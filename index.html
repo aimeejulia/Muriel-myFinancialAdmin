@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self';" />
+  <title>Muriel - myFinancialAdmin</title>
+  <link rel="icon" type="image/png" href="./build/icon.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="modulepreload" href="./renderer.js" />
+  <link rel="modulepreload" href="./state.js" />
+  <link rel="modulepreload" href="./views.js" />
+  <link rel="modulepreload" href="./profile.js" />
+  <link rel="modulepreload" href="./reports.js" />
+  <link rel="modulepreload" href="./pdf.js" />
+  <link rel="modulepreload" href="./imports.js" />
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <aside class="sidebar">
+ <nav class="nav">
+  <button type="button" class="nav-link active" data-view="dashboard">Dashboard</button>
+  <button type="button" class="nav-link" data-view="clients">Clients</button>
+  <button type="button" class="nav-link" data-view="invoices">Invoices</button>
+  <button type="button" class="nav-link" data-view="expenses">Expenses</button>
+  <button type="button" class="nav-link" data-view="reports">Reports</button>
+    <button type="button" class="nav-link" data-view="profile">Profile</button>
+</nav>
+
+      <div class="sidebar-tools">
+        <p class="sidebar-tools-label">Theme</p>
+        <div class="theme-switcher" role="group" aria-label="Choose app theme">
+          <button type="button" class="theme-option active" data-theme="muriel" aria-label="Muriel theme" title="Muriel theme">
+            <span class="theme-swatch muriel" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="theme-option" data-theme="sunrise" aria-label="Warm brand theme" title="Warm brand theme">
+            <span class="theme-swatch sunrise" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="theme-option" data-theme="night" aria-label="Night mode" title="Night mode">
+            <span class="theme-icon-moon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="brand-bottom">
+        <img class="brand-logo" src="./MURIEL.jpg" alt="Muriel myFinancialAdmin logo" />
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Overview</p>
+          <h2 id="page-title">Dashboard</h2>
+        </div>
+        <div class="topbar-actions">
+          <button type="button" class="secondary-btn" id="check-updates-btn">Check for updates</button>
+        </div>
+      </header>
+
+      <section class="update-banner" id="update-banner" hidden>
+        <div>
+          <p class="eyebrow">Software update</p>
+          <strong id="update-banner-title">Checking for updates…</strong>
+          <p id="update-banner-message">Muriel will let you know when a new version is available.</p>
+        </div>
+        <div class="update-banner-actions">
+          <button type="button" class="secondary-btn" id="update-download-btn" hidden>Open download page</button>
+          <button type="button" class="secondary-btn" id="update-dismiss-btn">Dismiss</button>
+        </div>
+      </section>
+
+      <section class="view active" id="dashboard-view">
+        <div class="dashboard-toolbar">
+          <div class="field">
+            <label for="dashboardYear">Year</label>
+            <input id="dashboardYear" type="number" min="2020" max="2100" />
+          </div>
+          <div class="field">
+            <label for="dashboardPeriod">Period</label>
+            <select id="dashboardPeriod" class="compact-select">
+              <option value="q1">Q1</option>
+              <option value="q2">Q2</option>
+              <option value="q3">Q3</option>
+              <option value="q4">Q4</option>
+              <option value="year">Full year</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-grid metrics-grid">
+          <article class="metric-card">
+            <span>Realised net income</span>
+            <strong id="metric-quarter-invoiced">€0.00</strong>
+            <small>Paid invoice income less period expenses</small>
+          </article>
+          <article class="metric-card">
+            <span>Accrued net income</span>
+            <strong id="metric-received">€0.00</strong>
+            <small>Issued invoice income less period expenses</small>
+          </article>
+          <article class="metric-card">
+            <span>Outstanding receivables</span>
+            <strong id="metric-outstanding">€0.00</strong>
+            <small>Open invoices still expected to be collected</small>
+          </article>
+          <article class="metric-card warning">
+            <span>VAT exposure</span>
+            <strong id="metric-vat-exposure">€0.00</strong>
+            <small>VAT on unpaid invoices</small>
+          </article>
+        </div>
+
+        <div class="two-col">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Urgent</p>
+                <h3>Overdue invoices</h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice</th>
+                    <th>Client</th>
+                    <th>Due</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody id="overdue-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Quick glance</p>
+                <h3>Status summary</h3>
+              </div>
+            </div>
+            <div class="status-stack" id="status-summary"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="clients-view">
+        <div class="two-col two-col-forms">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Client record</p>
+                <h3>Add client</h3>
+              </div>
+            </div>
+            <form id="client-form" class="form-grid">
+              <div class="field">
+                <label for="clientName">Client name</label>
+                <input id="clientName" name="clientName" placeholder="e.g. Acme Ltd" required />
+              </div>
+              <div class="field">
+                <label for="clientContactName">Contact name</label>
+                <input id="clientContactName" name="clientContactName" placeholder="e.g. Maria Smith" />
+              </div>
+              <div class="field">
+                <label for="clientDisplayId">Client ID</label>
+                <input id="clientDisplayId" name="clientDisplayId" placeholder="Auto-generated" />
+              </div>
+              <div class="field">
+                <label for="clientEmail">Email</label>
+                <input id="clientEmail" name="clientEmail" type="email" placeholder="billing@client.com" />
+              </div>
+              <div class="field">
+                <label for="clientVatNumber">VAT / Tax ID</label>
+                <input id="clientVatNumber" name="clientVatNumber" placeholder="e.g. MT12345678" />
+              </div>
+              <div class="field full-span">
+                <label for="clientAddress">Address</label>
+                <textarea id="clientAddress" name="clientAddress" rows="3" placeholder="Street, city, postcode, country"></textarea>
+              </div>
+              <div class="field">
+                <label for="clientDefaultVat">Default VAT %</label>
+                <input id="clientDefaultVat" name="clientDefaultVat" type="number" min="0" step="0.01" value="21" />
+              </div>
+              <div class="field">
+                <label for="clientDefaultCurrency">Client currency</label>
+                <select id="clientDefaultCurrency" name="clientDefaultCurrency">
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="GBP">GBP - British Pound</option>
+                  <option value="CHF">CHF - Swiss Franc</option>
+                  <option value="CAD">CAD - Canadian Dollar</option>
+                  <option value="AUD">AUD - Australian Dollar</option>
+                  <option value="JPY">JPY - Japanese Yen</option>
+                  <option value="SEK">SEK - Swedish Krona</option>
+                  <option value="NOK">NOK - Norwegian Krone</option>
+                  <option value="DKK">DKK - Danish Krone</option>
+                  <option value="PLN">PLN - Polish Zloty</option>
+                </select>
+              </div>
+              <div class="field full-span">
+                <label for="clientPreferredPaymentMethod">Preferred payment method</label>
+                <select id="clientPreferredPaymentMethod" name="clientPreferredPaymentMethod"></select>
+              </div>
+              <div class="form-actions full-span">
+                <button type="submit" class="primary-btn">Save client</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Directory</p>
+                <h3>Clients</h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Client ID</th>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>VAT ID</th>
+                    <th>Default VAT</th>
+                    <th>Currency</th>
+                  </tr>
+                </thead>
+                <tbody id="clients-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="invoices-view">
+        <div class="two-col two-col-forms">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Invoice builder</p>
+                <h3>Create invoice</h3>
+              </div>
+            </div>
+            <form id="invoice-form" class="form-grid">
+              <div class="field">
+                <label for="invoiceClient">Client</label>
+                <select id="invoiceClient" name="invoiceClient" required></select>
+              </div>
+              <div class="field">
+                <label for="invoicePaymentMethod">Payment method</label>
+                <select id="invoicePaymentMethod" name="invoicePaymentMethod"></select>
+              </div>
+              <div class="field">
+                <label for="invoiceIssuer">Bill from</label>
+                <select id="invoiceIssuer" name="invoiceIssuer"></select>
+              </div>
+              <div class="field">
+                <label for="invoiceNumber">Invoice number</label>
+                <input id="invoiceNumber" name="invoiceNumber" placeholder="Auto-generated if empty" />
+              </div>
+              <div class="field">
+                <label for="invoiceIssueDate">Issue date</label>
+                <input id="invoiceIssueDate" name="invoiceIssueDate" type="date" required />
+              </div>
+              <div class="field">
+                <label for="invoiceDueDate">Due date</label>
+                <input id="invoiceDueDate" name="invoiceDueDate" type="date" required />
+              </div>
+              <div class="field full-span">
+                <label for="invoiceDescription">Description</label>
+                <textarea id="invoiceDescription" name="invoiceDescription" rows="3" placeholder="e.g. Website maintenance for April 2026" required></textarea>
+              </div>
+              <div class="field">
+                <label for="invoiceSubtotal">Subtotal (default currency)</label>
+                <input id="invoiceSubtotal" name="invoiceSubtotal" type="number" min="0" step="0.01" required />
+              </div>
+              <div class="field">
+                <label for="invoiceVatRate">VAT %</label>
+                <input id="invoiceVatRate" name="invoiceVatRate" type="number" min="0" step="0.01" value="21" required />
+              </div>
+              <div class="field">
+                <label>Total (auto-calculated)</label>
+                <div class="calc-output" id="invoiceTotalPreview">€0.00</div>
+              </div>
+              <div class="field" id="invoice-default-currency-received-field" hidden>
+                <label for="invoiceDefaultCurrencyReceived" id="invoice-default-currency-received-label">Amount received</label>
+                <input id="invoiceDefaultCurrencyReceived" name="invoiceDefaultCurrencyReceived" type="number" min="0" step="0.01" />
+                <small id="invoice-default-currency-received-preview" class="field-hint"></small>
+              </div>
+              <div class="field" id="invoice-client-secondary-total-field" hidden>
+                <label for="invoiceClientSecondaryTotal" id="invoice-client-secondary-total-label">Total in client currency</label>
+                <input id="invoiceClientSecondaryTotal" name="invoiceClientSecondaryTotal" type="number" min="0" step="0.01" />
+                <small id="invoice-client-secondary-total-preview" class="field-hint"></small>
+              </div>
+              <div class="field">
+                <label for="invoiceStatus">Status</label>
+                <select id="invoiceStatus" name="invoiceStatus">
+                  <option value="draft">Draft</option>
+                  <option value="sent" selected>Sent</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+              <div class="field" id="invoice-paid-date-field" hidden>
+                <label for="invoicePaidDate">Paid date</label>
+                <input id="invoicePaidDate" name="invoicePaidDate" type="date" />
+              </div>
+              <div class="form-actions full-span">
+                <button type="submit" class="primary-btn">Create invoice</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header split-header">
+              <div>
+                <p class="eyebrow">Issued invoices</p>
+                <h3>Invoice list</h3>
+              </div>
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+  <button class="secondary-btn" id="export-invoices-csv">Export CSV</button>
+  <button class="secondary-btn" id="import-invoices-pdf">Import PDF</button>
+  <input id="invoice-pdf-input" type="file" accept="application/pdf" multiple style="display:none;" />
+  <select id="invoice-filter" class="compact-select">
+                <option value="all">All</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+                  <option value="delinquent">Delinquent</option>
+                <option value="aborted">Aborted</option>
+              </select>
+              <button class="secondary-btn" id="invoice-sort-toggle" title="Sort by issue date">Date ↓</button>
+            </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice</th>
+                    <th>Client</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoices-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+<section class="view" id="expenses-view">
+  <div class="two-col two-col-forms">
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Expense tracker</p>
+          <h3>Add expense</h3>
+        </div>
+      </div>
+      <form id="expense-form" class="form-grid">
+        <div class="field">
+          <label for="expenseDate">Date</label>
+          <input id="expenseDate" name="expenseDate" type="date" required />
+        </div>
+        <div class="field">
+          <label for="expenseAmount">Amount (€)</label>
+          <input id="expenseAmount" name="expenseAmount" type="number" min="0" step="0.01" required />
+        </div>
+        <div class="field">
+          <label for="expenseCategory">Category</label>
+          <select id="expenseCategory" name="expenseCategory">
+            <option>Software</option>
+            <option>Travel</option>
+            <option>Office</option>
+            <option>Marketing</option>
+            <option>Professional services</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="expenseDeductible">Tax deductible</label>
+          <select id="expenseDeductible" name="expenseDeductible">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="field full-span">
+          <label for="expenseNote">Note</label>
+          <textarea id="expenseNote" name="expenseNote" rows="3" placeholder="e.g. Adobe subscription or taxi receipt"></textarea>
+        </div>
+        <div class="form-actions full-span" style="gap:10px; flex-wrap:wrap;">
+          <button type="button" class="secondary-btn" id="import-expense-pdf">Upload expense PDF</button>
+          <input id="expense-pdf-input" type="file" accept="application/pdf" style="display:none;" />
+          <button type="submit" class="primary-btn" id="expense-submit-btn">Save expense</button>
+          <button type="button" class="secondary-btn" id="expense-edit-cancel-btn" hidden>Cancel edit</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header split-header">
+        <div>
+          <p class="eyebrow">Logged expenses</p>
+          <h3>Expense list</h3>
+        </div>
+        <button class="secondary-btn" id="export-expenses-csv">Export CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Deductible</th>
+              <th>Receipt</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expenses-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</section>
+      <section class="view" id="reports-view">
+        <div class="report-layout">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Reporting period</p>
+                <h3>Period snapshot</h3>
+              </div>
+            </div>
+            <form id="report-form" class="report-toolbar">
+              <div class="field">
+                <label for="reportYear">Year</label>
+                <input id="reportYear" type="number" min="2020" max="2100" />
+              </div>
+              <div class="field">
+                <label for="reportQuarter">Period</label>
+                <select id="reportQuarter">
+                  <option value="1">Q1</option>
+                  <option value="2">Q2</option>
+                  <option value="3">Q3</option>
+                  <option value="4">Q4</option>
+                  <option value="year">Full year</option>
+                </select>
+              </div>
+              <div class="report-actions">
+                <button type="button" class="primary-btn" id="run-quarter-report">Run report</button>
+                <button type="button" class="secondary-btn" id="export-report-csv">Export CSV</button>
+              </div>
+            </form>
+
+            <div class="report-grid" id="report-cards"></div>
+            <div class="report-chart-grid" id="report-charts">
+              <article class="report-chart-card">
+                <h4>Status breakdown</h4>
+                <canvas id="report-status-chart"></canvas>
+              </article>
+              <article class="report-chart-card">
+                <h4>Cashflow mix</h4>
+                <canvas id="report-cashflow-chart"></canvas>
+              </article>
+              <article class="report-chart-card wide">
+                <h4>Income trend</h4>
+                <canvas id="report-income-chart"></canvas>
+              </article>
+            </div>
+            <p id="report-charts-empty" class="report-charts-empty" hidden></p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Guide</p>
+                <h3>How to read this report</h3>
+              </div>
+            </div>
+            <p class="report-notes-intro">Use this panel to quickly understand what the numbers include, what they exclude, and what to do next when the figures change.</p>
+            <div class="report-notes-groups">
+              <section class="report-note-group">
+                <h4>How this snapshot works</h4>
+                <ul class="notes-list">
+                  <li>Totals are based on invoice issue date inside the selected quarter or full year.</li>
+                  <li>Net invoiced uses invoice subtotals, while paid and outstanding focus on collection status.</li>
+                  <li>Income trend compares invoiced value, expenses, and estimated net over time.</li>
+                </ul>
+              </section>
+              <section class="report-note-group">
+                <h4>What to watch weekly</h4>
+                <ul class="notes-list">
+                  <li>Outstanding receivables should trend down as reminders are sent and payments are booked.</li>
+                  <li>VAT exposure should not keep rising for more than one reporting period.</li>
+                  <li>Delinquent totals indicate cashflow risk and should trigger follow-up action.</li>
+                </ul>
+              </section>
+              <section class="report-note-group">
+                <h4>Data and operations notes</h4>
+                <ul class="notes-list">
+                  <li>Aborted invoices are excluded from financial totals and reporting cards.</li>
+                  <li>Paid status and payment dates are manual entries unless automation is connected later.</li>
+                  <li>CSV exports mirror report cards and can be shared with advisors or imported elsewhere.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="profile-view">
+        <div class="two-col two-col-forms">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Your details</p>
+                <h3>Invoice sender profile</h3>
+              </div>
+            </div>
+            <form id="profile-form" class="form-grid">
+              <div class="field">
+                <label for="profilePersonalName">Your name</label>
+                <input id="profilePersonalName" name="profilePersonalName" placeholder="e.g. John Smith" />
+              </div>
+              <div class="field">
+                <label for="profileLegalName">Legal name</label>
+                <input id="profileLegalName" name="profileLegalName" placeholder="e.g. John Smith" />
+              </div>
+              <div class="field">
+                <label for="profileEmail">Email</label>
+                <input id="profileEmail" name="profileEmail" type="email" placeholder="you@example.com" />
+              </div>
+              <div class="field">
+                <label for="profilePhone">Phone</label>
+                <input id="profilePhone" name="profilePhone" placeholder="+356 ..." />
+              </div>
+              <div class="field">
+                <label for="profileVatNumber">VAT / Tax ID</label>
+                <input id="profileVatNumber" name="profileVatNumber" placeholder="e.g. MT12345678" />
+              </div>
+              <div class="field full-span">
+                <label for="profileAddress">Address</label>
+                <textarea id="profileAddress" name="profileAddress" rows="3" placeholder="Street, city, postcode, country"></textarea>
+              </div>
+              <div class="field">
+                <label for="profileReportingCurrency">Default reporting currency</label>
+                <select id="profileReportingCurrency" name="profileReportingCurrency">
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="GBP">GBP - British Pound</option>
+                  <option value="CHF">CHF - Swiss Franc</option>
+                  <option value="CAD">CAD - Canadian Dollar</option>
+                  <option value="AUD">AUD - Australian Dollar</option>
+                  <option value="JPY">JPY - Japanese Yen</option>
+                  <option value="SEK">SEK - Swedish Krona</option>
+                  <option value="NOK">NOK - Norwegian Krone</option>
+                  <option value="DKK">DKK - Danish Krone</option>
+                  <option value="PLN">PLN - Polish Zloty</option>
+                </select>
+              </div>
+              <div class="form-actions full-span">
+                <button type="submit" class="primary-btn">Save profile</button>
+              </div>
+              <p id="profile-save-feedback" class="form-feedback success full-span" role="status" aria-live="polite" hidden>Profile changes saved.</p>
+              <p id="profile-encryption-status" class="storage-status full-span" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Business names</p>
+                <h3>Trading names for invoices</h3>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field full-span">
+                <label for="profileBusinessName">Add business name</label>
+                <input id="profileBusinessName" name="profileBusinessName" placeholder="Your Business Name" />
+              </div>
+              <div class="field">
+                <label for="profileBusinessWebsite">Website</label>
+                <input id="profileBusinessWebsite" name="profileBusinessWebsite" type="url" placeholder="https://yourbusiness.com" />
+              </div>
+              <div class="field">
+                <label for="profileBusinessContactEmail">Contact email</label>
+                <input id="profileBusinessContactEmail" name="profileBusinessContactEmail" type="email" placeholder="hello@yourbusiness.com" />
+              </div>
+              <div class="field full-span">
+                <label for="profileBusinessLogo">Logo</label>
+                <input id="profileBusinessLogo" name="profileBusinessLogo" type="file" accept="image/*" />
+              </div>
+              <div class="form-actions full-span">
+                <button type="button" class="inline-action-btn" id="add-business-name">Add trading name</button>
+                <button type="button" class="secondary-btn" id="cancel-business-edit" hidden>Cancel edit</button>
+              </div>
+            </div>
+            <div id="business-name-list" class="business-name-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Payment details</p>
+                <h3>Methods for invoices</h3>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="profilePaymentMethodLabel">Method label</label>
+                <input id="profilePaymentMethodLabel" name="profilePaymentMethodLabel" placeholder="Bank transfer" />
+              </div>
+              <div class="field">
+                <label for="profilePaymentMethodType">Type</label>
+                <input id="profilePaymentMethodType" name="profilePaymentMethodType" placeholder="SEPA / Card / PayPal" />
+              </div>
+              <div class="field full-span">
+                <label for="profilePaymentMethodDetails">Payment details</label>
+                <textarea id="profilePaymentMethodDetails" name="profilePaymentMethodDetails" rows="3" placeholder="IBAN, BIC, account name, payment link, references..."></textarea>
+              </div>
+              <div class="field full-span">
+                <label><input id="profilePaymentMethodDefault" name="profilePaymentMethodDefault" type="checkbox" /> Include by default on invoices</label>
+              </div>
+              <div class="form-actions full-span">
+                <button type="button" class="inline-action-btn" id="add-payment-method">Add payment method</button>
+                <button type="button" class="secondary-btn" id="cancel-payment-method-edit" hidden>Cancel edit</button>
+              </div>
+            </div>
+            <div id="payment-method-list" class="business-name-list"></div>
+          </section>
+
+          <section class="panel full-span">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Safety</p>
+                <h3>Backup and restore</h3>
+              </div>
+            </div>
+            <p class="report-notes-intro">Create a backup file you can keep anywhere, then restore it later if you change device or need to recover data. A local safety backup is also refreshed when you save changes and again when the app closes.</p>
+            <div class="form-actions">
+              <button type="button" class="primary-btn" id="export-backup-btn">Export backup</button>
+              <button type="button" class="secondary-btn" id="restore-backup-btn">Restore backup</button>
+            </div>
+            <p id="backup-status" class="storage-status" role="status" aria-live="polite">Automatic safety backups are kept locally, refreshed when you save, and written again when the app closes. For best protection, use the app on a password-protected machine.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="create-client-modal" hidden>
+    <form id="quick-client-form" class="modal-card">
+      <div>
+        <p class="eyebrow">Invoice flow</p>
+        <h3>Create new client</h3>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="quickClientName">Client name</label>
+          <input id="quickClientName" name="quickClientName" placeholder="e.g. Acme Ltd" required />
+        </div>
+        <div class="field">
+          <label for="quickClientContactName">Contact name</label>
+          <input id="quickClientContactName" name="quickClientContactName" placeholder="e.g. Maria Smith" />
+        </div>
+        <div class="field">
+          <label for="quickClientDisplayId">Client ID</label>
+          <input id="quickClientDisplayId" name="quickClientDisplayId" placeholder="Auto-generated" />
+        </div>
+        <div class="field">
+          <label for="quickClientEmail">Email</label>
+          <input id="quickClientEmail" name="quickClientEmail" type="email" placeholder="billing@client.com" />
+        </div>
+        <div class="field">
+          <label for="quickClientVatNumber">VAT / Tax ID</label>
+          <input id="quickClientVatNumber" name="quickClientVatNumber" placeholder="e.g. MT12345678" />
+        </div>
+        <div class="field full-span">
+          <label for="quickClientAddress">Address</label>
+          <textarea id="quickClientAddress" name="quickClientAddress" rows="3" placeholder="Street, city, postcode, country"></textarea>
+        </div>
+        <div class="field">
+          <label for="quickClientDefaultVat">Default VAT %</label>
+          <input id="quickClientDefaultVat" name="quickClientDefaultVat" type="number" min="0" step="0.01" value="21" />
+        </div>
+        <div class="field">
+          <label for="quickClientDefaultCurrency">Client currency</label>
+          <select id="quickClientDefaultCurrency" name="quickClientDefaultCurrency">
+            <option value="EUR">EUR - Euro</option>
+            <option value="USD">USD - US Dollar</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="CHF">CHF - Swiss Franc</option>
+            <option value="CAD">CAD - Canadian Dollar</option>
+            <option value="AUD">AUD - Australian Dollar</option>
+            <option value="JPY">JPY - Japanese Yen</option>
+            <option value="SEK">SEK - Swedish Krona</option>
+            <option value="NOK">NOK - Norwegian Krone</option>
+            <option value="DKK">DKK - Danish Krone</option>
+            <option value="PLN">PLN - Polish Zloty</option>
+          </select>
+        </div>
+        <div class="field full-span">
+          <label for="quickClientPreferredPaymentMethod">Preferred payment method</label>
+          <select id="quickClientPreferredPaymentMethod" name="quickClientPreferredPaymentMethod"></select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="quick-client-cancel">Cancel</button>
+        <button type="submit" class="primary-btn">Create client</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="mark-paid-modal" hidden>
+    <form id="mark-paid-form" class="modal-card">
+      <div>
+        <p class="eyebrow">Invoice status</p>
+        <h3>Mark invoice as paid</h3>
+      </div>
+      <div class="field">
+        <label for="markPaidDate">Payment date</label>
+        <input id="markPaidDate" name="markPaidDate" type="date" required />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="mark-paid-cancel">Cancel</button>
+        <button type="submit" class="primary-btn">Save paid date</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="change-status-modal" hidden>
+    <form id="change-status-form" class="modal-card">
+      <div>
+        <p class="eyebrow">Invoice status</p>
+        <h3>Change status</h3>
+      </div>
+      <div class="form-grid">
+        <div class="field full-span">
+          <label for="changeStatusSelect">Status</label>
+          <select id="changeStatusSelect" name="changeStatusSelect" required>
+            <option value="draft">Draft</option>
+            <option value="sent">Sent</option>
+            <option value="overdue">Overdue</option>
+            <option value="delinquent">Delinquent</option>
+            <option value="aborted">Aborted</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+        <div class="field full-span" id="change-status-paid-date-field" hidden>
+          <label for="changeStatusPaidDate">Payment date</label>
+          <input id="changeStatusPaidDate" name="changeStatusPaidDate" type="date" />
+        </div>
+        <div class="field full-span" id="change-status-aborted-number-field" hidden>
+          <label for="changeStatusAbortedNumberHandling">Invoice number handling</label>
+          <select id="changeStatusAbortedNumberHandling" name="changeStatusAbortedNumberHandling">
+            <option value="cancelled">Mark invoice number as cancelled</option>
+            <option value="reuse">Allow invoice number to be reused</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="change-status-cancel">Cancel</button>
+        <button type="submit" class="primary-btn">Save status</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="invoice-preview-modal" hidden>
+    <div class="modal-card preview-modal-card">
+      <div class="preview-modal-head">
+        <div>
+          <p class="eyebrow" id="invoice-preview-eyebrow">Invoice review</p>
+          <h3 id="invoice-preview-title">Preview invoice</h3>
+        </div>
+      </div>
+      <div class="preview-modal-body">
+        <div id="invoice-preview-content" class="preview-sheet"></div>
+      </div>
+      <div class="modal-actions" style="padding: 0 24px 24px;">
+        <button type="button" class="secondary-btn" id="invoice-preview-close">Close</button>
+        <button type="button" class="secondary-btn" id="invoice-preview-edit">Edit invoice</button>
+        <button type="button" class="primary-btn" id="invoice-preview-download">Download PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="expense-receipt-modal" hidden>
+    <div class="modal-card preview-modal-card">
+      <div class="preview-modal-head">
+        <div>
+          <p class="eyebrow">Expense receipt</p>
+          <h3 id="expense-receipt-title">Receipt preview</h3>
+        </div>
+      </div>
+      <div class="preview-modal-body">
+        <div id="expense-receipt-content" class="receipt-preview-stack"></div>
+      </div>
+      <div class="modal-actions" style="padding: 0 24px 24px;">
+        <button type="button" class="secondary-btn" id="expense-receipt-close">Close</button>
+        <button type="button" class="primary-btn" id="expense-receipt-download">Download PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <template id="status-pill-template">
+    <div class="status-row">
+      <div>
+        <strong class="status-label"></strong>
+        <p class="status-subtext"></p>
+      </div>
+      <span class="status-count"></span>
+    </div>
+  </template>
+
+  <script src="./node_modules/chart.js/dist/chart.umd.js"></script>
+  <script src="./node_modules/jspdf/dist/jspdf.umd.min.js"></script>
+  <script type="module" src="./renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Muriel - myFinancialAdmin
+Comment=Local-first financial admin desktop app
+Type=Application
+Exec=muriel-myfinancialadmin %U
+Terminal=false
+Categories=Office;Finance;
+StartupWMClass=Muriel - myFinancialAdmin
+Icon=com.muriel.myfinancialadmin

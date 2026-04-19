@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.muriel.myfinancialadmin</id>
+  <name>Muriel - myFinancialAdmin</name>
+  <summary>Local-first financial admin for freelancers and small businesses</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>BSD-3-Clause</project_license>
+
+  <description>
+    <p>
+      Muriel - myFinancialAdmin is a local-first desktop app for client records,
+      invoices, expenses, and reporting.
+    </p>
+    <p>
+      Data is stored locally on the user's device.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">com.muriel.myfinancialadmin.desktop</launchable>
+
+  <developer id="com.muriel">
+    <name>Aimee Fenech</name>
+  </developer>
+
+  <categories>
+    <category>Office</category>
+    <category>Finance</category>
+  </categories>
+
+  <url type="homepage">https://example.com</url>
+  <url type="bugtracker">https://example.com/issues</url>
+
+  <provides>
+    <binary>muriel-myfinancialadmin</binary>
+  </provides>
+
+  <releases>
+    <release version="1.0.0" date="2026-04-19" />
+  </releases>
+
+  <content_rating type="oars-1.1" />
+</component>

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+release/
+squashfs-root/
+.venv/
+.env
+.env.*
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
