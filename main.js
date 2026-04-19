@@ -137,21 +137,35 @@ function getPackageJson() {
 function extractGithubRepo(metadata = {}) {
   const repository = metadata?.repository;
   const repositoryUrl = typeof repository === 'string' ? repository : repository?.url;
-  const publishRepo = metadata?.build?.publish?.repo;
+  const publishConfig = Array.isArray(metadata?.build?.publish)
+    ? metadata.build.publish[0]
+    : metadata?.build?.publish;
+  const publishOwnerRepo = publishConfig?.owner && publishConfig?.repo
+    ? `${publishConfig.owner}/${publishConfig.repo}`
+    : '';
+  const publishRepo = publishConfig?.repo;
   const homepage = metadata?.homepage;
-  const configuredValue = process.env.MURIEL_UPDATE_REPO || publishRepo || repositoryUrl || homepage || '';
-  const text = String(configuredValue || '').trim();
+  const candidates = [
+    process.env.MURIEL_UPDATE_REPO,
+    publishOwnerRepo,
+    publishRepo,
+    repositoryUrl,
+    homepage,
+  ];
 
-  if (!text) return '';
+  for (const candidate of candidates) {
+    const text = String(candidate || '').trim();
+    if (!text) continue;
 
-  const githubMatch = text.match(/github\.com[/:]([^/\s]+)\/([^/\s#]+?)(?:\.git)?(?:\/|$|#)/i);
-  if (githubMatch) {
-    return `${githubMatch[1]}/${githubMatch[2]}`.replace(/\.git$/i, '');
-  }
+    const githubMatch = text.match(/github\.com[/:]([^/\s]+)\/([^/\s#]+?)(?:\.git)?(?:\/|$|#)/i);
+    if (githubMatch) {
+      return `${githubMatch[1]}/${githubMatch[2]}`.replace(/\.git$/i, '');
+    }
 
-  const slugMatch = text.match(/^([^/\s]+)\/([^/\s]+)$/);
-  if (slugMatch) {
-    return `${slugMatch[1]}/${slugMatch[2]}`.replace(/\.git$/i, '');
+    const slugMatch = text.match(/^([^/\s]+)\/([^/\s]+)$/);
+    if (slugMatch) {
+      return `${slugMatch[1]}/${slugMatch[2]}`.replace(/\.git$/i, '');
+    }
   }
 
   return '';

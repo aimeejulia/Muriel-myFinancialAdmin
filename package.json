@@ -5,6 +5,11 @@
   "main": "main.js",
   "author": "Aimee Fenech",
   "license": "BSD-3-Clause",
+  "homepage": "https://github.com/aimeejulia/Muriel-myFinancialAdmin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aimeejulia/Muriel-myFinancialAdmin.git"
+  },
   "scripts": {
     "preinstall": "node ./scripts/check-node.js",
     "start": "electron .",
@@ -51,6 +56,12 @@
     "directories": {
       "output": "dist",
       "buildResources": "build"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "aimeejulia",
+      "repo": "Muriel-myFinancialAdmin",
+      "releaseType": "release"
     },
     "linux": {
       "target": [
