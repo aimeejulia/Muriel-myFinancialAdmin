@@ -1,6 +1,6 @@
 {
   "name": "muriel-myfinancialadmin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Muriel - myFinancialAdmin desktop app",
   "main": "main.js",
   "author": "Aimee Fenech",
@@ -14,8 +14,9 @@
     "preinstall": "node ./scripts/check-node.js",
     "start": "electron .",
     "dev": "electron .",
-    "package:appimage": "electron-builder --linux AppImage",
-    "package:linux": "electron-builder --linux",
+    "check:appimage-config": "node ./scripts/validate-appimage-config.js",
+    "package:appimage": "npm run check:appimage-config && electron-builder --linux AppImage",
+    "package:linux": "npm run check:appimage-config && electron-builder --linux",
     "package:flatpak": "electron-builder --linux flatpak",
     "package:snap": "electron-builder --linux snap"
   },
@@ -70,7 +71,15 @@
         "snap"
       ],
       "category": "Office",
-      "icon": "build/icons"
+      "icon": "build/icons",
+      "desktop": {
+        "entry": {
+          "Name": "Muriel - myFinancialAdmin",
+          "Comment": "Local-first financial admin desktop app",
+          "Categories": "Office;Finance;",
+          "StartupWMClass": "Muriel - myFinancialAdmin"
+        }
+      }
     },
     "flatpak": {
       "runtime": "org.freedesktop.Platform",
