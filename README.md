@@ -6,49 +6,94 @@ The software is named after Muriel Siebert.
 
 ## Runtime Requirements
 
-- Node.js: 22.12.0 or newer
-- npm: 10 or newer
+- Node.js 22.12.0 or newer
+- npm 10 or newer
 
-This project enforces versions via:
+Version checks are enforced by:
 
 - `.nvmrc`
 - `package.json` `engines`
-- `preinstall` check script at `scripts/check-node.js`
+- `scripts/check-node.js` (runs during `npm install`)
 
-## Quick Start
+## Installation Guide For Beginners
 
-1. Install and use the required Node version:
-   - `nvm install 22.12.0`
-   - `nvm use 22.12.0`
-2. Install dependencies:
-   - `npm install`
-3. Run the desktop app:
-   - `npm run start`
+### Super Quick Install (AppImage)
 
-## Build AppImage
+If you already have an `.AppImage` file:
 
-- `npm run package:appimage`
+1. Put the `.AppImage` file in `Downloads`.
+2. Right-click the file and open `Properties`.
+3. In `Permissions`, enable `Allow executing file as program`.
+4. Double-click the file.
 
-**Pre-build Validation:** The build command automatically validates that desktop integration metadata is configured. If validation fails, the build stops with a clear error message. Run `npm run check:appimage-config` anytime to validate the configuration.
+If it does not open, right-click it and choose `Run as Program`.
 
-### Using the AppImage
+### Method 1: Run A Downloaded AppImage
 
-Once built, the AppImage is located at `dist/Muriel - myFinancialAdmin-*.AppImage`.
+1. Save the `.AppImage` in `Downloads`.
+2. Enable `Allow executing file as program`.
+3. Double-click to start.
 
-**Option 1: Direct Execution**
+If double-click still does nothing:
+
+```bash
+sudo apt update
+sudo apt install -y libfuse2
+```
+
+### Method 2: Run From Source
+
+1. Install Node with nvm:
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+```
+
+2. Restart Terminal and select Node:
+
+```bash
+nvm install 22.12.0
+nvm use 22.12.0
+node -v
+```
+
+3. In the project folder:
+
+```bash
+npm install
+npm run start
+```
+
+## Build And Use AppImage
+
+Build:
+
+```bash
+npm run package:appimage
+```
+
+Pre-build validation runs automatically. To run it manually:
+
+```bash
+npm run check:appimage-config
+```
+
+Expected output location:
+
+- `dist/Muriel - myFinancialAdmin-*.AppImage`
+
+Run from terminal:
+
 ```bash
 ./dist/Muriel\ -\ myFinancialAdmin-1.0.1.AppImage
 ```
 
-**Option 2: Desktop Integration (Recommended)**
+### Optional Desktop Shortcut (Choose One Method)
 
-For double-click support from your file manager, install the AppImage with proper desktop integration:
+Method A: Manual launcher entry
 
 ```bash
-# Make the AppImage executable (should already be)
 chmod +x ./dist/Muriel\ -\ myFinancialAdmin-1.0.1.AppImage
-
-# Copy to Applications directory for system integration
 mkdir -p ~/.local/share/applications
 desktop-file-install --dir=$HOME/.local/share/applications \
   --set-key=Exec --set-value="$PWD/dist/Muriel - myFinancialAdmin-1.0.1.AppImage" \
@@ -62,75 +107,99 @@ Categories=Office;Finance;
 StartupWMClass=Muriel - myFinancialAdmin")
 ```
 
-Alternatively, use **AppImageLauncher** (if installed) which provides automatic integration:
+Method B: AppImageLauncher
+
 ```bash
-sudo apt install appimagelauncher  # On Ubuntu/Debian
-# Then double-click the AppImage to register it
+sudo apt install appimagelauncher
 ```
 
-**Troubleshooting AppImage Issues**
+Use only one method. Using both creates duplicate desktop shortcuts.
 
-If the AppImage won't run:
-1. Verify it's executable: `chmod +x Muriel\ -\ myFinancialAdmin-1.0.1.AppImage`
-2. Check permissions: Should show `rwxr-xr-x` when you run `ls -l`
-3. Run from terminal to see error output: `./Muriel\ -\ myFinancialAdmin-1.0.1.AppImage`
-4. Ensure FUSE2 support is available (required by AppImage): `apt install libfuse2`
+### Duplicate Shortcut Cleanup
 
-## Build All Linux Targets
+```bash
+find ~/.local/share/applications -maxdepth 1 -type f | grep -Ei "muriel|financial|appimage|com\\.muriel" || true
+rm -f ~/.local/share/applications/muriel-myfinancialadmin-local.desktop
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database ~/.local/share/applications
+fi
+```
 
-- `npm run package:linux`
+If your app menu still shows both icons, log out and back in once.
 
-This builds every Linux target currently configured in `package.json`:
+### GNOME Pin To Dash
 
-- AppImage
-- Flatpak
-- Snap
+After creating a single launcher entry, open Activities, search for "Muriel - myFinancialAdmin", launch it once, then right-click the Dock icon and choose "Pin to Dash".
 
-If Flatpak tools are missing, this combined command can stop before every target finishes.
+If pinning does not appear, refresh desktop entries:
 
-## Build Flatpak (Step 1)
+```bash
+update-desktop-database ~/.local/share/applications || true
+```
 
-- `npm run package:flatpak`
+## Linux Packaging
 
-Flatpak artifacts are generated in `dist/`.
+Build all configured Linux targets:
 
-If Flatpak tools are missing, you may only see a staging folder such as
-`dist/__flatpak-x86_64` instead of a final `.flatpak` file.
+```bash
+npm run package:linux
+```
 
-Required tools for Flatpak packaging:
+This includes AppImage, Flatpak, and Snap.
 
-- `flatpak`
-- `flatpak-builder`
+### Flatpak
 
-On Ubuntu/Debian:
+```bash
+npm run package:flatpak
+```
 
-- `sudo apt update && sudo apt install -y flatpak flatpak-builder`
+If Flatpak tools are missing, install:
 
-Flathub metadata templates are included in:
+```bash
+sudo apt update && sudo apt install -y flatpak flatpak-builder
+```
+
+Metadata templates:
 
 - `flatpak/com.muriel.myfinancialadmin.desktop`
 - `flatpak/com.muriel.myfinancialadmin.metainfo.xml`
 
-Before submitting to Flathub, update these fields in
-`flatpak/com.muriel.myfinancialadmin.metainfo.xml`:
+### Snap
 
-- `url` values (homepage and bugtracker)
-- release history
-- long description text (if needed)
+```bash
+npm run package:snap
+```
 
-## Build Snap (Step 2)
-
-- `npm run package:snap`
-
-Snap artifacts are generated in `dist/`.
-
-Typical output file:
+Typical output:
 
 - `dist/muriel-myfinancialadmin_1.0.0_amd64.snap`
 
-## Notes
+## Troubleshooting
 
-If you run `npm install` with an older Node version, installation will stop with a clear error message describing the required version.
+### nvm command not found
+
+1. Close and reopen Terminal.
+2. Run `nvm install 22.12.0` and `nvm use 22.12.0` again.
+
+### Unsupported Node.js version
+
+```bash
+nvm use 22.12.0
+```
+
+### npm install fails
+
+```bash
+npm cache clean --force
+npm install
+```
+
+### AppImage does not launch
+
+```bash
+sudo apt update
+sudo apt install -y libfuse2
+```
 
 ## Release QA Checklist
 
