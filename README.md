@@ -29,6 +29,53 @@ This project enforces versions via:
 
 - `npm run package:appimage`
 
+**Pre-build Validation:** The build command automatically validates that desktop integration metadata is configured. If validation fails, the build stops with a clear error message. Run `npm run check:appimage-config` anytime to validate the configuration.
+
+### Using the AppImage
+
+Once built, the AppImage is located at `dist/Muriel - myFinancialAdmin-*.AppImage`.
+
+**Option 1: Direct Execution**
+```bash
+./dist/Muriel\ -\ myFinancialAdmin-1.0.1.AppImage
+```
+
+**Option 2: Desktop Integration (Recommended)**
+
+For double-click support from your file manager, install the AppImage with proper desktop integration:
+
+```bash
+# Make the AppImage executable (should already be)
+chmod +x ./dist/Muriel\ -\ myFinancialAdmin-1.0.1.AppImage
+
+# Copy to Applications directory for system integration
+mkdir -p ~/.local/share/applications
+desktop-file-install --dir=$HOME/.local/share/applications \
+  --set-key=Exec --set-value="$PWD/dist/Muriel - myFinancialAdmin-1.0.1.AppImage" \
+  <(echo "[Desktop Entry]
+Name=Muriel - myFinancialAdmin
+Comment=Local-first financial admin desktop app
+Exec=${PWD}/dist/Muriel - myFinancialAdmin-1.0.1.AppImage
+Icon=com.muriel.myfinancialadmin
+Type=Application
+Categories=Office;Finance;
+StartupWMClass=Muriel - myFinancialAdmin")
+```
+
+Alternatively, use **AppImageLauncher** (if installed) which provides automatic integration:
+```bash
+sudo apt install appimagelauncher  # On Ubuntu/Debian
+# Then double-click the AppImage to register it
+```
+
+**Troubleshooting AppImage Issues**
+
+If the AppImage won't run:
+1. Verify it's executable: `chmod +x Muriel\ -\ myFinancialAdmin-1.0.1.AppImage`
+2. Check permissions: Should show `rwxr-xr-x` when you run `ls -l`
+3. Run from terminal to see error output: `./Muriel\ -\ myFinancialAdmin-1.0.1.AppImage`
+4. Ensure FUSE2 support is available (required by AppImage): `apt install libfuse2`
+
 ## Build All Linux Targets
 
 - `npm run package:linux`
