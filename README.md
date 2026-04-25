@@ -6,84 +6,200 @@ The software is named after Muriel Siebert.
 
 ## Runtime Requirements
 
-- Node.js: 22.12.0 or newer
-- npm: 10 or newer
+- Node.js 22.12.0 or newer
+- npm 10 or newer
 
-This project enforces versions via:
+Version checks are enforced by:
 
 - `.nvmrc`
 - `package.json` `engines`
-- `preinstall` check script at `scripts/check-node.js`
+- `scripts/check-node.js` (runs during `npm install`)
 
-## Quick Start
+## Installation Guide For Beginners
 
-1. Install and use the required Node version:
-   - `nvm install 22.12.0`
-   - `nvm use 22.12.0`
-2. Install dependencies:
-   - `npm install`
-3. Run the desktop app:
-   - `npm run start`
+### Super Quick Install (AppImage)
 
-## Build AppImage
+If you already have an `.AppImage` file:
 
-- `npm run package:appimage`
+1. Put the `.AppImage` file in `Downloads`.
+2. Right-click the file and open `Properties`.
+3. In `Permissions`, enable `Allow executing file as program`.
+4. Double-click the file.
 
-## Build All Linux Targets
+If it does not open, right-click it and choose `Run as Program`.
 
-- `npm run package:linux`
+### Method 1: Run A Downloaded AppImage
 
-This builds every Linux target currently configured in `package.json`:
+1. Save the `.AppImage` in `Downloads`.
+2. Enable `Allow executing file as program`.
+3. Double-click to start.
 
-- AppImage
-- Flatpak
-- Snap
+If double-click still does nothing:
 
-If Flatpak tools are missing, this combined command can stop before every target finishes.
+```bash
+sudo apt update
+sudo apt install -y libfuse2
+```
 
-## Build Flatpak (Step 1)
+### Method 2: Run From Source
 
-- `npm run package:flatpak`
+1. Install Node with nvm:
 
-Flatpak artifacts are generated in `dist/`.
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+```
 
-If Flatpak tools are missing, you may only see a staging folder such as
-`dist/__flatpak-x86_64` instead of a final `.flatpak` file.
+2. Restart Terminal and select Node:
 
-Required tools for Flatpak packaging:
+```bash
+nvm install 22.12.0
+nvm use 22.12.0
+node -v
+```
 
-- `flatpak`
-- `flatpak-builder`
+3. In the project folder:
 
-On Ubuntu/Debian:
+```bash
+npm install
+npm run start
+```
 
-- `sudo apt update && sudo apt install -y flatpak flatpak-builder`
+## Build And Use AppImage
 
-Flathub metadata templates are included in:
+Build:
+
+```bash
+npm run package:appimage
+```
+
+Pre-build validation runs automatically. To run it manually:
+
+```bash
+npm run check:appimage-config
+```
+
+Expected output location:
+
+- `dist/Muriel - myFinancialAdmin-*.AppImage`
+
+Run from terminal:
+
+```bash
+./dist/Muriel\ -\ myFinancialAdmin-1.0.1.AppImage
+```
+
+### Optional Desktop Shortcut (Choose One Method)
+
+Method A: Manual launcher entry
+
+```bash
+chmod +x ./dist/Muriel\ -\ myFinancialAdmin-1.0.1.AppImage
+mkdir -p ~/.local/share/applications
+desktop-file-install --dir=$HOME/.local/share/applications \
+  --set-key=Exec --set-value="$PWD/dist/Muriel - myFinancialAdmin-1.0.1.AppImage" \
+  <(echo "[Desktop Entry]
+Name=Muriel - myFinancialAdmin
+Comment=Local-first financial admin desktop app
+Exec=${PWD}/dist/Muriel - myFinancialAdmin-1.0.1.AppImage
+Icon=com.muriel.myfinancialadmin
+Type=Application
+Categories=Office;Finance;
+StartupWMClass=Muriel - myFinancialAdmin")
+```
+
+Method B: AppImageLauncher
+
+```bash
+sudo apt install appimagelauncher
+```
+
+Use only one method. Using both creates duplicate desktop shortcuts.
+
+### Duplicate Shortcut Cleanup
+
+```bash
+find ~/.local/share/applications -maxdepth 1 -type f | grep -Ei "muriel|financial|appimage|com\\.muriel" || true
+rm -f ~/.local/share/applications/muriel-myfinancialadmin-local.desktop
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database ~/.local/share/applications
+fi
+```
+
+If your app menu still shows both icons, log out and back in once.
+
+### GNOME Pin To Dash
+
+After creating a single launcher entry, open Activities, search for "Muriel - myFinancialAdmin", launch it once, then right-click the Dock icon and choose "Pin to Dash".
+
+If pinning does not appear, refresh desktop entries:
+
+```bash
+update-desktop-database ~/.local/share/applications || true
+```
+
+## Linux Packaging
+
+Build all configured Linux targets:
+
+```bash
+npm run package:linux
+```
+
+This includes AppImage, Flatpak, and Snap.
+
+### Flatpak
+
+```bash
+npm run package:flatpak
+```
+
+If Flatpak tools are missing, install:
+
+```bash
+sudo apt update && sudo apt install -y flatpak flatpak-builder
+```
+
+Metadata templates:
 
 - `flatpak/com.muriel.myfinancialadmin.desktop`
 - `flatpak/com.muriel.myfinancialadmin.metainfo.xml`
 
-Before submitting to Flathub, update these fields in
-`flatpak/com.muriel.myfinancialadmin.metainfo.xml`:
+### Snap
 
-- `url` values (homepage and bugtracker)
-- release history
-- long description text (if needed)
+```bash
+npm run package:snap
+```
 
-## Build Snap (Step 2)
-
-- `npm run package:snap`
-
-Snap artifacts are generated in `dist/`.
-
-Typical output file:
+Typical output:
 
 - `dist/muriel-myfinancialadmin_1.0.0_amd64.snap`
 
-## Notes
+## Troubleshooting
 
-If you run `npm install` with an older Node version, installation will stop with a clear error message describing the required version.
+### nvm command not found
+
+1. Close and reopen Terminal.
+2. Run `nvm install 22.12.0` and `nvm use 22.12.0` again.
+
+### Unsupported Node.js version
+
+```bash
+nvm use 22.12.0
+```
+
+### npm install fails
+
+```bash
+npm cache clean --force
+npm install
+```
+
+### AppImage does not launch
+
+```bash
+sudo apt update
+sudo apt install -y libfuse2
+```
 
 ## Release QA Checklist
 

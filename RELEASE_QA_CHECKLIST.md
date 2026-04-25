@@ -16,6 +16,16 @@ npm -v
 git status
 ```
 
+## 0.5) Build Configuration Validation
+
+Before building AppImage or multi-target builds, validate the desktop integration configuration:
+
+```bash
+npm run check:appimage-config
+```
+
+This ensures the AppImage will support double-click execution from file managers. The validation automatically runs before `npm run package:appimage` and `npm run package:linux`, but you can run it manually to verify your configuration before starting a build.
+
 ## 1) Build Artifacts
 
 Build each Linux artifact separately:
