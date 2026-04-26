@@ -36,6 +36,11 @@
   </provides>
 
   <releases>
+    <release version="1.1.0" date="2026-04-26">
+      <description>
+        <p>Added ability to edit existing clients directly from the clients list.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-04-19" />
   </releases>
 

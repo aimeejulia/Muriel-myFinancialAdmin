@@ -1,6 +1,6 @@
 {
   "name": "muriel-myfinancialadmin",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Muriel - myFinancialAdmin desktop app",
   "main": "main.js",
   "author": "Aimee Fenech",
@@ -83,7 +83,7 @@
     },
     "flatpak": {
       "runtime": "org.freedesktop.Platform",
-      "runtimeVersion": "23.08",
+      "runtimeVersion": "24.08",
       "sdk": "org.freedesktop.Sdk"
     },
     "snap": {
