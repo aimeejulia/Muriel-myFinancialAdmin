@@ -196,6 +196,7 @@ export function printInvoice(invoice) {
   const hasClientCurrencyTotal = clientCurrency !== defaultCurrency && Number(invoice.clientCurrencyTotal || 0) > 0;
   const money = (value) => formatCurrency(value, defaultCurrency);
   const client = getClient(invoice.clientId);
+  const paymentMethods = paymentMethodsForInvoice(invoice, client);
   const senderName = resolveInvoiceIssuerName(invoice);
   const senderBusiness = invoice.issuerType === 'business' && invoice.issuerBusinessId
     ? state.profile.businesses.find((item) => item.id === invoice.issuerBusinessId)
