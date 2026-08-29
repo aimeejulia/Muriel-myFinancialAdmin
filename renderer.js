@@ -368,10 +368,11 @@ function upsertClientOptionList(selectedValue = '') {
 
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = state.clients.length ? 'Select client' : 'No clients yet';
+  const activeClients = state.clients.filter((client) => client.status !== 'inactive');
+  placeholder.textContent = activeClients.length ? 'Select client' : 'No active clients yet';
   elements.invoiceClient.appendChild(placeholder);
 
-  state.clients.forEach((client) => {
+  activeClients.forEach((client) => {
     const option = document.createElement('option');
     option.value = client.id;
     option.textContent = `${client.displayId} · ${client.name}`;
@@ -384,7 +385,12 @@ function upsertClientOptionList(selectedValue = '') {
   elements.invoiceClient.appendChild(createOption);
 
   if (selectedValue) {
-    elements.invoiceClient.value = selectedValue;
+    const hasSelectedValue = Array.from(elements.invoiceClient.options).some((option) => option.value === selectedValue);
+    if (hasSelectedValue) {
+      elements.invoiceClient.value = selectedValue;
+    } else {
+      elements.invoiceClient.value = '';
+    }
   }
 }
 
@@ -437,10 +443,36 @@ function renderAll() {
   runReport();
 }
 
-function resetForms() {
+function resetClientEditMode() {
+  uiState.editingClientId = '';
+  elements.clientSubmitBtn.textContent = 'Save client';
+  elements.cancelClientEditBtn.hidden = true;
   elements.clientForm.reset();
   document.getElementById('clientDefaultCurrency').value = reportingCurrency();
   elements.clientPreferredPaymentMethod.value = '';
+  syncClientIdPlaceholders();
+}
+
+function loadClientForEditing(client) {
+  uiState.editingClientId = client.id;
+  elements.clientName.value = client.name || '';
+  elements.clientContactName.value = client.contactName || '';
+  elements.clientDisplayId.value = client.displayId || '';
+  elements.clientEmail.value = client.email || '';
+  elements.clientVatNumber.value = client.vatNumber || '';
+  elements.clientAddress.value = client.address || '';
+  elements.clientDefaultVat.value = String(client.defaultVatRate ?? 21);
+  elements.clientDefaultCurrency.value = client.defaultCurrency || reportingCurrency();
+  elements.clientStatus.value = client.status === 'inactive' ? 'inactive' : 'active';
+  elements.clientPreferredPaymentMethod.value = String(client.preferredPaymentMethodId || '').trim();
+  elements.clientSubmitBtn.textContent = 'Update client';
+  elements.cancelClientEditBtn.hidden = false;
+  showView('clients');
+  elements.clientForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetForms() {
+  resetClientEditMode();
   elements.invoiceForm.reset();
   elements.invoiceIssueDate.value = todayISO();
   const dueDate = new Date();
@@ -619,28 +651,56 @@ try {
   console.error('Failed to attach profile handlers', error);
 }
 
+if (elements.cancelClientEditBtn) {
+  elements.cancelClientEditBtn.addEventListener('click', () => {
+    resetClientEditMode();
+  });
+}
+
 elements.clientForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const formData = new FormData(elements.clientForm);
-  const displayId = formData.get('clientDisplayId') || generateClientDisplayId();
-  state.clients.push({
-    id: crypto.randomUUID(),
+  const name = String(formData.get('clientName') || '').trim();
+  if (!name) {
+    alert('Client name is required.');
+    return;
+  }
+
+  const displayId = String(formData.get('clientDisplayId') || '').trim() || generateClientDisplayId();
+  const duplicateDisplayId = state.clients.some((client) => client.id !== uiState.editingClientId && client.displayId === displayId);
+  if (duplicateDisplayId) {
+    alert('Client ID already exists. Please use another one.');
+    return;
+  }
+
+  const clientPayload = {
+    id: uiState.editingClientId || crypto.randomUUID(),
     displayId,
-    name: String(formData.get('clientName') || '').trim(),
+    name,
     contactName: String(formData.get('clientContactName') || '').trim(),
     email: String(formData.get('clientEmail') || '').trim(),
     vatNumber: String(formData.get('clientVatNumber') || '').trim(),
     address: String(formData.get('clientAddress') || '').trim(),
     defaultVatRate: Number(formData.get('clientDefaultVat') || 0),
     defaultCurrency: normalizeCurrencyCode(formData.get('clientDefaultCurrency') || reportingCurrency()),
+    status: String(formData.get('clientStatus') || 'active').trim().toLowerCase() === 'inactive' ? 'inactive' : 'active',
     preferredPaymentMethodId: String(formData.get('clientPreferredPaymentMethod') || '').trim(),
-  });
+  };
+
+  if (uiState.editingClientId) {
+    const existingClient = state.clients.find((client) => client.id === uiState.editingClientId);
+    if (!existingClient) {
+      state.clients.push(clientPayload);
+    } else {
+      Object.assign(existingClient, clientPayload);
+    }
+  } else {
+    state.clients.push(clientPayload);
+  }
+
   saveState();
   renderAll();
-  elements.clientForm.reset();
-  document.getElementById('clientDefaultCurrency').value = reportingCurrency();
-  elements.clientPreferredPaymentMethod.value = '';
-  syncClientIdPlaceholders();
+  resetClientEditMode();
 });
 
 elements.expenseForm.addEventListener('submit', (event) => {
@@ -832,6 +892,7 @@ elements.quickClientForm.addEventListener('submit', (event) => {
     address: String(formData.get('quickClientAddress') || '').trim(),
     defaultVatRate: Number(formData.get('quickClientDefaultVat') || 21),
     defaultCurrency: normalizeCurrencyCode(formData.get('quickClientDefaultCurrency') || reportingCurrency()),
+    status: String(formData.get('quickClientStatus') || 'active').trim().toLowerCase() === 'inactive' ? 'inactive' : 'active',
     preferredPaymentMethodId: String(formData.get('quickClientPreferredPaymentMethod') || '').trim(),
   };
 
@@ -1004,6 +1065,16 @@ elements.invoicesTableBody.addEventListener('click', (event) => {
     closeInvoiceRowMenus();
     openInvoicePreview(invoice);
   }
+});
+
+elements.clientsTableBody.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-action="edit-client"]');
+  if (!button) return;
+
+  const client = state.clients.find((item) => item.id === button.dataset.id);
+  if (!client) return;
+
+  loadClientForEditing(client);
 });
 
 elements.expensesTableBody.addEventListener('click', (event) => {

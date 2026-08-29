@@ -259,6 +259,7 @@ export function getOrCreateImportedClient(clientName, clientDisplayId, vatRate) 
     address: '',
     defaultVatRate: Number(vatRate || 21),
     defaultCurrency: normalizeCurrencyCode(reportingCurrency()),
+    status: 'active',
     preferredPaymentMethodId: defaultPaymentMethods()[0]?.id || '',
   };
   state.clients.push(createdClient);

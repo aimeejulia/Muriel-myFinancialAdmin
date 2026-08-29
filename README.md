@@ -119,7 +119,8 @@ Use only one method. Using both creates duplicate desktop shortcuts.
 
 ```bash
 find ~/.local/share/applications -maxdepth 1 -type f | grep -Ei "muriel|financial|appimage|com\\.muriel" || true
-rm -f ~/.local/share/applications/muriel-myfinancialadmin-local.desktop
+rm -f ~/.local/share/applications/appimagekit_*-Muriel_-_myFinancialAdmin.desktop
+find ~/.local/share/icons/hicolor -type f -name "appimagekit_*_muriel-myfinancialadmin.png" -delete
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database ~/.local/share/applications
 fi

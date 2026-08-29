@@ -37,25 +37,30 @@ function tryDecryptPayload(raw) {
   }
 
   const encryptedBuffer = Buffer.from(parsed.data, 'base64');
+  const candidateNames = Array.from(new Set([
+    typeof app.getName === 'function' ? app.getName() : '',
+    'muriel-myfinancialadmin',
+    'darwin-myfinancialadmin',
+  ])).filter(Boolean);
 
-  try {
-    return safeStorage.decryptString(encryptedBuffer);
-  } catch (error) {
-    const originalName = typeof app.getName === 'function' ? app.getName() : '';
+  const originalName = typeof app.getName === 'function' ? app.getName() : '';
 
+  for (const candidateName of candidateNames) {
     try {
       if (typeof app.setName === 'function') {
-        app.setName('darwin-myfinancialadmin');
+        app.setName(candidateName);
       }
       return safeStorage.decryptString(encryptedBuffer);
     } catch {
-      throw error;
-    } finally {
-      if (originalName && typeof app.setName === 'function') {
-        app.setName(originalName);
-      }
+      // Try the next known app name to remain compatible with older encrypted state.
     }
   }
+
+  if (originalName && typeof app.setName === 'function') {
+    app.setName(originalName);
+  }
+
+  throw new Error('Unable to decrypt stored state for the current or legacy app name.');
 }
 
 function getStateFilePath() {
@@ -68,10 +73,15 @@ function getBackupStateFilePath() {
 
 function getLegacyStateFilePaths() {
   const appDataPath = app.getPath('appData');
-  return [
-    path.join(app.getPath('userData'), 'darwin-myfinancialadmin-state.json'),
-    path.join(appDataPath, 'darwin-myfinancialadmin', 'darwin-myfinancialadmin-state.json'),
-  ];
+  const appNames = ['muriel-myfinancialadmin', 'darwin-myfinancialadmin'];
+  const uniquePaths = [];
+
+  for (const appName of appNames) {
+    uniquePaths.push(path.join(app.getPath('userData'), `${appName}-state.json`));
+    uniquePaths.push(path.join(appDataPath, appName, `${appName}-state.json`));
+  }
+
+  return [...new Set(uniquePaths)];
 }
 
 function readStateFile() {

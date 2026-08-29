@@ -66,7 +66,7 @@ export function renderClients() {
   elements.clientsTableBody.innerHTML = '';
 
   if (!state.clients.length) {
-    appendEmptyStateRow(elements.clientsTableBody, 6, 'No clients yet.');
+    appendEmptyStateRow(elements.clientsTableBody, 7, 'No clients yet.');
     return;
   }
 
@@ -89,6 +89,18 @@ export function renderClients() {
     appendTextCell(row, client.vatNumber || '—');
     appendTextCell(row, `${client.defaultVatRate}%`);
     appendTextCell(row, clientCurrencyFor(client));
+    appendTextCell(row, client.status === 'inactive' ? 'Inactive' : 'Active');
+
+    const actionsCell = document.createElement('td');
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'chip-btn';
+    editBtn.dataset.action = 'edit-client';
+    editBtn.dataset.id = client.id;
+    editBtn.textContent = 'Edit';
+    actionsCell.appendChild(editBtn);
+    row.appendChild(actionsCell);
+
     elements.clientsTableBody.appendChild(row);
   });
 }

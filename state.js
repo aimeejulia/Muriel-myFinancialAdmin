@@ -46,6 +46,11 @@ function createDefaultProfile() {
   };
 }
 
+function normalizeClientStatus(value) {
+  const status = String(value || 'active').trim().toLowerCase();
+  return status === 'inactive' ? 'inactive' : 'active';
+}
+
 function createDefaultState() {
   return {
     clients: [],
@@ -64,6 +69,7 @@ export const uiState = {
   invoiceSortAsc: false,
   pendingImportedExpenseReceipt: null,
   editingExpenseId: '',
+  editingClientId: '',
   editingBusinessId: '',
   editingPaymentMethodId: '',
   profileSaveFeedbackTimeout: null,
@@ -79,6 +85,17 @@ export const elements = {
   themeButtons: document.querySelectorAll('.theme-option'),
   pageTitle: byId('page-title'),
   clientForm: byId('client-form'),
+  clientName: byId('clientName'),
+  clientContactName: byId('clientContactName'),
+  clientDisplayId: byId('clientDisplayId'),
+  clientEmail: byId('clientEmail'),
+  clientVatNumber: byId('clientVatNumber'),
+  clientAddress: byId('clientAddress'),
+  clientDefaultVat: byId('clientDefaultVat'),
+  clientDefaultCurrency: byId('clientDefaultCurrency'),
+  clientStatus: byId('clientStatus'),
+  clientSubmitBtn: byId('client-submit-btn'),
+  cancelClientEditBtn: byId('cancel-client-edit'),
   invoiceForm: byId('invoice-form'),
   profileForm: byId('profile-form'),
   profileSaveFeedback: byId('profile-save-feedback'),
@@ -117,6 +134,15 @@ export const elements = {
   expenseImportInfo: document.createElement('div'),
   createClientModal: byId('create-client-modal'),
   quickClientForm: byId('quick-client-form'),
+  quickClientName: byId('quickClientName'),
+  quickClientContactName: byId('quickClientContactName'),
+  quickClientDisplayId: byId('quickClientDisplayId'),
+  quickClientEmail: byId('quickClientEmail'),
+  quickClientVatNumber: byId('quickClientVatNumber'),
+  quickClientAddress: byId('quickClientAddress'),
+  quickClientDefaultVat: byId('quickClientDefaultVat'),
+  quickClientDefaultCurrency: byId('quickClientDefaultCurrency'),
+  quickClientStatus: byId('quickClientStatus'),
   quickClientCancel: byId('quick-client-cancel'),
   markPaidModal: byId('mark-paid-modal'),
   markPaidForm: byId('mark-paid-form'),
@@ -256,6 +282,7 @@ function assignLoadedState(nextState) {
     ? nextState.clients.map((client) => ({
         ...client,
         contactName: String(client?.contactName || '').trim(),
+        status: normalizeClientStatus(client?.status),
       }))
     : [];
   state.invoices = nextState.invoices;

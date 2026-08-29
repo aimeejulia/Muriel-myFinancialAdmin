@@ -199,12 +199,20 @@
                   <option value="PLN">PLN - Polish Zloty</option>
                 </select>
               </div>
+              <div class="field">
+                <label for="clientStatus">Client status</label>
+                <select id="clientStatus" name="clientStatus">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
               <div class="field full-span">
                 <label for="clientPreferredPaymentMethod">Preferred payment method</label>
                 <select id="clientPreferredPaymentMethod" name="clientPreferredPaymentMethod"></select>
               </div>
               <div class="form-actions full-span">
-                <button type="submit" class="primary-btn">Save client</button>
+                <button type="submit" id="client-submit-btn" class="primary-btn">Save client</button>
+                <button type="button" class="secondary-btn" id="cancel-client-edit" hidden>Cancel edit</button>
               </div>
             </form>
           </section>
@@ -226,6 +234,7 @@
                     <th>VAT ID</th>
                     <th>Default VAT</th>
                     <th>Currency</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="clients-table-body"></tbody>
@@ -702,6 +711,13 @@
             <option value="NOK">NOK - Norwegian Krone</option>
             <option value="DKK">DKK - Danish Krone</option>
             <option value="PLN">PLN - Polish Zloty</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="quickClientStatus">Client status</label>
+          <select id="quickClientStatus" name="quickClientStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
         <div class="field full-span">
