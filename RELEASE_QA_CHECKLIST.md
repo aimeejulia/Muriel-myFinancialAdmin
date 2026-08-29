@@ -4,9 +4,9 @@ Use this checklist before publishing any release.
 
 ## 0) Environment Check
 
-- [ ] Node version is 22.12.0 or newer.
-- [ ] npm version is 10 or newer.
-- [ ] Working tree is clean or intentionally staged.
+- [x] Node version is 22.12.0 or newer.
+- [x] npm version is 10 or newer.
+- [x] Working tree is clean or intentionally staged.
 
 Commands:
 
@@ -64,8 +64,8 @@ sudo apt update && sudo apt install -y flatpak flatpak-builder
 npm run package:flatpak
 ```
 
-- [ ] AppImage exists in dist.
-- [ ] Snap exists in dist.
+- [x] AppImage exists in dist.
+- [x] Snap exists in dist.
 - [ ] Flatpak exists in dist.
 
 ## 2) AppImage Local Test
@@ -77,8 +77,8 @@ chmod +x dist/*.AppImage
 
 Checks:
 
-- [ ] App launches.
-- [ ] No startup crash.
+- [x] App launches.
+- [x] No startup crash.
 - [ ] Create a client successfully.
 - [ ] Create an invoice successfully.
 - [ ] Create an expense successfully.
@@ -144,8 +144,8 @@ Checks:
 
 ## 7) Release Notes and Metadata
 
-- [ ] Version number updated where needed.
-- [ ] Changelog/release notes written.
+- [x] Version number updated where needed.
+- [x] Changelog/release notes written in [CHANGELOG.md](CHANGELOG.md).
 - [ ] Flatpak metadata release entry updated.
 - [ ] Store descriptions and screenshots are current.
 
@@ -154,3 +154,5 @@ Checks:
 - [ ] All required checks passed.
 - [ ] Artifacts uploaded to release draft.
 - [ ] Ready to publish.
+
+> Current status: AppImage and Snap passes the release gate, while Flatpak packaging still needs a fix before the final go/no-go decision.

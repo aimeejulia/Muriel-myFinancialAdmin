@@ -1,6 +1,6 @@
 {
   "name": "muriel-myfinancialadmin",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Muriel - myFinancialAdmin desktop app",
   "main": "main.js",
   "author": "Aimee Fenech",
@@ -14,11 +14,13 @@
     "preinstall": "node ./scripts/check-node.js",
     "start": "electron .",
     "dev": "electron .",
+    "clean:dist": "rm -rf dist",
     "check:appimage-config": "node ./scripts/validate-appimage-config.js",
-    "package:appimage": "npm run check:appimage-config && electron-builder --linux AppImage",
-    "package:linux": "npm run check:appimage-config && electron-builder --linux",
-    "package:flatpak": "electron-builder --linux flatpak",
-    "package:snap": "electron-builder --linux snap"
+    "check:release-version": "node ./scripts/validate-release-version.js",
+    "package:appimage": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux AppImage",
+    "package:linux": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux",
+    "package:flatpak": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux flatpak",
+    "package:snap": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux snap"
   },
   "engines": {
     "node": ">=22.12.0",
