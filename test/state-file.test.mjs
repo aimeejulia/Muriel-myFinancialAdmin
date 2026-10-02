@@ -30,6 +30,16 @@ test('writeFileAtomic replaces the file and leaves no temporary file', () => {
   assert.deepEqual(fs.readdirSync(dir), ['state.json']);
 });
 
+test('writeFileAtomic makes the file readable only by the current user', () => {
+  const filePath = path.join(dir, 'state.json');
+  fs.writeFileSync(filePath, 'old', { mode: 0o664 });
+  fs.chmodSync(filePath, 0o664);
+
+  writeFileAtomic(filePath, validState);
+
+  assert.equal(fs.statSync(filePath).mode & 0o777, 0o600);
+});
+
 test('isStateJson accepts only a JSON object', () => {
   assert.equal(isStateJson(validState), true);
   assert.equal(isStateJson(validState.slice(0, 20)), false);
