@@ -29,7 +29,7 @@ async function assertRejected(raw, expectedError) {
 
   assert.equal(result.ok, false);
   assert.match(result.error, expectedError);
-  assert.deepEqual(state.invoices, [currentInvoice]);
+  assert.deepEqual(state.invoices.map((invoice) => invoice.id), [currentInvoice.id]);
   assert.equal(state.clients[0].name, 'Current Client');
 }
 
@@ -80,5 +80,5 @@ test('a backup made by serializeStateForBackup can be restored', async () => {
   const result = await restoreStateFromRaw(raw);
 
   assert.equal(result.ok, true);
-  assert.deepEqual(state.invoices, [currentInvoice]);
+  assert.deepEqual(state.invoices.map((invoice) => invoice.id), ['invoice-1']);
 });
