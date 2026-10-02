@@ -462,17 +462,36 @@ export function clientCurrencyFor(client) {
   return normalizeReportingCurrency(client?.defaultCurrency || reportingCurrency());
 }
 
+export function toLocalISODate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function todayISO() {
-  return new Date().toISOString().split('T')[0];
+  return toLocalISODate(new Date());
+}
+
+export function addDaysISO(dateString, days) {
+  const date = new Date(`${dateString}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return toLocalISODate(date);
+}
+
+// Dates are stored as YYYY-MM-DD text. Reading the parts from the text means the time zone cannot move a date to another day.
+function datePartsFromISO(dateString) {
+  const match = /^(\d{4})-(\d{2})-\d{2}/.exec(String(dateString || ''));
+  return match ? { year: Number(match[1]), month: Number(match[2]) } : null;
 }
 
 export function quarterFromDate(dateString) {
-  const date = new Date(dateString);
-  return Math.floor(date.getMonth() / 3) + 1;
+  const parts = datePartsFromISO(dateString);
+  return parts ? Math.floor((parts.month - 1) / 3) + 1 : NaN;
 }
 
 export function yearFromDate(dateString) {
-  return new Date(dateString).getFullYear();
+  return datePartsFromISO(dateString)?.year ?? NaN;
 }
 
 export function computedStatus(invoice) {
@@ -480,11 +499,8 @@ export function computedStatus(invoice) {
   if (invoice.status === 'draft') return 'draft';
   if (invoice.status === 'delinquent') return 'delinquent';
   if (invoice.status === 'aborted') return 'aborted';
-  const due = new Date(invoice.dueDate);
-  const now = new Date();
-  due.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
-  return due < now ? 'overdue' : 'sent';
+  if (!invoice.dueDate) return 'sent';
+  return invoice.dueDate < todayISO() ? 'overdue' : 'sent';
 }
 
 export function invoiceReservesNumber(invoice) {
@@ -508,18 +524,16 @@ export function displayInvoiceNumber(invoice) {
 }
 
 export function buildInvoiceNumber(issueDate) {
-  const year = yearFromDate(issueDate);
-  const month = issueDate
-    ? String(new Date(`${issueDate}T00:00:00`).getMonth() + 1).padStart(2, '0')
-    : String(new Date().getMonth() + 1).padStart(2, '0');
+  const dateParts = datePartsFromISO(issueDate) || datePartsFromISO(todayISO());
+  const year = dateParts.year;
+  const month = String(dateParts.month).padStart(2, '0');
   const pattern = new RegExp(`^INV-${year}-${month}-(\\d{3})$`);
   const reserved = new Set();
 
   state.invoices.forEach((invoice) => {
     if (!invoice.issueDate || !invoiceReservesNumber(invoice)) return;
-    const sameYear = yearFromDate(invoice.issueDate) === year;
-    const sameMonth = String(new Date(`${invoice.issueDate}T00:00:00`).getMonth() + 1).padStart(2, '0') === month;
-    if (!sameYear || !sameMonth) return;
+    const invoiceDateParts = datePartsFromISO(invoice.issueDate);
+    if (invoiceDateParts?.year !== year || invoiceDateParts?.month !== dateParts.month) return;
     const match = String(invoice.invoiceNumber || '').match(pattern);
     if (match) {
       reserved.add(Number(match[1]));
