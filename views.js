@@ -7,6 +7,7 @@ import {
   reportingCurrency,
   clientCurrencyFor,
   computedStatus,
+  countsAsInvoiced,
   displayInvoiceNumber,
   matchesDashboardPeriod,
   formatDashboardPeriodLabel,
@@ -238,7 +239,7 @@ export function renderInvoices() {
 
 export function renderDashboard() {
   const periodInvoices = state.invoices.filter((invoice) => matchesDashboardPeriod(invoice.issueDate));
-  const financialInvoices = periodInvoices.filter((invoice) => computedStatus(invoice) !== 'aborted');
+  const financialInvoices = periodInvoices.filter(countsAsInvoiced);
   const periodExpenses = state.expenses
     .filter((expense) => matchesDashboardPeriod(expense.date))
     .reduce((sum, expense) => sum + Number(expense.amount), 0);
