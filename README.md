@@ -202,6 +202,24 @@ sudo apt update
 sudo apt install -y libfuse2
 ```
 
+## Tests
+
+Run the unit tests:
+
+```bash
+npm test
+```
+
+Run the end-to-end tests:
+
+```bash
+npm run test:e2e
+```
+
+The end-to-end tests start the app, so they need a desktop session.
+Each test uses a new temporary data folder.
+The tests do not read or change the saved data in `~/.config/muriel-myfinancialadmin`.
+
 ## Release QA Checklist
 
 Use [RELEASE_QA_CHECKLIST.md](RELEASE_QA_CHECKLIST.md) before publishing a release.
