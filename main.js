@@ -318,7 +318,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('desktop-store:write-state', (_, serializedState) => {
     try {
-      return writeStateFile(serializedState);
+      const result = writeStateFile(serializedState);
+      stateSavedThisSession = true;
+      return result;
     } catch (error) {
       console.error('Failed to write state file', error);
       return { ok: false, error: error.message };
@@ -451,8 +453,11 @@ app.whenReady().then(() => {
   });
 });
 
+// Only write again on quit when the app saved something, so data that was not loaded is never rewritten.
+let stateSavedThisSession = false;
+
 app.on('before-quit', () => {
-  if (!lastKnownSerializedState) return;
+  if (!lastKnownSerializedState || !stateSavedThisSession) return;
 
   try {
     writeStateFile(lastKnownSerializedState);
