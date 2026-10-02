@@ -52,6 +52,7 @@
       "pdf.js",
       "imports.js",
       "main.js",
+      "state-file.js",
       "preload.js",
       "build/icon.png",
       "vendor/pdfjs/pdf.min.mjs",
