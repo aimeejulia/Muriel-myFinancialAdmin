@@ -87,7 +87,7 @@ test('dashboard totals leave out draft and aborted invoices', () => {
 
   renderDashboard();
 
-  assert.equal(document.getElementById('metric-received').textContent, euro(500));
-  assert.equal(document.getElementById('metric-outstanding').textContent, euro(200));
-  assert.equal(document.getElementById('metric-vat-exposure').textContent, euro(42));
+  assert.equal(globalThis.document.getElementById('metric-received').textContent, euro(500));
+  assert.equal(globalThis.document.getElementById('metric-outstanding').textContent, euro(200));
+  assert.equal(globalThis.document.getElementById('metric-vat-exposure').textContent, euro(42));
 });
