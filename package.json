@@ -16,8 +16,10 @@
     "dev": "electron .",
     "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
     "clean:dist": "rm -rf dist",
+    "lint": "eslint .",
     "check:appimage-config": "node ./scripts/validate-appimage-config.js",
     "check:release-version": "node ./scripts/validate-release-version.js",
+    "test:e2e": "node --test --test-concurrency=1 --test-timeout=60000 --disable-warning=MODULE_TYPELESS_PACKAGE_JSON e2e/*.e2e.mjs",
     "package:appimage": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux AppImage",
     "package:linux": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux",
     "package:flatpak": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux flatpak",
@@ -33,8 +35,11 @@
     "npm": "10.9.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "electron": "^41.2.1",
-    "electron-builder": "^26.8.1"
+    "electron-builder": "^26.8.1",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0"
   },
   "build": {
     "appId": "com.muriel.myfinancialadmin",
@@ -52,6 +57,7 @@
       "pdf.js",
       "imports.js",
       "main.js",
+      "state-file.js",
       "preload.js",
       "build/icon.png",
       "vendor/pdfjs/pdf.min.mjs",

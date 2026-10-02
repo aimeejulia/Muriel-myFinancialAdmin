@@ -149,7 +149,6 @@ export function closeInvoicePreview() {
 
 export function buildReminder(invoice, tone) {
   const client = getClient(invoice.clientId);
-  const paymentMethods = paymentMethodsForInvoice(invoice, client);
   const name = client?.contactName || client?.name || 'there';
   const defaultCurrency = normalizeCurrencyCode(invoice.defaultCurrency || reportingCurrency());
   const money = (value) => formatCurrency(value, defaultCurrency);
@@ -202,7 +201,7 @@ export function printInvoice(invoice) {
     ? state.profile.businesses.find((item) => item.id === invoice.issuerBusinessId)
     : null;
   const senderLegalName = String(state.profile.legalName || state.profile.personalName || '').trim();
-  const secondarySenderName = Boolean(
+  const secondarySenderName = (
     senderBusiness
     && senderName
     && senderName.toLowerCase() !== String(senderLegalName || '').toLowerCase()

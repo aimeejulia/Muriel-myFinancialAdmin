@@ -2,9 +2,11 @@ const { app, BrowserWindow, ipcMain, shell, safeStorage, dialog } = require('ele
 const fs = require('fs');
 const https = require('https');
 const path = require('path');
+const { writeFileAtomic, isStateJson, readFirstValidStateFile } = require('./state-file');
 
 let mainWindow = null;
 let lastKnownSerializedState = '';
+let stateLoadFailed = false;
 const ENCRYPTED_STATE_VERSION = 1;
 
 function buildEncryptedPayload(plainText) {
@@ -88,46 +90,44 @@ function readStateFile() {
   const statePath = getStateFilePath();
   const backupStatePath = getBackupStateFilePath();
   const candidatePaths = [statePath, backupStatePath, ...getLegacyStateFilePaths()];
-  const pathToRead = candidatePaths.find((candidatePath) => fs.existsSync(candidatePath)) || '';
+  const result = readFirstValidStateFile(candidatePaths, (raw) => tryDecryptPayload(raw) ?? raw);
 
-  if (!pathToRead) {
+  if (!result.path) {
+    if (result.failedPaths.length > 0) {
+      // Saving now would overwrite files that may still be recoverable.
+      stateLoadFailed = true;
+      throw new Error(`Could not read saved state from ${result.failedPaths.join(', ')}`);
+    }
     return '';
   }
 
-  const raw = fs.readFileSync(pathToRead, 'utf8');
-
-  if (pathToRead !== statePath && pathToRead !== backupStatePath) {
+  if (result.path !== statePath && result.path !== backupStatePath) {
     fs.mkdirSync(path.dirname(statePath), { recursive: true });
-    fs.writeFileSync(statePath, raw, 'utf8');
+    writeFileAtomic(statePath, result.raw);
   }
 
-  try {
-    const decrypted = tryDecryptPayload(raw);
-    lastKnownSerializedState = decrypted ?? raw;
-    return lastKnownSerializedState;
-  } catch (error) {
-    if (fs.existsSync(backupStatePath)) {
-      lastKnownSerializedState = fs.readFileSync(backupStatePath, 'utf8');
-      return lastKnownSerializedState;
-    }
-    throw error;
-  }
+  lastKnownSerializedState = result.plainText;
+  return lastKnownSerializedState;
 }
 
 function writeStateFile(serializedState) {
+  if (stateLoadFailed) {
+    throw new Error('Saved state could not be read, so changes are not saved to protect the existing files.');
+  }
+
+  if (!isStateJson(serializedState)) {
+    throw new Error('Refusing to save state that is not valid JSON.');
+  }
+
   const statePath = getStateFilePath();
   const backupStatePath = getBackupStateFilePath();
-  lastKnownSerializedState = String(serializedState || '');
+  lastKnownSerializedState = String(serializedState);
   fs.mkdirSync(path.dirname(statePath), { recursive: true });
-  fs.writeFileSync(backupStatePath, lastKnownSerializedState, 'utf8');
 
-  const encryptedPayload = buildEncryptedPayload(serializedState);
-  if (encryptedPayload) {
-    fs.writeFileSync(statePath, encryptedPayload, 'utf8');
-  } else {
-    // Fallback keeps app functional on systems without an available keyring.
-    fs.writeFileSync(statePath, serializedState, 'utf8');
-  }
+  // Fallback keeps app functional on systems without an available keyring.
+  const payload = buildEncryptedPayload(serializedState) || serializedState;
+  writeFileAtomic(backupStatePath, payload);
+  writeFileAtomic(statePath, payload);
 
   return { ok: true, path: statePath };
 }
@@ -306,6 +306,12 @@ app.whenReady().then(() => {
       return readStateFile();
     } catch (error) {
       console.error('Failed to read state file', error);
+      dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        title: 'Saved data could not be read',
+        message: 'Muriel cannot read your saved data.',
+        detail: `To protect your data files, Muriel will not save changes until it can read them. Make a copy of this folder before you try again:\n\n${app.getPath('userData')}`,
+      });
       return '';
     }
   });
@@ -379,7 +385,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('desktop-store:export-backup', async (_, serializedState) => {
     try {
-      const defaultPath = path.join(app.getPath('documents'), `muriel-backup-${new Date().toISOString().slice(0, 10)}.json`);
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const defaultPath = path.join(app.getPath('documents'), `muriel-backup-${localDate}.json`);
       const result = await dialog.showSaveDialog(mainWindow, {
         title: 'Export backup',
         defaultPath,

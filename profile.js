@@ -120,7 +120,7 @@ export function getInvoiceSenderDetails(invoice) {
     ? state.profile.businesses.find((item) => item.id === invoice.issuerBusinessId)
     : null;
   const senderLegalName = String(state.profile.legalName || state.profile.personalName || '').trim();
-  const secondarySenderName = Boolean(
+  const secondarySenderName = (
     senderBusiness
     && senderName
     && senderName.toLowerCase() !== String(senderLegalName || '').toLowerCase()
@@ -157,7 +157,7 @@ export async function renderProfile() {
     encryptionStatusEl.classList.remove('ok', 'warn');
     if (status.ok && status.available) {
       encryptionStatusEl.classList.add('ok');
-      encryptionStatusEl.textContent = 'Storage security: the main saved data file is encrypted on this device. Safety backups and exported backup files are kept as readable restore copies. We recommend using this app on a password-protected machine.';
+      encryptionStatusEl.textContent = 'Storage security: saved data and its safety backup are encrypted on this device. Exported backup files are readable restore copies, so keep them in a safe place. We recommend using this app on a password-protected machine.';
     } else {
       encryptionStatusEl.classList.add('warn');
       encryptionStatusEl.textContent = 'Storage security: encrypted storage is unavailable here, so saved data and local safety backups are stored in plain text on this device. We recommend using this app on a password-protected machine.';

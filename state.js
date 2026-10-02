@@ -2,6 +2,8 @@ export const STORAGE_KEY = 'murielMyFinancialAdminPhase1';
 export const PREVIOUS_STORAGE_KEY = 'darwinMyFinancialAdminPhase1';
 export const LEGACY_STORAGE_KEY = 'flowInvoicePhase1';
 export const isDesktopApp = Boolean(window.desktopStore?.isDesktopApp);
+const BACKUP_APP_NAME = 'muriel-myfinancialadmin';
+const BACKUP_SCHEMA_VERSION = 1;
 const SUPPORTED_REPORTING_CURRENCIES = new Set(['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SEK', 'NOK', 'DKK', 'PLN']);
 const SUPPORTED_THEME_PRESETS = new Set(['muriel', 'sunrise', 'night']);
 
@@ -69,6 +71,7 @@ export const uiState = {
   invoiceSortAsc: false,
   pendingImportedExpenseReceipt: null,
   editingExpenseId: '',
+  editingInvoiceId: '',
   editingClientId: '',
   editingBusinessId: '',
   editingPaymentMethodId: '',
@@ -97,6 +100,8 @@ export const elements = {
   clientSubmitBtn: byId('client-submit-btn'),
   cancelClientEditBtn: byId('cancel-client-edit'),
   invoiceForm: byId('invoice-form'),
+  invoiceSubmitBtn: byId('invoice-submit-btn'),
+  invoiceEditCancelBtn: byId('invoice-edit-cancel-btn'),
   profileForm: byId('profile-form'),
   profileSaveFeedback: byId('profile-save-feedback'),
   reportYear: byId('reportYear'),
@@ -203,6 +208,8 @@ export const elements = {
   clientPreferredPaymentMethod: byId('clientPreferredPaymentMethod'),
   quickClientPreferredPaymentMethod: byId('quickClientPreferredPaymentMethod'),
   checkUpdatesBtn: byId('check-updates-btn'),
+  saveErrorBanner: byId('save-error-banner'),
+  saveErrorMessage: byId('save-error-message'),
   updateBanner: byId('update-banner'),
   updateBannerTitle: byId('update-banner-title'),
   updateBannerMessage: byId('update-banner-message'),
@@ -285,7 +292,14 @@ function assignLoadedState(nextState) {
         status: normalizeClientStatus(client?.status),
       }))
     : [];
-  state.invoices = nextState.invoices;
+  state.invoices = Array.isArray(nextState.invoices)
+    ? nextState.invoices.map((invoice) => ({
+        ...invoice,
+        subtotal: roundMoney(invoice?.subtotal),
+        vatAmount: roundMoney(invoice?.vatAmount),
+        total: roundMoney(invoice?.total),
+      }))
+    : [];
   state.expenses = nextState.expenses;
   state.profile = nextState.profile;
   normalizeProfile();
@@ -377,22 +391,72 @@ export function defaultPaymentMethods() {
 export function serializeStateForBackup() {
   normalizeProfile();
   return JSON.stringify({
-    app: 'muriel-myfinancialadmin',
+    app: BACKUP_APP_NAME,
     exportedAt: new Date().toISOString(),
-    schemaVersion: 1,
+    schemaVersion: BACKUP_SCHEMA_VERSION,
     state,
   }, null, 2);
 }
 
-export async function restoreStateFromRaw(raw) {
-  const parsed = parseStateRaw(raw);
-  if (!parsed) {
-    return { ok: false, error: 'This backup file could not be read.' };
+function isListOfRecords(value) {
+  return Array.isArray(value) && value.every((item) => item && typeof item === 'object' && !Array.isArray(item));
+}
+
+// Accepts an exported backup, or a plain saved state that has all of the data lists.
+function parseBackupRaw(raw) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: 'This backup file could not be read.' };
   }
 
-  assignLoadedState(parsed);
+  const isExportedBackup = parsed?.app === BACKUP_APP_NAME;
+  if (isExportedBackup && Number(parsed.schemaVersion) > BACKUP_SCHEMA_VERSION) {
+    return { error: 'This backup was made by a newer version of Muriel. Update the app, then try again.' };
+  }
+
+  const payload = isExportedBackup ? parsed.state : parsed;
+  if (
+    !payload
+    || typeof payload !== 'object'
+    || !isListOfRecords(payload.clients)
+    || !isListOfRecords(payload.invoices)
+    || !isListOfRecords(payload.expenses)
+  ) {
+    return { error: 'This file is not a Muriel backup. Your current data was not changed.' };
+  }
+
+  return {
+    state: {
+      clients: payload.clients,
+      invoices: payload.invoices,
+      expenses: payload.expenses,
+      profile: payload.profile || createDefaultProfile(),
+    },
+  };
+}
+
+export async function restoreStateFromRaw(raw) {
+  const parsed = parseBackupRaw(raw);
+  if (parsed.error) {
+    return { ok: false, error: parsed.error };
+  }
+
+  assignLoadedState(parsed.state);
   await saveState();
   return { ok: true };
+}
+
+function showSaveError(errorMessage) {
+  if (!elements.saveErrorBanner) return;
+  elements.saveErrorMessage.textContent = `Muriel could not save to the data file. To keep your changes, export a backup from the Profile page. Error: ${errorMessage}`;
+  elements.saveErrorBanner.hidden = false;
+}
+
+function hideSaveError() {
+  if (!elements.saveErrorBanner) return;
+  elements.saveErrorBanner.hidden = true;
 }
 
 export async function saveState() {
@@ -405,9 +469,13 @@ export async function saveState() {
     const result = await window.desktopStore.writeState(serialized);
     if (!result?.ok) {
       console.error('Could not save desktop state file', result?.error || 'Unknown error');
+      showSaveError(result?.error || 'Unknown error');
+      return;
     }
+    hideSaveError();
   } catch (error) {
     console.error('Could not save desktop state file', error?.message || 'Unknown error');
+    showSaveError(error?.message || 'Unknown error');
   }
 }
 
@@ -441,6 +509,22 @@ export function escapeCsv(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+export function roundMoney(value) {
+  // toPrecision removes floating point noise first, so 1.005 rounds to 1.01 and not 1.00
+  return Math.round(Number((Number(value || 0) * 100).toPrecision(15))) / 100;
+}
+
+// VAT is rounded to cents for each invoice, so the invoice, reports and exports show the same amounts.
+export function calculateInvoiceAmounts(subtotal, vatRate) {
+  const roundedSubtotal = roundMoney(subtotal);
+  const vatAmount = roundMoney(roundedSubtotal * Number(vatRate || 0) / 100);
+  return {
+    subtotal: roundedSubtotal,
+    vatAmount,
+    total: roundMoney(roundedSubtotal + vatAmount),
+  };
+}
+
 export function euro(value) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
 }
@@ -462,17 +546,36 @@ export function clientCurrencyFor(client) {
   return normalizeReportingCurrency(client?.defaultCurrency || reportingCurrency());
 }
 
+export function toLocalISODate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function todayISO() {
-  return new Date().toISOString().split('T')[0];
+  return toLocalISODate(new Date());
+}
+
+export function addDaysISO(dateString, days) {
+  const date = new Date(`${dateString}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return toLocalISODate(date);
+}
+
+// Dates are stored as YYYY-MM-DD text. Reading the parts from the text means the time zone cannot move a date to another day.
+function datePartsFromISO(dateString) {
+  const match = /^(\d{4})-(\d{2})-\d{2}/.exec(String(dateString || ''));
+  return match ? { year: Number(match[1]), month: Number(match[2]) } : null;
 }
 
 export function quarterFromDate(dateString) {
-  const date = new Date(dateString);
-  return Math.floor(date.getMonth() / 3) + 1;
+  const parts = datePartsFromISO(dateString);
+  return parts ? Math.floor((parts.month - 1) / 3) + 1 : NaN;
 }
 
 export function yearFromDate(dateString) {
-  return new Date(dateString).getFullYear();
+  return datePartsFromISO(dateString)?.year ?? NaN;
 }
 
 export function computedStatus(invoice) {
@@ -480,11 +583,8 @@ export function computedStatus(invoice) {
   if (invoice.status === 'draft') return 'draft';
   if (invoice.status === 'delinquent') return 'delinquent';
   if (invoice.status === 'aborted') return 'aborted';
-  const due = new Date(invoice.dueDate);
-  const now = new Date();
-  due.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
-  return due < now ? 'overdue' : 'sent';
+  if (!invoice.dueDate) return 'sent';
+  return invoice.dueDate < todayISO() ? 'overdue' : 'sent';
 }
 
 // Drafts are not issued yet and aborted invoices are cancelled, so neither counts towards invoiced totals.
@@ -504,6 +604,18 @@ export function canUseInvoiceNumber(invoiceNumber, currentInvoiceId = '') {
   ));
 }
 
+export function upsertInvoice(invoiceId, invoiceFields) {
+  const index = state.invoices.findIndex((invoice) => invoice.id === invoiceId);
+  if (index >= 0) {
+    state.invoices[index] = { ...state.invoices[index], ...invoiceFields };
+    return state.invoices[index];
+  }
+
+  const createdInvoice = { id: invoiceId, abortedNumberHandling: '', ...invoiceFields };
+  state.invoices.push(createdInvoice);
+  return createdInvoice;
+}
+
 export function displayInvoiceNumber(invoice) {
   if (invoice.status !== 'aborted') return invoice.invoiceNumber;
   if (invoice.abortedNumberHandling === 'reuse') {
@@ -513,18 +625,16 @@ export function displayInvoiceNumber(invoice) {
 }
 
 export function buildInvoiceNumber(issueDate) {
-  const year = yearFromDate(issueDate);
-  const month = issueDate
-    ? String(new Date(`${issueDate}T00:00:00`).getMonth() + 1).padStart(2, '0')
-    : String(new Date().getMonth() + 1).padStart(2, '0');
+  const dateParts = datePartsFromISO(issueDate) || datePartsFromISO(todayISO());
+  const year = dateParts.year;
+  const month = String(dateParts.month).padStart(2, '0');
   const pattern = new RegExp(`^INV-${year}-${month}-(\\d{3})$`);
   const reserved = new Set();
 
   state.invoices.forEach((invoice) => {
     if (!invoice.issueDate || !invoiceReservesNumber(invoice)) return;
-    const sameYear = yearFromDate(invoice.issueDate) === year;
-    const sameMonth = String(new Date(`${invoice.issueDate}T00:00:00`).getMonth() + 1).padStart(2, '0') === month;
-    if (!sameYear || !sameMonth) return;
+    const invoiceDateParts = datePartsFromISO(invoice.issueDate);
+    if (invoiceDateParts?.year !== year || invoiceDateParts?.month !== dateParts.month) return;
     const match = String(invoice.invoiceNumber || '').match(pattern);
     if (match) {
       reserved.add(Number(match[1]));
@@ -579,6 +689,18 @@ export function formatDashboardPeriodLabel() {
     return `Reporting period: Full year ${year}`;
   }
   return `Reporting period: ${period.toUpperCase()} ${year}`;
+}
+
+// Inactive clients are hidden from the invoice client list, except the client that is already selected.
+export function invoiceClientOptions(selectedClientId = '') {
+  return state.clients
+    .filter((client) => client.status !== 'inactive' || client.id === selectedClientId)
+    .map((client) => ({
+      value: client.id,
+      label: client.status === 'inactive'
+        ? `${client.displayId} · ${client.name} (inactive)`
+        : `${client.displayId} · ${client.name}`,
+    }));
 }
 
 export function getClient(clientId) {

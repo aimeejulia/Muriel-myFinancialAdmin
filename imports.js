@@ -4,6 +4,7 @@ import {
   elements,
   saveState,
   todayISO,
+  addDaysISO,
   generateClientDisplayId,
   buildInvoiceNumber,
   computedStatus,
@@ -25,6 +26,7 @@ const NEW_CLIENT_OPTION_VALUE = '__create_client__';
 
 let importHooks = {
   showView: () => {},
+  resetInvoiceEditMode: () => {},
   upsertClientOptionList: () => {},
   updateInvoicePreview: () => {},
   toggleInvoicePaidDateField: () => {},
@@ -93,22 +95,18 @@ export function extractPdfInvoiceFields(text, fileName = '') {
   const normalized = text.replace(/\s+/g, ' ').trim();
 
   const invoiceNumberMatch = normalized.match(/\b(?:Invoice\s*(?:Number|No\.?|#)\s*[:#-]?\s*|INV[-\s#:]+)([A-Z0-9][A-Z0-9-]{2,})\b/i);
-  const issueDateMatch = normalized.match(/(?:Issue\s*date|Issued\s*on|Invoice\s*date)\s*[:#-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/i);
-  const dueDateMatch = normalized.match(/(?:Due\s*date|Payment\s*due)\s*[:#-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/i);
+  const issueDateMatch = normalized.match(/(?:Issue\s*date|Issued\s*on|Invoice\s*date)\s*[:#-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i);
+  const dueDateMatch = normalized.match(/(?:Due\s*date|Payment\s*due)\s*[:#-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i);
   const subtotalMatch = normalized.match(/\b(?:Subtotal|Sub\s*total|Net)\b\s*[:#-]?\s*([€$£]?\s*[\d.,]+)/i);
   const totalMatch = normalized.match(/(?:\bGrand\s*total\b|\bTotal\b(?!\s*(?:vat|tax))\s*(?:due|amount)?)\s*[:#-]?\s*([€$£]?\s*[\d.,]+)/i);
   const vatAmountMatch = normalized.match(/(?:VAT\s*(?:amount)?|Tax)\s*[:#-]?\s*([€$£]?\s*[\d.,]+)/i);
   const vatRateMatch = normalized.match(/(?:VAT|Tax)\s*(?:rate)?\s*[:#-]?\s*(\d{1,2}(?:[.,]\d{1,2})?)\s*%/i);
   const descriptionMatch = normalized.match(/(?:Description|Service|Details)\s*[:#-]?\s*([^\n]{5,120})/i);
   const clientIdMatch = normalized.match(/Client\s*ID\s*[:#-]?\s*([A-Z0-9-]+)/i);
-  const clientNameMatch = normalized.match(/(?:Client|Bill\s*to|Billed\s*to)\s*[:#-]?\s*([A-Za-z0-9 .,&'\-]{3,80})/i);
+  const clientNameMatch = normalized.match(/(?:Client|Bill\s*to|Billed\s*to)\s*[:#-]?\s*([A-Za-z0-9 .,&'-]{3,80})/i);
 
   const issueDate = parseDateToIso(issueDateMatch?.[1]) || todayISO();
-  const dueDate = parseDateToIso(dueDateMatch?.[1]) || (() => {
-    const date = new Date(issueDate);
-    date.setDate(date.getDate() + 14);
-    return date.toISOString().split('T')[0];
-  })();
+  const dueDate = parseDateToIso(dueDateMatch?.[1]) || addDaysISO(issueDate, 14);
 
   const subtotal = parseAmount(subtotalMatch?.[1]);
   const total = parseAmount(totalMatch?.[1]);
@@ -165,10 +163,10 @@ export function inferExpenseCategoryFromText(normalizedText = '') {
 
 export function extractPdfExpenseFields(text, fileName = '') {
   const normalized = text.replace(/\s+/g, ' ').trim();
-  const issueDateMatch = normalized.match(/(?:Issue\s*date|Issued\s*on|Invoice\s*date|Date)\s*[:#-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/i);
+  const issueDateMatch = normalized.match(/(?:Issue\s*date|Issued\s*on|Invoice\s*date|Date)\s*[:#-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i);
   const totalMatch = normalized.match(/(?:Total\s*(?:due|amount)?|Amount\s*due|Grand\s*total)\s*[:#-]?\s*([€$£]?\s*[\d.,]+)/i);
   const vatAmountMatch = normalized.match(/(?:VAT\s*(?:amount)?|Tax)\s*[:#-]?\s*([€$£]?\s*[\d.,]+)/i);
-  const vendorMatch = normalized.match(/(?:From|Supplier|Vendor|Company|Billed\s*by)\s*[:#-]?\s*([A-Za-z0-9 .,&'\-]{3,80})/i);
+  const vendorMatch = normalized.match(/(?:From|Supplier|Vendor|Company|Billed\s*by)\s*[:#-]?\s*([A-Za-z0-9 .,&'-]{3,80})/i);
 
   const amount = parseAmount(totalMatch?.[1]);
   const vatAmount = parseAmount(vatAmountMatch?.[1]);
@@ -342,6 +340,7 @@ export function updateImportQueueInfo() {
 }
 
 export function loadImportedDraftIntoForm(draft) {
+  importHooks.resetInvoiceEditMode();
   const clientId = getOrCreateImportedClient(draft.clientName, draft.clientDisplayId, draft.vatRate);
   importHooks.upsertClientOptionList(clientId);
   uiState.lastInvoiceClientValue = clientId || '';

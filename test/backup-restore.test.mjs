@@ -1,0 +1,84 @@
+import { test, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+
+// state.js looks up DOM elements when it loads, so give it an empty document
+globalThis.window = {};
+globalThis.document = {
+  getElementById: () => null,
+  querySelectorAll: () => [],
+  createElement: () => ({}),
+};
+
+const { state, restoreStateFromRaw, serializeStateForBackup } = await import('../state.js');
+
+const currentInvoice = { id: 'invoice-1', invoiceNumber: 'INV-2026-03-001', clientId: 'client-1' };
+const backupState = {
+  clients: [{ id: 'client-2', displayId: '0002', name: 'Restored Client', status: 'active' }],
+  invoices: [{ id: 'invoice-2', invoiceNumber: 'INV-2025-12-001', clientId: 'client-2' }],
+  expenses: [{ id: 'expense-1', amount: 10 }],
+};
+
+beforeEach(() => {
+  state.clients = [{ id: 'client-1', displayId: '0001', name: 'Current Client', status: 'active' }];
+  state.invoices = [currentInvoice];
+  state.expenses = [];
+});
+
+async function assertRejected(raw, expectedError) {
+  const result = await restoreStateFromRaw(raw);
+
+  assert.equal(result.ok, false);
+  assert.match(result.error, expectedError);
+  assert.deepEqual(state.invoices, [currentInvoice]);
+  assert.equal(state.clients[0].name, 'Current Client');
+}
+
+test('an empty JSON object is rejected and the current data is kept', async () => {
+  await assertRejected('{}', /not a Muriel backup/);
+});
+
+test('an unrelated JSON file is rejected', async () => {
+  await assertRejected(JSON.stringify({ name: 'muriel-myfinancialadmin', version: '1.1.2' }), /not a Muriel backup/);
+});
+
+test('an exported backup without data lists is rejected', async () => {
+  await assertRejected(JSON.stringify({ app: 'muriel-myfinancialadmin', schemaVersion: 1, state: {} }), /not a Muriel backup/);
+});
+
+test('data lists with entries that are not records are rejected', async () => {
+  await assertRejected(JSON.stringify({ ...backupState, invoices: ['INV-1', null] }), /not a Muriel backup/);
+});
+
+test('a truncated file is rejected', async () => {
+  await assertRejected(JSON.stringify(backupState).slice(0, 30), /could not be read/);
+});
+
+test('a backup from a newer schema version is rejected', async () => {
+  await assertRejected(JSON.stringify({ app: 'muriel-myfinancialadmin', schemaVersion: 2, state: backupState }), /newer version/);
+});
+
+test('an exported backup is restored', async () => {
+  const result = await restoreStateFromRaw(JSON.stringify({ app: 'muriel-myfinancialadmin', schemaVersion: 1, state: backupState }));
+
+  assert.equal(result.ok, true);
+  assert.equal(state.invoices[0].id, 'invoice-2');
+  assert.equal(state.clients[0].name, 'Restored Client');
+  assert.equal(state.expenses.length, 1);
+});
+
+test('a plain saved state is restored', async () => {
+  const result = await restoreStateFromRaw(JSON.stringify(backupState));
+
+  assert.equal(result.ok, true);
+  assert.equal(state.invoices[0].id, 'invoice-2');
+});
+
+test('a backup made by serializeStateForBackup can be restored', async () => {
+  const raw = serializeStateForBackup();
+  state.invoices = [];
+
+  const result = await restoreStateFromRaw(raw);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.invoices, [currentInvoice]);
+});
