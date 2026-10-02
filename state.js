@@ -208,6 +208,8 @@ export const elements = {
   clientPreferredPaymentMethod: byId('clientPreferredPaymentMethod'),
   quickClientPreferredPaymentMethod: byId('quickClientPreferredPaymentMethod'),
   checkUpdatesBtn: byId('check-updates-btn'),
+  saveErrorBanner: byId('save-error-banner'),
+  saveErrorMessage: byId('save-error-message'),
   updateBanner: byId('update-banner'),
   updateBannerTitle: byId('update-banner-title'),
   updateBannerMessage: byId('update-banner-message'),
@@ -439,6 +441,17 @@ export async function restoreStateFromRaw(raw) {
   return { ok: true };
 }
 
+function showSaveError(errorMessage) {
+  if (!elements.saveErrorBanner) return;
+  elements.saveErrorMessage.textContent = `Muriel could not save to the data file. To keep your changes, export a backup from the Profile page. Error: ${errorMessage}`;
+  elements.saveErrorBanner.hidden = false;
+}
+
+function hideSaveError() {
+  if (!elements.saveErrorBanner) return;
+  elements.saveErrorBanner.hidden = true;
+}
+
 export async function saveState() {
   const serialized = JSON.stringify(state);
   if (!isDesktopApp || typeof window.desktopStore?.writeState !== 'function') {
@@ -449,9 +462,13 @@ export async function saveState() {
     const result = await window.desktopStore.writeState(serialized);
     if (!result?.ok) {
       console.error('Could not save desktop state file', result?.error || 'Unknown error');
+      showSaveError(result?.error || 'Unknown error');
+      return;
     }
+    hideSaveError();
   } catch (error) {
     console.error('Could not save desktop state file', error?.message || 'Unknown error');
+    showSaveError(error?.message || 'Unknown error');
   }
 }
 
