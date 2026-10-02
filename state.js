@@ -69,6 +69,7 @@ export const uiState = {
   invoiceSortAsc: false,
   pendingImportedExpenseReceipt: null,
   editingExpenseId: '',
+  editingInvoiceId: '',
   editingClientId: '',
   editingBusinessId: '',
   editingPaymentMethodId: '',
@@ -97,6 +98,8 @@ export const elements = {
   clientSubmitBtn: byId('client-submit-btn'),
   cancelClientEditBtn: byId('cancel-client-edit'),
   invoiceForm: byId('invoice-form'),
+  invoiceSubmitBtn: byId('invoice-submit-btn'),
+  invoiceEditCancelBtn: byId('invoice-edit-cancel-btn'),
   profileForm: byId('profile-form'),
   profileSaveFeedback: byId('profile-save-feedback'),
   reportYear: byId('reportYear'),
@@ -497,6 +500,18 @@ export function canUseInvoiceNumber(invoiceNumber, currentInvoiceId = '') {
     && invoice.invoiceNumber === invoiceNumber
     && invoiceReservesNumber(invoice)
   ));
+}
+
+export function upsertInvoice(invoiceId, invoiceFields) {
+  const index = state.invoices.findIndex((invoice) => invoice.id === invoiceId);
+  if (index >= 0) {
+    state.invoices[index] = { ...state.invoices[index], ...invoiceFields };
+    return state.invoices[index];
+  }
+
+  const createdInvoice = { id: invoiceId, abortedNumberHandling: '', ...invoiceFields };
+  state.invoices.push(createdInvoice);
+  return createdInvoice;
 }
 
 export function displayInvoiceNumber(invoice) {

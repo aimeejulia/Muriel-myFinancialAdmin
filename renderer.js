@@ -9,6 +9,7 @@ import {
   formatCurrency,
   todayISO,
   canUseInvoiceNumber,
+  upsertInvoice,
   downloadFile,
   buildInvoiceNumber,
   generateClientDisplayId,
@@ -471,8 +472,15 @@ function loadClientForEditing(client) {
   elements.clientForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function resetInvoiceEditMode() {
+  uiState.editingInvoiceId = '';
+  elements.invoiceSubmitBtn.textContent = 'Create invoice';
+  elements.invoiceEditCancelBtn.hidden = true;
+}
+
 function resetForms() {
   resetClientEditMode();
+  resetInvoiceEditMode();
   elements.invoiceForm.reset();
   elements.invoiceIssueDate.value = todayISO();
   const dueDate = new Date();
@@ -547,10 +555,9 @@ function toggleInvoicePaidDateField() {
 }
 
 function loadInvoiceForEditing(invoice) {
-  state.invoices = state.invoices.filter((item) => item.id !== invoice.id);
-  saveState();
   renderAll();
 
+  uiState.editingInvoiceId = invoice.id;
   upsertClientOptionList(invoice.clientId);
   uiState.lastInvoiceClientValue = invoice.clientId || '';
 
@@ -560,7 +567,7 @@ function loadInvoiceForEditing(invoice) {
   elements.invoiceDescription.value = invoice.description || '';
   elements.invoiceSubtotal.value = String(invoice.subtotal || 0);
   elements.invoiceVatRate.value = String(invoice.vatRate ?? 21);
-  elements.invoiceStatus.value = invoice.status || 'draft';
+  elements.invoiceStatus.value = invoice.status === 'overdue' ? 'sent' : invoice.status || 'draft';
   elements.invoicePaidDate.value = invoice.paidDate || '';
   elements.invoicePaymentMethod.value = invoice.paymentMethodId || '';
   elements.invoiceClientSecondaryTotal.value = String(invoice.clientCurrencyTotal || '');
@@ -575,6 +582,8 @@ function loadInvoiceForEditing(invoice) {
   toggleInvoicePaidDateField();
   syncInvoiceClientCurrencyFields(invoice.clientId);
   updateInvoicePreview();
+  elements.invoiceSubmitBtn.textContent = 'Update invoice';
+  elements.invoiceEditCancelBtn.hidden = false;
   showView('invoices');
   elements.invoiceForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -582,6 +591,7 @@ function loadInvoiceForEditing(invoice) {
 registerProfileHooks({ renderAll });
 registerImportHooks({
   showView,
+  resetInvoiceEditMode,
   upsertClientOptionList,
   updateInvoicePreview,
   toggleInvoicePaidDateField,
@@ -718,6 +728,10 @@ elements.expenseEditCancelBtn.addEventListener('click', () => {
   resetExpenseEditMode();
 });
 
+elements.invoiceEditCancelBtn.addEventListener('click', () => {
+  resetForms();
+});
+
 elements.invoiceForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const formData = new FormData(elements.invoiceForm);
@@ -731,7 +745,7 @@ elements.invoiceForm.addEventListener('submit', (event) => {
   const issuerSelection = String(formData.get('invoiceIssuer') || 'legal');
   const manualInvoiceNumber = String(formData.get('invoiceNumber') || '').trim();
   const invoiceNumber = manualInvoiceNumber || buildInvoiceNumber(issueDate);
-  if (!canUseInvoiceNumber(invoiceNumber)) {
+  if (!canUseInvoiceNumber(invoiceNumber, uiState.editingInvoiceId)) {
     alert('Invoice number already exists. Please change it before saving.');
     return;
   }
@@ -756,8 +770,8 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     }
   }
 
-  const createdInvoice = {
-    id: crypto.randomUUID(),
+  const editingInvoice = state.invoices.find((item) => item.id === uiState.editingInvoiceId);
+  const invoiceFields = {
     invoiceNumber,
     clientId,
     issuerType,
@@ -774,21 +788,22 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     clientCurrency: clientCurrencyFor(getClient(clientId)),
     paymentMethodId: String(formData.get('invoicePaymentMethod') || '').trim() || String(getClient(clientId)?.preferredPaymentMethodId || '').trim(),
     clientCurrencyTotal: Number(formData.get('invoiceClientSecondaryTotal') || 0),
-    status: formData.get('invoiceStatus'),
+    // Statuses such as aborted or delinquent are not in the form, so keep them when editing
+    status: formData.get('invoiceStatus') || editingInvoice?.status || 'draft',
     paidDate: formData.get('invoicePaidDate'),
-    abortedNumberHandling: '',
   };
 
-  if (createdInvoice.clientCurrency === createdInvoice.defaultCurrency) {
-    createdInvoice.clientCurrencyTotal = 0;
+  if (invoiceFields.clientCurrency === invoiceFields.defaultCurrency) {
+    invoiceFields.clientCurrencyTotal = 0;
   }
 
   // Auto-set status to overdue if due date is today or in the past and status is sent
-  if (createdInvoice.status === 'sent' && createdInvoice.dueDate <= todayISO()) {
-    createdInvoice.status = 'overdue';
+  if (invoiceFields.status === 'sent' && invoiceFields.dueDate <= todayISO()) {
+    invoiceFields.status = 'overdue';
   }
 
-  state.invoices.push(createdInvoice);
+  const createdInvoice = upsertInvoice(editingInvoice?.id || crypto.randomUUID(), invoiceFields);
+  resetInvoiceEditMode();
 
   saveState();
   renderAll();
