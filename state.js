@@ -3,7 +3,6 @@ export const PREVIOUS_STORAGE_KEY = 'darwinMyFinancialAdminPhase1';
 export const LEGACY_STORAGE_KEY = 'flowInvoicePhase1';
 export const isDesktopApp = Boolean(window.desktopStore?.isDesktopApp);
 const BACKUP_APP_NAME = 'muriel-myfinancialadmin';
-const BACKUP_SCHEMA_VERSION = 1;
 const SUPPORTED_REPORTING_CURRENCIES = new Set(['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SEK', 'NOK', 'DKK', 'PLN']);
 const SUPPORTED_THEME_PRESETS = new Set(['muriel', 'sunrise', 'night']);
 
@@ -259,6 +258,29 @@ function readLegacyBrowserStateRaw() {
   );
 }
 
+// The version of the saved data format. Saved data and exported backups both store it.
+export const STATE_SCHEMA_VERSION = 1;
+
+// Each migration upgrades saved data from its version to the next version.
+// For example, a version 2 that adds a list needs { 1: (saved) => ({ ...saved, newList: [] }) }.
+const STATE_MIGRATIONS = {};
+
+// Set when the saved data comes from a newer version of Muriel, so this version never overwrites it.
+let stateIsFromNewerVersion = false;
+
+function savedSchemaVersion(value) {
+  const version = Number(value);
+  return Number.isInteger(version) && version > 0 ? version : 1;
+}
+
+export function migrateSavedState(saved, savedVersion, migrations = STATE_MIGRATIONS, targetVersion = STATE_SCHEMA_VERSION) {
+  let migrated = saved;
+  for (let version = savedVersion; version < targetVersion; version += 1) {
+    migrated = migrations[version](migrated);
+  }
+  return migrated;
+}
+
 function parseStateRaw(raw) {
   if (!raw) {
     return null;
@@ -266,7 +288,13 @@ function parseStateRaw(raw) {
 
   try {
     const parsed = JSON.parse(raw);
-    const payload = parsed?.state && typeof parsed.state === 'object' ? parsed.state : parsed;
+    const savedVersion = savedSchemaVersion(parsed?.schemaVersion);
+    if (savedVersion > STATE_SCHEMA_VERSION) {
+      return { newerVersion: savedVersion };
+    }
+
+    const savedState = parsed?.state && typeof parsed.state === 'object' ? parsed.state : parsed;
+    const payload = migrateSavedState(savedState, savedVersion);
     return {
       clients: Array.isArray(payload.clients) ? payload.clients : [],
       invoices: Array.isArray(payload.invoices) ? payload.invoices : [],
@@ -296,6 +324,12 @@ function assignLoadedState(nextState) {
 export async function loadState() {
   const desktopRaw = await readPersistedStateRaw();
   const desktopState = parseStateRaw(desktopRaw);
+  if (desktopState?.newerVersion) {
+    stateIsFromNewerVersion = true;
+    alert('Your data was saved by a newer version of Muriel. Update Muriel to open it. Until then, Muriel does not save changes, so your data stays safe.');
+    return;
+  }
+
   if (desktopState) {
     assignLoadedState(desktopState);
     return;
@@ -303,7 +337,7 @@ export async function loadState() {
 
   const legacyRaw = readLegacyBrowserStateRaw();
   const legacyState = parseStateRaw(legacyRaw);
-  if (!legacyState) {
+  if (!legacyState || legacyState.newerVersion) {
     return;
   }
 
@@ -311,7 +345,7 @@ export async function loadState() {
 
   // One-time migration path for users moving from browser storage to desktop storage.
   if (isDesktopApp && typeof window.desktopStore?.writeState === 'function') {
-    const result = await window.desktopStore.writeState(JSON.stringify(state));
+    const result = await window.desktopStore.writeState(JSON.stringify({ schemaVersion: STATE_SCHEMA_VERSION, ...state }));
     if (!result?.ok) {
       console.error('Could not migrate legacy state to desktop file', result?.error || 'Unknown error');
     }
@@ -381,7 +415,7 @@ export function serializeStateForBackup() {
   return JSON.stringify({
     app: BACKUP_APP_NAME,
     exportedAt: new Date().toISOString(),
-    schemaVersion: BACKUP_SCHEMA_VERSION,
+    schemaVersion: STATE_SCHEMA_VERSION,
     state,
   }, null, 2);
 }
@@ -400,11 +434,17 @@ function parseBackupRaw(raw) {
   }
 
   const isExportedBackup = parsed?.app === BACKUP_APP_NAME;
-  if (isExportedBackup && Number(parsed.schemaVersion) > BACKUP_SCHEMA_VERSION) {
+  const savedState = isExportedBackup ? parsed.state : parsed;
+  const savedVersion = savedSchemaVersion(isExportedBackup ? parsed.schemaVersion : savedState?.schemaVersion);
+  if (savedVersion > STATE_SCHEMA_VERSION) {
     return { error: 'This backup was made by a newer version of Muriel. Update the app, then try again.' };
   }
 
-  const payload = isExportedBackup ? parsed.state : parsed;
+  if (!savedState || typeof savedState !== 'object' || Array.isArray(savedState)) {
+    return { error: 'This file is not a Muriel backup. Your current data was not changed.' };
+  }
+
+  const payload = migrateSavedState(savedState, savedVersion);
   if (
     !payload
     || typeof payload !== 'object'
@@ -432,12 +472,19 @@ export async function restoreStateFromRaw(raw) {
   }
 
   assignLoadedState(parsed.state);
+  // Restoring a backup is a choice to replace the saved data, also when it came from a newer version.
+  stateIsFromNewerVersion = false;
   await saveState();
   return { ok: true };
 }
 
 export async function saveState() {
-  const serialized = JSON.stringify(state);
+  if (stateIsFromNewerVersion) {
+    console.error('Not saving, because the saved data is from a newer version of Muriel');
+    return;
+  }
+
+  const serialized = JSON.stringify({ schemaVersion: STATE_SCHEMA_VERSION, ...state });
   if (!isDesktopApp || typeof window.desktopStore?.writeState !== 'function') {
     return;
   }
