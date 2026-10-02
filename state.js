@@ -2,6 +2,8 @@ export const STORAGE_KEY = 'murielMyFinancialAdminPhase1';
 export const PREVIOUS_STORAGE_KEY = 'darwinMyFinancialAdminPhase1';
 export const LEGACY_STORAGE_KEY = 'flowInvoicePhase1';
 export const isDesktopApp = Boolean(window.desktopStore?.isDesktopApp);
+const BACKUP_APP_NAME = 'muriel-myfinancialadmin';
+const BACKUP_SCHEMA_VERSION = 1;
 const SUPPORTED_REPORTING_CURRENCIES = new Set(['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SEK', 'NOK', 'DKK', 'PLN']);
 const SUPPORTED_THEME_PRESETS = new Set(['muriel', 'sunrise', 'night']);
 
@@ -377,20 +379,59 @@ export function defaultPaymentMethods() {
 export function serializeStateForBackup() {
   normalizeProfile();
   return JSON.stringify({
-    app: 'muriel-myfinancialadmin',
+    app: BACKUP_APP_NAME,
     exportedAt: new Date().toISOString(),
-    schemaVersion: 1,
+    schemaVersion: BACKUP_SCHEMA_VERSION,
     state,
   }, null, 2);
 }
 
-export async function restoreStateFromRaw(raw) {
-  const parsed = parseStateRaw(raw);
-  if (!parsed) {
-    return { ok: false, error: 'This backup file could not be read.' };
+function isListOfRecords(value) {
+  return Array.isArray(value) && value.every((item) => item && typeof item === 'object' && !Array.isArray(item));
+}
+
+// Accepts an exported backup, or a plain saved state that has all of the data lists.
+function parseBackupRaw(raw) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: 'This backup file could not be read.' };
   }
 
-  assignLoadedState(parsed);
+  const isExportedBackup = parsed?.app === BACKUP_APP_NAME;
+  if (isExportedBackup && Number(parsed.schemaVersion) > BACKUP_SCHEMA_VERSION) {
+    return { error: 'This backup was made by a newer version of Muriel. Update the app, then try again.' };
+  }
+
+  const payload = isExportedBackup ? parsed.state : parsed;
+  if (
+    !payload
+    || typeof payload !== 'object'
+    || !isListOfRecords(payload.clients)
+    || !isListOfRecords(payload.invoices)
+    || !isListOfRecords(payload.expenses)
+  ) {
+    return { error: 'This file is not a Muriel backup. Your current data was not changed.' };
+  }
+
+  return {
+    state: {
+      clients: payload.clients,
+      invoices: payload.invoices,
+      expenses: payload.expenses,
+      profile: payload.profile || createDefaultProfile(),
+    },
+  };
+}
+
+export async function restoreStateFromRaw(raw) {
+  const parsed = parseBackupRaw(raw);
+  if (parsed.error) {
+    return { ok: false, error: parsed.error };
+  }
+
+  assignLoadedState(parsed.state);
   await saveState();
   return { ok: true };
 }
