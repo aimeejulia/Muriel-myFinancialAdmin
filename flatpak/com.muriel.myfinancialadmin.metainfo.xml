@@ -36,6 +36,11 @@
   </provides>
 
   <releases>
+    <release version="1.2.0" date="2026-10-02">
+      <description>
+        <p>Fixed data safety and money figures: invoice edits no longer lose the invoice, saves are crash safe, the safety backup is encrypted, restore accepts only Muriel backups, reports leave out draft invoices, VAT is rounded for each invoice, and dates use local time.</p>
+      </description>
+    </release>
     <release version="1.1.1" date="2026-04-29">
       <description>
         <p>Fixed invoice PDF download from both the post-create invoice preview and the invoice list preview pane.</p>
