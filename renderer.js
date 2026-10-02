@@ -18,6 +18,7 @@ import {
   generateClientDisplayId,
   currentQuarterInfo,
   getClient,
+  invoiceClientOptions,
   reportingCurrency,
   normalizeCurrencyCode,
   clientCurrencyFor,
@@ -370,14 +371,14 @@ function upsertClientOptionList(selectedValue = '') {
 
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  const activeClients = state.clients.filter((client) => client.status !== 'inactive');
-  placeholder.textContent = activeClients.length ? 'Select client' : 'No active clients yet';
+  const clientOptions = invoiceClientOptions(selectedValue);
+  placeholder.textContent = clientOptions.length ? 'Select client' : 'No active clients yet';
   elements.invoiceClient.appendChild(placeholder);
 
-  activeClients.forEach((client) => {
+  clientOptions.forEach((clientOption) => {
     const option = document.createElement('option');
-    option.value = client.id;
-    option.textContent = `${client.displayId} · ${client.name}`;
+    option.value = clientOption.value;
+    option.textContent = clientOption.label;
     elements.invoiceClient.appendChild(option);
   });
 

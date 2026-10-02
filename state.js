@@ -691,6 +691,18 @@ export function formatDashboardPeriodLabel() {
   return `Reporting period: ${period.toUpperCase()} ${year}`;
 }
 
+// Inactive clients are hidden from the invoice client list, except the client that is already selected.
+export function invoiceClientOptions(selectedClientId = '') {
+  return state.clients
+    .filter((client) => client.status !== 'inactive' || client.id === selectedClientId)
+    .map((client) => ({
+      value: client.id,
+      label: client.status === 'inactive'
+        ? `${client.displayId} · ${client.name} (inactive)`
+        : `${client.displayId} · ${client.name}`,
+    }));
+}
+
 export function getClient(clientId) {
   return state.clients.find((client) => client.id === clientId);
 }
