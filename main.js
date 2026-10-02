@@ -123,15 +123,11 @@ function writeStateFile(serializedState) {
   const backupStatePath = getBackupStateFilePath();
   lastKnownSerializedState = String(serializedState);
   fs.mkdirSync(path.dirname(statePath), { recursive: true });
-  writeFileAtomic(backupStatePath, lastKnownSerializedState);
 
-  const encryptedPayload = buildEncryptedPayload(serializedState);
-  if (encryptedPayload) {
-    writeFileAtomic(statePath, encryptedPayload);
-  } else {
-    // Fallback keeps app functional on systems without an available keyring.
-    writeFileAtomic(statePath, serializedState);
-  }
+  // Fallback keeps app functional on systems without an available keyring.
+  const payload = buildEncryptedPayload(serializedState) || serializedState;
+  writeFileAtomic(backupStatePath, payload);
+  writeFileAtomic(statePath, payload);
 
   return { ok: true, path: statePath };
 }

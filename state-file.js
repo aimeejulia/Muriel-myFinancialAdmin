@@ -3,8 +3,10 @@ const fs = require('fs');
 function writeFileAtomic(filePath, content) {
   // Write to a temporary file first, so a crash never leaves a half-written state file.
   const tempPath = `${filePath}.tmp`;
-  const fileDescriptor = fs.openSync(tempPath, 'w');
+  const fileDescriptor = fs.openSync(tempPath, 'w', 0o600);
   try {
+    // Only the current user can read the saved data.
+    fs.fchmodSync(fileDescriptor, 0o600);
     fs.writeFileSync(fileDescriptor, content, 'utf8');
     fs.fsyncSync(fileDescriptor);
   } finally {
