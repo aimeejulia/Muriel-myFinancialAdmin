@@ -18,6 +18,7 @@
     "clean:dist": "rm -rf dist",
     "check:appimage-config": "node ./scripts/validate-appimage-config.js",
     "check:release-version": "node ./scripts/validate-release-version.js",
+    "test:e2e": "node --test --test-concurrency=1 --test-timeout=60000 --disable-warning=MODULE_TYPELESS_PACKAGE_JSON e2e/*.e2e.mjs",
     "package:appimage": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux AppImage",
     "package:linux": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux",
     "package:flatpak": "npm run clean:dist && npm run check:appimage-config && npm run check:release-version && electron-builder --linux flatpak",
