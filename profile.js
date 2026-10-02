@@ -120,7 +120,7 @@ export function getInvoiceSenderDetails(invoice) {
     ? state.profile.businesses.find((item) => item.id === invoice.issuerBusinessId)
     : null;
   const senderLegalName = String(state.profile.legalName || state.profile.personalName || '').trim();
-  const secondarySenderName = Boolean(
+  const secondarySenderName = (
     senderBusiness
     && senderName
     && senderName.toLowerCase() !== String(senderLegalName || '').toLowerCase()
