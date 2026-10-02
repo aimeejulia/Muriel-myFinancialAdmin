@@ -24,6 +24,7 @@ const NEW_CLIENT_OPTION_VALUE = '__create_client__';
 
 let importHooks = {
   showView: () => {},
+  resetInvoiceEditMode: () => {},
   upsertClientOptionList: () => {},
   updateInvoicePreview: () => {},
   toggleInvoicePaidDateField: () => {},
@@ -341,6 +342,7 @@ export function updateImportQueueInfo() {
 }
 
 export function loadImportedDraftIntoForm(draft) {
+  importHooks.resetInvoiceEditMode();
   const clientId = getOrCreateImportedClient(draft.clientName, draft.clientDisplayId, draft.vatRate);
   importHooks.upsertClientOptionList(clientId);
   uiState.lastInvoiceClientValue = clientId || '';
