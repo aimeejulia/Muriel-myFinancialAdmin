@@ -2,6 +2,7 @@ import {
   state,
   elements,
   computedStatus,
+  countsAsInvoiced,
   formatCurrency,
   reportingCurrency,
   quarterFromDate,
@@ -55,7 +56,7 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
     .filter((invoice) => computedStatus(invoice) === 'paid')
     .reduce((sum, invoice) => sum + Number(invoice.total), 0);
   const openTotal = financialInvoices
-    .filter((invoice) => ['draft', 'sent'].includes(computedStatus(invoice)))
+    .filter((invoice) => computedStatus(invoice) === 'sent')
     .reduce((sum, invoice) => sum + Number(invoice.total), 0);
   const overdueTotal = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'overdue')
@@ -253,7 +254,7 @@ export function runReport() {
     yearFromDate(invoice.issueDate) === year
     && (period === 'year' || quarterFromDate(invoice.issueDate) === Number(period))
   ));
-  const financialInvoices = filteredInvoices.filter((invoice) => computedStatus(invoice) !== 'aborted');
+  const financialInvoices = filteredInvoices.filter(countsAsInvoiced);
 
   const filteredExpenses = state.expenses.filter((expense) => (
     yearFromDate(expense.date) === year

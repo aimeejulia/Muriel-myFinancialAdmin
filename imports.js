@@ -7,6 +7,7 @@ import {
   generateClientDisplayId,
   buildInvoiceNumber,
   computedStatus,
+  countsAsInvoiced,
   getClient,
   readFileAsDataUrl,
   downloadFile,
@@ -413,7 +414,7 @@ export function exportReportCsv() {
     yearFromDate(invoice.issueDate) === year
     && (period === 'year' || quarterFromDate(invoice.issueDate) === Number(period))
   ));
-  const financialReportInvoices = reportInvoices.filter((invoice) => computedStatus(invoice) !== 'aborted');
+  const financialReportInvoices = reportInvoices.filter(countsAsInvoiced);
 
   const reportExpenses = state.expenses.filter((expense) => (
     yearFromDate(expense.date) === year

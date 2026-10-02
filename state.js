@@ -487,6 +487,11 @@ export function computedStatus(invoice) {
   return due < now ? 'overdue' : 'sent';
 }
 
+// Drafts are not issued yet and aborted invoices are cancelled, so neither counts towards invoiced totals.
+export function countsAsInvoiced(invoice) {
+  return !['draft', 'aborted'].includes(computedStatus(invoice));
+}
+
 export function invoiceReservesNumber(invoice) {
   return !(invoice.status === 'aborted' && invoice.abortedNumberHandling === 'reuse');
 }
