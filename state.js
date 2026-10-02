@@ -285,7 +285,14 @@ function assignLoadedState(nextState) {
         status: normalizeClientStatus(client?.status),
       }))
     : [];
-  state.invoices = nextState.invoices;
+  state.invoices = Array.isArray(nextState.invoices)
+    ? nextState.invoices.map((invoice) => ({
+        ...invoice,
+        subtotal: roundMoney(invoice?.subtotal),
+        vatAmount: roundMoney(invoice?.vatAmount),
+        total: roundMoney(invoice?.total),
+      }))
+    : [];
   state.expenses = nextState.expenses;
   state.profile = nextState.profile;
   normalizeProfile();
@@ -439,6 +446,22 @@ export function downloadFile(filename, content, mimeType = 'text/plain;charset=u
 export function escapeCsv(value) {
   const text = String(value ?? '');
   return `"${text.replace(/"/g, '""')}"`;
+}
+
+export function roundMoney(value) {
+  // toPrecision removes floating point noise first, so 1.005 rounds to 1.01 and not 1.00
+  return Math.round(Number((Number(value || 0) * 100).toPrecision(15))) / 100;
+}
+
+// VAT is rounded to cents for each invoice, so the invoice, reports and exports show the same amounts.
+export function calculateInvoiceAmounts(subtotal, vatRate) {
+  const roundedSubtotal = roundMoney(subtotal);
+  const vatAmount = roundMoney(roundedSubtotal * Number(vatRate || 0) / 100);
+  return {
+    subtotal: roundedSubtotal,
+    vatAmount,
+    total: roundMoney(roundedSubtotal + vatAmount),
+  };
 }
 
 export function euro(value) {

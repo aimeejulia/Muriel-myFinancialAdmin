@@ -7,6 +7,8 @@ import {
   saveState,
   renderDesktopOnlyScreen,
   formatCurrency,
+  calculateInvoiceAmounts,
+  roundMoney,
   todayISO,
   canUseInvoiceNumber,
   downloadFile,
@@ -305,9 +307,7 @@ function syncInvoiceClientCurrencyFields(selectedClientId = elements.invoiceClie
     ? `Displayed on invoice as ${formatCurrency(amount, clientCurrency)}`
     : 'Enter amount in the client currency for display on invoice.';
 
-  const subtotal = Number(elements.invoiceSubtotal.value || 0);
-  const vatRate = Number(elements.invoiceVatRate.value || 0);
-  const calcTotal = subtotal * (1 + vatRate / 100);
+  const { total: calcTotal } = calculateInvoiceAmounts(elements.invoiceSubtotal.value, elements.invoiceVatRate.value);
   const calcFormatted = formatCurrency(calcTotal, defaultCurrency);
   const receivedAmount = Number(elements.invoiceDefaultCurrencyReceived.value || 0);
   elements.invoiceDefaultCurrencyReceivedPreview.textContent = receivedAmount > 0
@@ -525,9 +525,7 @@ function loadExpenseForEditing(expense) {
 }
 
 function updateInvoicePreview() {
-  const subtotal = Number(elements.invoiceSubtotal.value || 0);
-  const vatRate = Number(elements.invoiceVatRate.value || 0);
-  const total = subtotal * (1 + vatRate / 100);
+  const { total } = calculateInvoiceAmounts(elements.invoiceSubtotal.value, elements.invoiceVatRate.value);
   elements.invoiceTotalPreview.textContent = formatCurrency(total, reportingCurrency());
   syncInvoiceClientCurrencyFields();
 }
@@ -564,7 +562,7 @@ function loadInvoiceForEditing(invoice) {
   elements.invoicePaidDate.value = invoice.paidDate || '';
   elements.invoicePaymentMethod.value = invoice.paymentMethodId || '';
   elements.invoiceClientSecondaryTotal.value = String(invoice.clientCurrencyTotal || '');
-  const calcTotal = invoice.subtotal * (1 + (invoice.vatRate || 0) / 100);
+  const { total: calcTotal } = calculateInvoiceAmounts(invoice.subtotal, invoice.vatRate);
   elements.invoiceDefaultCurrencyReceived.value =
     Math.abs((invoice.total || 0) - calcTotal) > 0.005 ? String(invoice.total) : '';
   if (invoice.issuerType === 'business' && invoice.issuerBusinessId) {
@@ -736,11 +734,9 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     return;
   }
 
-  const subtotal = Number(formData.get('invoiceSubtotal'));
   const vatRate = Number(formData.get('invoiceVatRate'));
-  const vatAmount = subtotal * vatRate / 100;
-  const calcTotal = subtotal + vatAmount;
-  const receivedDefaultTotal = Number(formData.get('invoiceDefaultCurrencyReceived') || 0);
+  const { subtotal, vatAmount, total: calcTotal } = calculateInvoiceAmounts(formData.get('invoiceSubtotal'), vatRate);
+  const receivedDefaultTotal = roundMoney(formData.get('invoiceDefaultCurrencyReceived'));
   const total = receivedDefaultTotal > 0 ? receivedDefaultTotal : calcTotal;
 
   let issuerType = 'legal';
