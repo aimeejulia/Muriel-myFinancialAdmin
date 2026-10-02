@@ -152,20 +152,27 @@ export async function launchApp(dataDir, { env = {} } = {}) {
   await new Promise((resolve) => socket.addEventListener('open', resolve));
   let nextId = 0;
   const pending = new Map();
-  socket.addEventListener('message', (event) => {
-    const message = JSON.parse(event.data);
-    pending.get(message.id)?.(message);
-  });
-
-  const evaluate = async (expression) => {
+  const dialogs = [];
+  const send = (method, params = {}) => {
     nextId += 1;
     const id = nextId;
-    socket.send(JSON.stringify({
-      id,
-      method: 'Runtime.evaluate',
-      params: { expression, awaitPromise: true, returnByValue: true },
-    }));
-    const message = await new Promise((resolve) => pending.set(id, resolve));
+    socket.send(JSON.stringify({ id, method, params }));
+    return new Promise((resolve) => pending.set(id, resolve));
+  };
+  socket.addEventListener('message', (event) => {
+    const message = JSON.parse(event.data);
+    if (message.method === 'Page.javascriptDialogOpening') {
+      // Accept alert and confirm dialogs, and keep their text for the test.
+      dialogs.push(message.params.message);
+      send('Page.handleJavaScriptDialog', { accept: true });
+      return;
+    }
+    pending.get(message.id)?.(message);
+  });
+  await send('Page.enable');
+
+  const evaluate = async (expression) => {
+    const message = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
     if (message.result.exceptionDetails) {
       throw new Error(message.result.exceptionDetails.exception?.description || 'Evaluation failed');
     }
@@ -187,7 +194,7 @@ export async function launchApp(dataDir, { env = {} } = {}) {
     }
   };
 
-  return { evaluate, stop };
+  return { evaluate, stop, dialogs };
 }
 
 // Reads the saved invoices back through the app, so this also works when the state file is encrypted.
