@@ -10,6 +10,7 @@ import {
   calculateInvoiceAmounts,
   roundMoney,
   todayISO,
+  addDaysISO,
   canUseInvoiceNumber,
   upsertInvoice,
   downloadFile,
@@ -483,9 +484,7 @@ function resetForms() {
   resetInvoiceEditMode();
   elements.invoiceForm.reset();
   elements.invoiceIssueDate.value = todayISO();
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 14);
-  elements.invoiceDueDate.value = dueDate.toISOString().split('T')[0];
+  elements.invoiceDueDate.value = addDaysISO(todayISO(), 14);
   elements.invoiceVatRate.value = 21;
   elements.invoiceStatus.value = 'sent';
   elements.invoicePaidDate.value = '';

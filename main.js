@@ -385,7 +385,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('desktop-store:export-backup', async (_, serializedState) => {
     try {
-      const defaultPath = path.join(app.getPath('documents'), `muriel-backup-${new Date().toISOString().slice(0, 10)}.json`);
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const defaultPath = path.join(app.getPath('documents'), `muriel-backup-${localDate}.json`);
       const result = await dialog.showSaveDialog(mainWindow, {
         title: 'Export backup',
         defaultPath,

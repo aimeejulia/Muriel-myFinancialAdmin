@@ -4,6 +4,7 @@ import {
   elements,
   saveState,
   todayISO,
+  addDaysISO,
   generateClientDisplayId,
   buildInvoiceNumber,
   computedStatus,
@@ -105,11 +106,7 @@ export function extractPdfInvoiceFields(text, fileName = '') {
   const clientNameMatch = normalized.match(/(?:Client|Bill\s*to|Billed\s*to)\s*[:#-]?\s*([A-Za-z0-9 .,&'\-]{3,80})/i);
 
   const issueDate = parseDateToIso(issueDateMatch?.[1]) || todayISO();
-  const dueDate = parseDateToIso(dueDateMatch?.[1]) || (() => {
-    const date = new Date(issueDate);
-    date.setDate(date.getDate() + 14);
-    return date.toISOString().split('T')[0];
-  })();
+  const dueDate = parseDateToIso(dueDateMatch?.[1]) || addDaysISO(issueDate, 14);
 
   const subtotal = parseAmount(subtotalMatch?.[1]);
   const total = parseAmount(totalMatch?.[1]);
