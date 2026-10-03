@@ -36,6 +36,11 @@
   </provides>
 
   <releases>
+    <release version="1.3.0" date="2026-10-03">
+      <description>
+        <p>Updates for every install type: the AppImage and source checkouts can update themselves, and Snap and Flatpak installs get the install command. The Flatpak now encrypts the saved data, Copy reminder works again, and Electron is updated to 44.</p>
+      </description>
+    </release>
     <release version="1.2.0" date="2026-10-02">
       <description>
         <p>Fixed data safety and money figures: invoice edits no longer lose the invoice, saves are crash safe, the safety backup is encrypted, restore accepts only Muriel backups, reports leave out draft invoices, VAT is rounded for each invoice, and dates use local time.</p>

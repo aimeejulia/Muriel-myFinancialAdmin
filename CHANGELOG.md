@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+- The update banner shows the update steps for your install type: AppImage, Snap, Flatpak, or source checkout.
+- The AppImage can update itself. Click Download and restart. The app checks the download before it replaces the AppImage.
+- A source checkout can update itself with git. Click Update and restart.
+- For Snap and Flatpak, the banner shows the install command, with a Copy command button.
+- Each release has an AppImage, a Snap, and a Flatpak.
+
+### Fixed
+- Copy reminder copies the reminder to the clipboard again.
+- The Flatpak encrypts the saved data. Before, it saved the data in plain text.
+- Electron is updated to 44, a supported version with security fixes.
+- The PDF library dependencies are updated to remove known security problems.
+
+### Notes
+- From version 1.2.0 or older, update one time by hand. Later updates can start from the app.
+- The AppImage file name has no spaces now: `Muriel-myFinancialAdmin-1.3.0.AppImage`. If a shortcut opens the AppImage, change the shortcut to the new file name.
+
 ## 1.2.0
 
 ### Added
