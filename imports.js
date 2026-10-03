@@ -34,7 +34,8 @@ export function getNewClientOptionValue() {
 
 export function parseAmount(value) {
   if (!value) return 0;
-  const raw = String(value).replace(/[^0-9,.-]/g, '');
+  // The text can end with a full stop, as in "Total: 1,234.56.", so separators at the start and end are removed.
+  const raw = String(value).replace(/[^0-9,.-]/g, '').replace(/[.,]+$/, '').replace(/^[.,]+/, '');
   const hasComma = raw.includes(',');
   const hasDot = raw.includes('.');
 
