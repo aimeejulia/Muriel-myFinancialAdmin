@@ -167,3 +167,17 @@ test('an expense receipt PDF shows in the preview', async () => {
     await app.stop();
   }
 });
+
+test('the app refuses to open popup windows', async () => {
+  const app = await launchApp(dataDir);
+  try {
+    const opened = await app.evaluate(`[
+      window.open('about:blank'),
+      window.open('https://example.test/'),
+      window.open(URL.createObjectURL(new Blob(['x'], { type: 'application/pdf' }))),
+    ].map((popup) => popup !== null)`);
+    assert.deepEqual(opened, [false, false, false]);
+  } finally {
+    await app.stop();
+  }
+});
