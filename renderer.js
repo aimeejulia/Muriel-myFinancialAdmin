@@ -11,6 +11,10 @@ import {
   addDaysISO,
   canUseInvoiceNumber,
   invoiceCurrency,
+  invoiceBookAmounts,
+  invoiceBookCurrency,
+  invoiceReceivedAmount,
+  roundMoney,
   invoiceMoneyForSave,
   upsertInvoice,
   buildInvoiceNumber,
@@ -111,9 +115,17 @@ function closeCreateClientModal() {
   elements.createClientModal.hidden = true;
 }
 
+// The received amount is in the book currency: the euros that arrived, after bank charges.
+function receivedLabel(invoice) {
+  return `Amount received in ${invoiceBookCurrency(invoice)} (after bank charges)`;
+}
+
 function openMarkPaidModal(invoice) {
   uiState.pendingMarkPaidInvoiceId = invoice.id;
   elements.markPaidDateInput.value = invoice.paidDate || todayISO();
+  elements.markPaidReceivedLabel.textContent = receivedLabel(invoice);
+  elements.markPaidReceived.value = invoiceReceivedAmount(invoice).toFixed(2);
+  elements.markPaidReceivedHint.textContent = `Invoice total in the books: ${formatCurrency(invoiceBookAmounts(invoice).total, invoiceBookCurrency(invoice))}.`;
   elements.markPaidModal.hidden = false;
   elements.markPaidDateInput.focus();
 }
@@ -130,6 +142,7 @@ function syncChangeStatusFields() {
 
   elements.changeStatusPaidDateField.hidden = !isPaid;
   elements.changeStatusPaidDate.required = isPaid;
+  elements.changeStatusReceived.required = isPaid;
   if (isPaid && !elements.changeStatusPaidDate.value) {
     elements.changeStatusPaidDate.value = todayISO();
   }
@@ -143,6 +156,8 @@ function openChangeStatusModal(invoice) {
   elements.changeStatusSelect.value = invoice.status === 'paid' ? 'sent' : (invoice.status || 'sent');
   elements.changeStatusAbortedNumberHandling.value = invoice.abortedNumberHandling || 'cancelled';
   elements.changeStatusPaidDate.value = invoice.paidDate || todayISO();
+  elements.changeStatusReceivedLabel.textContent = receivedLabel(invoice);
+  elements.changeStatusReceived.value = invoiceReceivedAmount(invoice).toFixed(2);
   syncChangeStatusFields();
   elements.changeStatusModal.hidden = false;
   elements.changeStatusSelect.focus();
@@ -328,6 +343,8 @@ function toggleInvoicePaidDateField() {
   const isPaid = elements.invoiceStatus.value === 'paid';
   elements.invoicePaidDateField.hidden = !isPaid;
   elements.invoicePaidDate.required = isPaid;
+  elements.invoiceReceivedField.hidden = !isPaid;
+  elements.invoiceReceivedLabel.textContent = `Amount received in ${reportingCurrency()} (after bank charges)`;
 
   if (isPaid && !elements.invoicePaidDate.value) {
     elements.invoicePaidDate.value = todayISO();
@@ -335,6 +352,7 @@ function toggleInvoicePaidDateField() {
 
   if (!isPaid) {
     elements.invoicePaidDate.value = '';
+    elements.invoiceReceived.value = '';
   }
 }
 
@@ -353,6 +371,7 @@ function loadInvoiceForEditing(invoice) {
   elements.invoiceVatRate.value = String(invoice.vatRate ?? 21);
   elements.invoiceStatus.value = invoice.status === 'overdue' ? 'sent' : invoice.status || 'draft';
   elements.invoicePaidDate.value = invoice.paidDate || '';
+  elements.invoiceReceived.value = invoice.receivedAmount ?? '';
   elements.invoicePaymentMethod.value = invoice.paymentMethodId || '';
   if (invoice.issuerType === 'business' && invoice.issuerBusinessId) {
     renderIssuerOptions(`business:${invoice.issuerBusinessId}`);
@@ -538,6 +557,10 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     status: formData.get('invoiceStatus') || editingInvoice?.status || 'draft',
     paidDate: formData.get('invoicePaidDate'),
   };
+  // A paid invoice keeps the euros that arrived. Without an entered amount it is the total in the books.
+  invoiceFields.receivedAmount = invoiceFields.status === 'paid'
+    ? (String(formData.get('invoiceReceived') || '').trim() ? roundMoney(formData.get('invoiceReceived')) : money.bookAmounts.total)
+    : null;
 
   // Auto-set status to overdue if due date is today or in the past and status is sent
   if (invoiceFields.status === 'sent' && invoiceFields.dueDate <= todayISO()) {
@@ -693,6 +716,7 @@ elements.changeStatusForm.addEventListener('submit', (event) => {
   invoice.status = newStatus;
   invoice.abortedNumberHandling = abortedNumberHandling;
   invoice.paidDate = newStatus === 'paid' ? (elements.changeStatusPaidDate.value || todayISO()) : '';
+  invoice.receivedAmount = newStatus === 'paid' ? roundMoney(elements.changeStatusReceived.value) : null;
   saveState();
   renderAll();
   closeChangeStatusModal();
@@ -710,6 +734,7 @@ elements.markPaidForm.addEventListener('submit', (event) => {
   invoice.status = 'paid';
   invoice.abortedNumberHandling = '';
   invoice.paidDate = elements.markPaidDateInput.value || todayISO();
+  invoice.receivedAmount = roundMoney(elements.markPaidReceived.value);
   saveState();
   renderAll();
   closeMarkPaidModal();

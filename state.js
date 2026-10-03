@@ -152,6 +152,14 @@ export const elements = {
   markPaidForm: byId('mark-paid-form'),
   markPaidCancel: byId('mark-paid-cancel'),
   markPaidDateInput: byId('markPaidDate'),
+  markPaidReceived: byId('markPaidReceived'),
+  markPaidReceivedLabel: byId('mark-paid-received-label'),
+  markPaidReceivedHint: byId('mark-paid-received-hint'),
+  changeStatusReceived: byId('changeStatusReceived'),
+  changeStatusReceivedLabel: byId('change-status-received-label'),
+  invoiceReceivedField: byId('invoice-received-field'),
+  invoiceReceived: byId('invoiceReceived'),
+  invoiceReceivedLabel: byId('invoice-received-label'),
   changeStatusModal: byId('change-status-modal'),
   changeStatusForm: byId('change-status-form'),
   changeStatusSelect: byId('changeStatusSelect'),
@@ -678,6 +686,23 @@ export function invoiceBookAmounts(invoice) {
     vatAmount: Number(invoice?.vatAmount || 0),
     total: Number(invoice?.total || 0),
   };
+}
+
+// The euros (in the book currency) that arrived for a paid invoice, after bank charges. Without a recorded amount,
+// for example for invoices from before this field, it is the total in the books.
+export function invoiceReceivedAmount(invoice) {
+  const recorded = Number(invoice?.receivedAmount);
+  return invoice?.receivedAmount !== null && invoice?.receivedAmount !== undefined && invoice?.receivedAmount !== '' && Number.isFinite(recorded)
+    ? recorded
+    : invoiceBookAmounts(invoice).total;
+}
+
+// The income of an invoice in the book currency. For a paid invoice it is what arrived, less the VAT, because the
+// VAT belongs to the tax office. For an invoice that is not paid yet it is the estimate from the invoice date.
+export function invoiceIncome(invoice) {
+  const bookAmounts = invoiceBookAmounts(invoice);
+  if (computedStatus(invoice) !== 'paid') return bookAmounts.subtotal;
+  return roundMoney(invoiceReceivedAmount(invoice) - bookAmounts.vatAmount);
 }
 
 // Converts invoice amounts to the book currency. The rate is invoice currency units for one book currency unit.

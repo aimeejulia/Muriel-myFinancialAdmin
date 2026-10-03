@@ -107,8 +107,8 @@ test('the CSV exports have the invoices, expenses and report figures', async () 
 
     assert.equal(files['invoices_export.csv'], [
       '"Invoice Number","Client ID","Client Name","Issue Date","Due Date","Status","Subtotal","VAT Rate","VAT Amount","Total","Paid Date",'
-        + '"Currency","Book Currency","Exchange Rate","Rate Date","Book Subtotal","Book VAT Amount","Book Total"',
-      '"INV-2026-09-001","0001","Client Example","2026-03-10","2099-09-15","sent","100","21","21","121","","EUR","EUR","1","","100","21","121"',
+        + '"Currency","Book Currency","Exchange Rate","Rate Date","Book Subtotal","Book VAT Amount","Book Total","Received"',
+      '"INV-2026-09-001","0001","Client Example","2026-03-10","2099-09-15","sent","100","21","21","121","","EUR","EUR","1","","100","21","121",""',
     ].join('\n'));
     assert.equal(files['expenses_export.csv'], [
       '"Date","Category","Amount","Deductible","Note"',
@@ -121,7 +121,8 @@ test('the CSV exports have the invoices, expenses and report figures', async () 
       '"Net invoiced","100"',
       '"VAT invoiced","21"',
       '"Gross invoiced","121"',
-      '"Marked paid","0"',
+      '"Received","0"',
+      '"Income","100"',
       '"Outstanding","121"',
       '"Delinquent","0"',
       '"Deductible expenses","45.5"',

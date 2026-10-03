@@ -332,6 +332,11 @@
                 <label for="invoicePaidDate">Paid date</label>
                 <input id="invoicePaidDate" name="invoicePaidDate" type="date" />
               </div>
+              <div class="field" id="invoice-received-field" hidden>
+                <label for="invoiceReceived" id="invoice-received-label">Amount received (after bank charges)</label>
+                <input id="invoiceReceived" name="invoiceReceived" type="number" min="0" step="0.01" />
+                <small class="field-hint">Leave it empty to use the invoice total in the books.</small>
+              </div>
               <div class="form-actions full-span">
                 <button type="submit" class="primary-btn" id="invoice-submit-btn">Create invoice</button>
                 <button type="button" class="secondary-btn" id="invoice-edit-cancel-btn" hidden>Cancel edit</button>
@@ -759,6 +764,11 @@
         <label for="markPaidDate">Payment date</label>
         <input id="markPaidDate" name="markPaidDate" type="date" required />
       </div>
+      <div class="field">
+        <label for="markPaidReceived" id="mark-paid-received-label">Amount received (after bank charges)</label>
+        <input id="markPaidReceived" name="markPaidReceived" type="number" min="0" step="0.01" required />
+        <small id="mark-paid-received-hint" class="field-hint"></small>
+      </div>
       <div class="modal-actions">
         <button type="button" class="secondary-btn" id="mark-paid-cancel" data-dialog-close>Cancel</button>
         <button type="submit" class="primary-btn">Save paid date</button>
@@ -787,6 +797,8 @@
         <div class="field full-span" id="change-status-paid-date-field" hidden>
           <label for="changeStatusPaidDate">Payment date</label>
           <input id="changeStatusPaidDate" name="changeStatusPaidDate" type="date" />
+          <label for="changeStatusReceived" id="change-status-received-label">Amount received (after bank charges)</label>
+          <input id="changeStatusReceived" name="changeStatusReceived" type="number" min="0" step="0.01" />
         </div>
         <div class="field full-span" id="change-status-aborted-number-field" hidden>
           <label for="changeStatusAbortedNumberHandling">Invoice number handling</label>
