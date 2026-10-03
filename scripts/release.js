@@ -189,8 +189,15 @@ function main() {
   if (preflightErrors.length) fail(preflightErrors);
 
   console.log(`\nBuilding AppImage, Snap and Flatpak for ${tag}...\n`);
+  run('npm', ['run', 'clean:dist'], { showOutput: true });
+  run('npm', ['run', 'check:appimage-config'], { showOutput: true });
+  run('npm', ['run', 'check:release-version'], { showOutput: true });
+  // One target at a time: targets that build at the same time can unpack the same tool into the
+  // electron-builder cache at the same time, and then one of them fails.
   // The script uploads the files itself, so electron-builder must never publish.
-  run('npm', ['run', 'package:linux', '--', '--publish', 'never'], { showOutput: true });
+  for (const target of ['AppImage', 'snap', 'flatpak']) {
+    run('npx', ['electron-builder', '--linux', target, '--publish', 'never'], { showOutput: true });
+  }
 
   const { artifacts, errors } = findArtifacts(fs.readdirSync(distDir), version);
   if (errors.length) fail(errors);
