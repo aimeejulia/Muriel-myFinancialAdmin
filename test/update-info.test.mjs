@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { detectInstallType, findReleaseAsset, updateCommand } = require('../update-info.js');
+const {
+  canUpdateInApp,
+  detectInstallType,
+  findReleaseAsset,
+  updateCommand,
+} = require('../update-info.js');
 
 // Asset names as GitHub shows them for the 1.1.2 release
 const releaseAssets = [
@@ -57,4 +62,13 @@ test('no command when there is nothing to run', () => {
   assert.equal(updateCommand('snap', {}), '');
   assert.equal(updateCommand('appimage', { assetName: 'Muriel.AppImage' }), '');
   assert.equal(updateCommand('other', {}), '');
+});
+
+test('an AppImage can update itself only when the release has latest-linux.yml and an AppImage', () => {
+  assert.equal(canUpdateInApp('appimage', releaseAssets), true);
+  assert.equal(canUpdateInApp('appimage', releaseAssets.filter((asset) => asset.name !== 'latest-linux.yml')), false);
+  assert.equal(canUpdateInApp('appimage', releaseAssets.filter((asset) => !asset.name.endsWith('.AppImage'))), false);
+  assert.equal(canUpdateInApp('snap', releaseAssets), false);
+  assert.equal(canUpdateInApp('source', releaseAssets), false);
+  assert.equal(canUpdateInApp('appimage', undefined), false);
 });

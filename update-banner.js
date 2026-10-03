@@ -37,6 +37,18 @@ export function describeUpdate(result) {
     };
   }
 
+  if (result.installType === 'appimage' && result.assetUrl && result.canUpdateInApp) {
+    return {
+      title,
+      tone: 'success',
+      message: `${current} Muriel can download the update and restart. ${keepsData}`,
+      downloadUrl: result.assetUrl,
+      downloadLabel: 'Download AppImage',
+      installLabel: 'Download and restart',
+      command: '',
+    };
+  }
+
   if (result.installType === 'appimage' && result.assetUrl) {
     return {
       title,
@@ -72,6 +84,9 @@ export function hideUpdateBanner() {
   elements.updateBanner.dataset.tone = 'info';
   latestUpdateUrl = '';
   latestUpdateCommand = '';
+  if (elements.updateInstallBtn) {
+    elements.updateInstallBtn.hidden = true;
+  }
   if (elements.updateDownloadBtn) {
     elements.updateDownloadBtn.hidden = true;
   }
@@ -89,6 +104,7 @@ export function showUpdateBanner({
   tone = 'info',
   downloadUrl = '',
   downloadLabel = 'Open download page',
+  installLabel = '',
   command = '',
 }) {
   if (!elements.updateBanner || !elements.updateBannerTitle || !elements.updateBannerMessage) return;
@@ -100,6 +116,11 @@ export function showUpdateBanner({
   latestUpdateUrl = downloadUrl;
   latestUpdateCommand = command;
 
+  if (elements.updateInstallBtn) {
+    elements.updateInstallBtn.hidden = !installLabel;
+    elements.updateInstallBtn.disabled = false;
+    elements.updateInstallBtn.textContent = installLabel;
+  }
   if (elements.updateDownloadBtn) {
     elements.updateDownloadBtn.hidden = !downloadUrl;
     elements.updateDownloadBtn.textContent = downloadLabel;
@@ -112,4 +133,30 @@ export function showUpdateBanner({
     elements.updateCopyBtn.hidden = !command;
     elements.updateCopyBtn.textContent = 'Copy command';
   }
+}
+
+// Downloads the new AppImage, then restarts into it. If anything fails, the banner offers the manual download.
+export async function downloadAndRestart(desktopStore) {
+  const button = elements.updateInstallBtn;
+  const fallbackUrl = latestUpdateUrl;
+  button.disabled = true;
+  button.textContent = 'Downloading…';
+  desktopStore.onUpdateProgress((percent) => {
+    button.textContent = `Downloading… ${percent}%`;
+  });
+
+  const download = await desktopStore.downloadUpdate();
+  if (!download?.ok) {
+    showUpdateBanner({
+      title: 'Could not download the update',
+      message: `${download?.error || 'The download failed.'} Download the new AppImage and use it in place of the old file.`,
+      tone: 'warning',
+      downloadUrl: fallbackUrl,
+      downloadLabel: 'Download AppImage',
+    });
+    return download;
+  }
+
+  button.textContent = 'Restarting…';
+  return desktopStore.installUpdate();
 }
