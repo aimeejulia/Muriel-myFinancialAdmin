@@ -28,8 +28,8 @@
     <category>Finance</category>
   </categories>
 
-  <url type="homepage">https://example.com</url>
-  <url type="bugtracker">https://example.com/issues</url>
+  <url type="homepage">https://github.com/aimeejulia/Muriel-myFinancialAdmin</url>
+  <url type="bugtracker">https://github.com/aimeejulia/Muriel-myFinancialAdmin/issues</url>
 
   <provides>
     <binary>muriel-myfinancialadmin</binary>
