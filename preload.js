@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld('desktopStore', {
     ipcRenderer.removeAllListeners('desktop-store:update-progress');
     ipcRenderer.on('desktop-store:update-progress', (_, percent) => callback(percent));
   },
+  async getExchangeRate(currency, date) {
+    return ipcRenderer.invoke('desktop-store:get-exchange-rate', currency, date);
+  },
   async openExternalUrl(url) {
     return ipcRenderer.invoke('desktop-store:open-external-url', url);
   },
