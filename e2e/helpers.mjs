@@ -14,6 +14,17 @@ export const BACKUP_FILE = 'muriel-myfinancialadmin-state.backup.json';
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Waits until check() returns true, or until the time is up. Returns the last result of check().
+export async function waitFor(check, { timeout = 5000, interval = 100 } = {}) {
+  const end = Date.now() + timeout;
+  let result = await check();
+  while (!result && Date.now() < end) {
+    await sleep(interval);
+    result = await check();
+  }
+  return result;
+}
+
 export const sampleClient = {
   id: 'client-1',
   displayId: '0001',
@@ -195,7 +206,15 @@ export async function launchApp(dataDir, { env = {} } = {}) {
     }
   };
 
-  return { evaluate, stop, dialogs };
+  // Presses a key like a real keyboard, for example 'Escape' or 'Tab'.
+  const pressKey = async (key, { shift = false } = {}) => {
+    const codes = { Escape: 27, Tab: 9, Enter: 13 };
+    const base = { key, code: key, windowsVirtualKeyCode: codes[key], modifiers: shift ? 8 : 0 };
+    await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...base });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', ...base });
+  };
+
+  return { evaluate, stop, dialogs, pressKey };
 }
 
 // Reads the saved invoices back through the app, so this also works when the state file is encrypted.

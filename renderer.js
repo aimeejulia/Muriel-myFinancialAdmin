@@ -55,6 +55,7 @@ import {
 } from './views.js';
 import { attachUpdateHandlers, checkForUpdates, hideUpdateBanner } from './update-banner.js';
 import { attachExpenseReceiptHandlers, openExpenseReceiptModal } from './expense-receipt.js';
+import { attachDialogHandlers } from './dialogs.js';
 import { exportInvoicesCsv, exportExpensesCsv, exportReportCsv } from './csv-export.js';
 
 
@@ -432,6 +433,7 @@ elements.themeButtons.forEach((button) => {
 
 attachUpdateHandlers();
 attachExpenseReceiptHandlers();
+attachDialogHandlers();
 
 try {
   attachProfileHandlers();
