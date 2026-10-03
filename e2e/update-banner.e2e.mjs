@@ -2,7 +2,7 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
-  createDataDir, removeDataDir, writeStateFile, sampleState, launchApp, assertRealDataUntouched,
+  createDataDir, removeDataDir, writeStateFile, sampleState, launchApp, waitFor, assertRealDataUntouched,
 } from './helpers.mjs';
 
 let dataDir;
@@ -65,10 +65,11 @@ test('the update banner shows the command and copies it', async () => {
     });
 
     await app.evaluate(`document.getElementById('update-copy-btn').click(); true`);
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await waitFor(() => app.evaluate(`document.getElementById('update-copy-btn').textContent !== 'Copy command'`));
     assert.equal(await app.evaluate(`document.getElementById('update-copy-btn').textContent`), 'Copied');
     if (clipboardBefore !== null) {
-      assert.equal(readClipboard(), 'sudo snap install --dangerous ~/Downloads/app.snap');
+      const expected = 'sudo snap install --dangerous ~/Downloads/app.snap';
+      assert.equal(await waitFor(() => readClipboard() === expected && readClipboard()), expected);
     }
   } finally {
     await app.stop();

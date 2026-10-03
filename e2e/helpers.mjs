@@ -14,6 +14,17 @@ export const BACKUP_FILE = 'muriel-myfinancialadmin-state.backup.json';
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Waits until check() returns true, or until the time is up. Returns the last result of check().
+export async function waitFor(check, { timeout = 5000, interval = 100 } = {}) {
+  const end = Date.now() + timeout;
+  let result = await check();
+  while (!result && Date.now() < end) {
+    await sleep(interval);
+    result = await check();
+  }
+  return result;
+}
+
 export const sampleClient = {
   id: 'client-1',
   displayId: '0001',
