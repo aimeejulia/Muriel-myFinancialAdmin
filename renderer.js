@@ -184,7 +184,8 @@ function closeChangeStatusModal() {
   elements.changeStatusModal.hidden = true;
 }
 
-function upsertClientOptionList(selectedValue = '') {
+// Keeps the client that is selected now, unless the caller selects another one.
+function upsertClientOptionList(selectedValue = elements.invoiceClient.value) {
   elements.invoiceClient.innerHTML = '';
 
   const placeholder = document.createElement('option');
@@ -299,7 +300,6 @@ function resetInvoiceEditMode() {
 }
 
 function resetForms() {
-  resetClientEditMode();
   resetInvoiceEditMode();
   elements.invoiceForm.reset();
   elements.invoiceIssueDate.value = todayISO();
@@ -917,6 +917,7 @@ async function init() {
   elements.dashboardPeriod.value = `q${now.quarter}`;
   elements.reportYear.value = now.year;
   elements.reportQuarter.value = String(now.quarter);
+  resetClientEditMode();
   resetForms();
   elements.expenseDate.value = todayISO();
   renderAll();
