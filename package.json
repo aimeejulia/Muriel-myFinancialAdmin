@@ -66,9 +66,7 @@
       "update-info.js",
       "source-update.js",
       "preload.js",
-      "build/icon.png",
-      "vendor/pdfjs/pdf.min.mjs",
-      "vendor/pdfjs/pdf.worker.min.mjs"
+      "build/icon.png"
     ],
     "directories": {
       "output": "dist",
