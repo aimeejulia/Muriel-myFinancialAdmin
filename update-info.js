@@ -21,6 +21,14 @@ function findReleaseAsset(assets, installType) {
   return asset ? { name: asset.name, url: asset.browser_download_url || '' } : null;
 }
 
+// An AppImage can replace itself when the release has the new AppImage and the
+// latest-linux.yml file, which electron-updater needs to find and verify it.
+function canUpdateInApp(installType, assets) {
+  if (installType !== 'appimage' || !Array.isArray(assets)) return false;
+  const names = assets.map((asset) => String(asset?.name || ''));
+  return names.includes('latest-linux.yml') && names.some((name) => ASSET_PATTERNS.appimage.test(name));
+}
+
 // Quotes text for a shell command, but only when it needs quotes, so simple commands stay easy to read.
 function shellQuote(text) {
   const value = String(text);
@@ -43,6 +51,7 @@ function updateCommand(installType, { assetName = '', appPath = '' } = {}) {
 }
 
 module.exports = {
+  canUpdateInApp,
   detectInstallType,
   findReleaseAsset,
   updateCommand,

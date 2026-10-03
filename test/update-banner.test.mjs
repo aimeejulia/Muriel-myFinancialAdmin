@@ -73,3 +73,22 @@ test('without a matching release file, the banner opens the release page', () =>
     assert.equal(banner.command, '', installType);
   }
 });
+
+test('an AppImage that can update itself offers Download and restart, and keeps the manual download', () => {
+  const banner = describeUpdate({
+    ...baseResult,
+    installType: 'appimage',
+    canUpdateInApp: true,
+    assetUrl: 'https://example.test/app.AppImage',
+  });
+
+  assert.equal(banner.installLabel, 'Download and restart');
+  assert.equal(banner.downloadUrl, 'https://example.test/app.AppImage');
+  assert.match(banner.message, /Muriel can download the update and restart/);
+});
+
+test('without in-app updates, an AppImage gets no Download and restart button', () => {
+  const banner = describeUpdate({ ...baseResult, installType: 'appimage', assetUrl: 'https://example.test/app.AppImage' });
+
+  assert.equal(banner.installLabel, undefined);
+});

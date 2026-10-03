@@ -3,7 +3,12 @@ const fs = require('fs');
 const https = require('https');
 const path = require('path');
 const { writeFileAtomic, isStateJson, readFirstValidStateFile } = require('./state-file');
-const { detectInstallType, findReleaseAsset, updateCommand } = require('./update-info');
+const {
+  canUpdateInApp,
+  detectInstallType,
+  findReleaseAsset,
+  updateCommand,
+} = require('./update-info');
 
 let mainWindow = null;
 let lastKnownSerializedState = '';
@@ -240,6 +245,26 @@ function fetchLatestGitHubRelease(repo) {
   });
 }
 
+function currentInstallType() {
+  return detectInstallType({
+    env: process.env,
+    isPackaged: app.isPackaged,
+    flatpakInfoExists: fs.existsSync('/.flatpak-info'),
+  });
+}
+
+let appImageUpdater = null;
+
+// electron-updater is only loaded for AppImage installs, the only type that can replace itself.
+function getAppImageUpdater() {
+  if (!appImageUpdater) {
+    appImageUpdater = require('electron-updater').autoUpdater;
+    appImageUpdater.autoDownload = false;
+    appImageUpdater.autoInstallOnAppQuit = false;
+  }
+  return appImageUpdater;
+}
+
 function isAllowedPopupUrl(url) {
   if (typeof url !== 'string') return false;
   // Allow only local receipt previews; block web/content popups.
@@ -340,11 +365,7 @@ app.whenReady().then(() => {
   ipcMain.handle('desktop-store:check-for-updates', async () => {
     const currentVersion = app.getVersion();
     const repo = extractGithubRepo(getPackageJson());
-    const installType = detectInstallType({
-      env: process.env,
-      isPackaged: app.isPackaged,
-      flatpakInfoExists: fs.existsSync('/.flatpak-info'),
-    });
+    const installType = currentInstallType();
 
     if (!repo) {
       return {
@@ -367,6 +388,7 @@ app.whenReady().then(() => {
         latestVersion,
         updateAvailable,
         installType,
+        canUpdateInApp: canUpdateInApp(installType, release.assets),
         assetName: asset?.name || '',
         assetUrl: asset?.url || '',
         updateCommand: updateCommand(installType, { assetName: asset?.name, appPath: app.getAppPath() }),
@@ -382,6 +404,41 @@ app.whenReady().then(() => {
         message: error.message || 'Could not check for updates.',
       };
     }
+  });
+
+  ipcMain.handle('desktop-store:download-update', async () => {
+    if (currentInstallType() !== 'appimage') {
+      return { ok: false, error: 'Only the AppImage can update itself.' };
+    }
+
+    try {
+      const updater = getAppImageUpdater();
+      updater.removeAllListeners('download-progress');
+      updater.on('download-progress', (progress) => {
+        mainWindow?.webContents.send('desktop-store:update-progress', Math.round(progress.percent || 0));
+      });
+
+      const check = await updater.checkForUpdates();
+      if (!check?.isUpdateAvailable) {
+        return { ok: false, error: 'No newer version was found.' };
+      }
+
+      // electron-updater checks the downloaded file against the sha512 in latest-linux.yml.
+      await updater.downloadUpdate();
+      return { ok: true, version: check.updateInfo?.version || '' };
+    } catch (error) {
+      return { ok: false, error: error.message || 'Could not download the update.' };
+    }
+  });
+
+  ipcMain.handle('desktop-store:install-update', () => {
+    if (currentInstallType() !== 'appimage' || !appImageUpdater) {
+      return { ok: false, error: 'There is no downloaded update to install.' };
+    }
+
+    // Replace the AppImage and start the new version. The quit handlers save the data first.
+    setImmediate(() => appImageUpdater.quitAndInstall(true, true));
+    return { ok: true };
   });
 
   ipcMain.handle('desktop-store:open-external-url', async (_, url) => {

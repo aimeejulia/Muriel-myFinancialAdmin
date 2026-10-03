@@ -89,3 +89,36 @@ test('a Snap install is detected by the update check', async (t) => {
     await app.stop();
   }
 });
+
+test('Download and restart is refused outside an AppImage and offers the manual download', async () => {
+  const app = await launchApp(dataDir);
+  try {
+    await app.evaluate(`import('./update-banner.js').then(({ describeUpdate, showUpdateBanner }) => {
+      showUpdateBanner(describeUpdate({
+        currentVersion: '1.2.0',
+        latestVersion: '1.3.0',
+        installType: 'appimage',
+        canUpdateInApp: true,
+        assetUrl: 'https://example.test/app.AppImage',
+      }));
+      return true;
+    })`);
+    assert.equal(await app.evaluate(`document.getElementById('update-install-btn').textContent`), 'Download and restart');
+
+    await app.evaluate(`document.getElementById('update-install-btn').click(); true`);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const banner = await app.evaluate(`({
+      title: document.getElementById('update-banner-title').textContent,
+      message: document.getElementById('update-banner-message').textContent,
+      installHidden: document.getElementById('update-install-btn').hidden,
+      download: document.getElementById('update-download-btn').textContent,
+    })`);
+    assert.equal(banner.title, 'Could not download the update');
+    assert.match(banner.message, /Only the AppImage can update itself/);
+    assert.equal(banner.installHidden, true);
+    assert.equal(banner.download, 'Download AppImage');
+  } finally {
+    await app.stop();
+  }
+});

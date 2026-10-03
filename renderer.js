@@ -59,6 +59,7 @@ import {
 } from './views.js';
 import {
   describeUpdate,
+  downloadAndRestart,
   getLatestUpdateCommand,
   getLatestUpdateUrl,
   hideUpdateBanner,
@@ -606,6 +607,13 @@ if (elements.updateDownloadBtn) {
     const updateUrl = getLatestUpdateUrl();
     if (!updateUrl || typeof window.desktopStore?.openExternalUrl !== 'function') return;
     await window.desktopStore.openExternalUrl(updateUrl);
+  });
+}
+
+if (elements.updateInstallBtn) {
+  elements.updateInstallBtn.addEventListener('click', () => {
+    if (typeof window.desktopStore?.downloadUpdate !== 'function') return;
+    downloadAndRestart(window.desktopStore);
   });
 }
 
