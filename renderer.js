@@ -815,6 +815,19 @@ elements.invoicesTableBody.addEventListener('click', (event) => {
     return;
   }
 
+  if (button.dataset.action === 'mark-unpaid') {
+    closeInvoiceRowMenus();
+    const confirmed = confirm(`Mark invoice ${invoice.invoiceNumber} as unpaid? The payment date and the amount received are removed.`);
+    if (!confirmed) return;
+
+    invoice.status = 'sent';
+    invoice.paidDate = '';
+    invoice.receivedAmount = null;
+    saveState();
+    renderAll();
+    return;
+  }
+
   if (button.dataset.action === 'edit-invoice') {
     closeInvoiceRowMenus();
     loadInvoiceForEditing(invoice);

@@ -230,6 +230,15 @@ export function renderInvoices() {
       actionsWrap.appendChild(markPaidBtn);
     }
 
+    if (status === 'paid') {
+      const markUnpaidBtn = document.createElement('button');
+      markUnpaidBtn.className = 'invoice-row-action-btn';
+      markUnpaidBtn.dataset.action = 'mark-unpaid';
+      markUnpaidBtn.dataset.id = invoice.id;
+      markUnpaidBtn.textContent = 'Mark unpaid';
+      actionsWrap.appendChild(markUnpaidBtn);
+    }
+
     const addActionBtn = (action, label) => {
       const button = document.createElement('button');
       button.className = 'invoice-row-action-btn';
