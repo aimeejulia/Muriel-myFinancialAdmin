@@ -1068,7 +1068,7 @@ elements.invoicesTableBody.addEventListener('click', (event) => {
     const text = buildReminder(invoice, 'neutral');
     navigator.clipboard.writeText(text)
       .then(() => alert('Reminder copied.'))
-      .catch(() => prompt('Copy reminder text:', text));
+      .catch(() => alert('Could not copy the reminder.'));
     return;
   }
 

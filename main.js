@@ -297,8 +297,9 @@ app.whenReady().then(() => {
   });
 
   const { session } = require('electron');
-  session.defaultSession.setPermissionRequestHandler((_, __, callback) => {
-    callback(false);
+  session.defaultSession.setPermissionRequestHandler((_, permission, callback) => {
+    // Copy buttons need to write to the clipboard. All other permissions stay blocked.
+    callback(permission === 'clipboard-sanitized-write');
   });
 
   ipcMain.handle('desktop-store:read-state', () => {

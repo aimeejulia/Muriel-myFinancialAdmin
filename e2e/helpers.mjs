@@ -172,7 +172,8 @@ export async function launchApp(dataDir, { env = {} } = {}) {
   await send('Page.enable');
 
   const evaluate = async (expression) => {
-    const message = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+    // userGesture makes clicks count as user actions, which the clipboard needs.
+    const message = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, userGesture: true });
     if (message.result.exceptionDetails) {
       throw new Error(message.result.exceptionDetails.exception?.description || 'Evaluation failed');
     }
