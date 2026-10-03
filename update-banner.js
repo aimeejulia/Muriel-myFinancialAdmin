@@ -7,6 +7,8 @@ const PACKAGE_LABELS = {
 
 let latestUpdateUrl = '';
 let latestUpdateCommand = '';
+let latestDownloadLabel = '';
+let latestBusyLabel = '';
 
 // Decides what the update banner shows for the way this copy of the app was installed.
 export function describeUpdate(result) {
@@ -22,6 +24,19 @@ export function describeUpdate(result) {
       message: `${current} Download the ${packageLabel} file, then run this command in a terminal. ${keepsData}`,
       downloadUrl: result.assetUrl,
       downloadLabel: `Download ${packageLabel} file`,
+      command: result.updateCommand,
+    };
+  }
+
+  if (result.installType === 'source' && result.updateCommand && result.canUpdateInApp) {
+    return {
+      title,
+      tone: 'success',
+      message: `${current} Muriel can update this folder with git and restart. You can also run this command in a terminal. ${keepsData}`,
+      downloadUrl: '',
+      downloadLabel: '',
+      installLabel: 'Update and restart',
+      busyLabel: 'Updating…',
       command: result.updateCommand,
     };
   }
@@ -45,6 +60,7 @@ export function describeUpdate(result) {
       downloadUrl: result.assetUrl,
       downloadLabel: 'Download AppImage',
       installLabel: 'Download and restart',
+      busyLabel: 'Downloading…',
       command: '',
     };
   }
@@ -105,6 +121,7 @@ export function showUpdateBanner({
   downloadUrl = '',
   downloadLabel = 'Open download page',
   installLabel = '',
+  busyLabel = 'Updating…',
   command = '',
 }) {
   if (!elements.updateBanner || !elements.updateBannerTitle || !elements.updateBannerMessage) return;
@@ -115,6 +132,8 @@ export function showUpdateBanner({
   elements.updateBannerMessage.textContent = message;
   latestUpdateUrl = downloadUrl;
   latestUpdateCommand = command;
+  latestDownloadLabel = downloadLabel;
+  latestBusyLabel = busyLabel;
 
   if (elements.updateInstallBtn) {
     elements.updateInstallBtn.hidden = !installLabel;
@@ -135,24 +154,27 @@ export function showUpdateBanner({
   }
 }
 
-// Downloads the new AppImage, then restarts into it. If anything fails, the banner offers the manual download.
+// Gets the update (a new AppImage, or the new code of a source checkout), then restarts into it.
+// If anything fails, the banner keeps the manual way to update.
 export async function downloadAndRestart(desktopStore) {
   const button = elements.updateInstallBtn;
-  const fallbackUrl = latestUpdateUrl;
+  const fallback = { downloadUrl: latestUpdateUrl, downloadLabel: latestDownloadLabel, command: latestUpdateCommand };
   button.disabled = true;
-  button.textContent = 'Downloading…';
+  button.textContent = latestBusyLabel;
   desktopStore.onUpdateProgress((percent) => {
     button.textContent = `Downloading… ${percent}%`;
   });
 
   const download = await desktopStore.downloadUpdate();
   if (!download?.ok) {
+    const manualStep = fallback.command
+      ? 'Run this command in a terminal to update.'
+      : 'Download the new AppImage and use it in place of the old file.';
     showUpdateBanner({
-      title: 'Could not download the update',
-      message: `${download?.error || 'The download failed.'} Download the new AppImage and use it in place of the old file.`,
+      title: 'Could not update',
+      message: `${download?.error || 'The update failed.'} ${manualStep}`,
       tone: 'warning',
-      downloadUrl: fallbackUrl,
-      downloadLabel: 'Download AppImage',
+      ...fallback,
     });
     return download;
   }

@@ -72,3 +72,9 @@ test('an AppImage can update itself only when the release has latest-linux.yml a
   assert.equal(canUpdateInApp('source', releaseAssets), false);
   assert.equal(canUpdateInApp('appimage', undefined), false);
 });
+
+test('a source checkout can update itself only when it is a git checkout', () => {
+  assert.equal(canUpdateInApp('source', [], { isGitCheckout: true }), true);
+  assert.equal(canUpdateInApp('source', [], { isGitCheckout: false }), false);
+  assert.equal(canUpdateInApp('source', []), false);
+});

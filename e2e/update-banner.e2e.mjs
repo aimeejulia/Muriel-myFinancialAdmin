@@ -91,7 +91,9 @@ test('a Snap install is detected by the update check', async (t) => {
 });
 
 test('Download and restart is refused outside an AppImage and offers the manual download', async () => {
-  const app = await launchApp(dataDir);
+  // The tests run the app from the repository, which is a source checkout that can update itself with git.
+  // Pretend to be a Flatpak, so the click can never run git pull on the repository.
+  const app = await launchApp(dataDir, { env: { FLATPAK_ID: 'com.muriel.myfinancialadmin' } });
   try {
     await app.evaluate(`import('./update-banner.js').then(({ describeUpdate, showUpdateBanner }) => {
       showUpdateBanner(describeUpdate({
@@ -114,8 +116,8 @@ test('Download and restart is refused outside an AppImage and offers the manual 
       installHidden: document.getElementById('update-install-btn').hidden,
       download: document.getElementById('update-download-btn').textContent,
     })`);
-    assert.equal(banner.title, 'Could not download the update');
-    assert.match(banner.message, /Only the AppImage can update itself/);
+    assert.equal(banner.title, 'Could not update');
+    assert.match(banner.message, /Only the AppImage and source checkouts can update themselves/);
     assert.equal(banner.installHidden, true);
     assert.equal(banner.download, 'Download AppImage');
   } finally {

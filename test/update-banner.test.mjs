@@ -92,3 +92,17 @@ test('without in-app updates, an AppImage gets no Download and restart button', 
 
   assert.equal(banner.installLabel, undefined);
 });
+
+test('a git checkout offers Update and restart and still shows the command', () => {
+  const banner = describeUpdate({
+    ...baseResult,
+    installType: 'source',
+    canUpdateInApp: true,
+    updateCommand: 'cd /src/muriel && git pull --ff-only && npm ci',
+  });
+
+  assert.equal(banner.installLabel, 'Update and restart');
+  assert.equal(banner.busyLabel, 'Updating…');
+  assert.equal(banner.command, 'cd /src/muriel && git pull --ff-only && npm ci');
+  assert.equal(banner.downloadUrl, '');
+});

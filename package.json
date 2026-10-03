@@ -60,6 +60,7 @@
       "main.js",
       "state-file.js",
       "update-info.js",
+      "source-update.js",
       "preload.js",
       "build/icon.png",
       "vendor/pdfjs/pdf.min.mjs",
