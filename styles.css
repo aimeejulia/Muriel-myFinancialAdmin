@@ -248,7 +248,7 @@
       margin: 2px 0 6px;
       font-size: 1rem;
     }
-    .update-banner p:last-child {
+    .update-banner p:last-of-type {
       margin: 0;
       color: var(--muted);
       line-height: 1.45;
@@ -258,6 +258,19 @@
     }
     .update-banner[data-tone="success"] {
       background: linear-gradient(135deg, rgba(242, 104, 181, 0.14), rgba(244, 160, 111, 0.14), rgba(243, 207, 104, 0.16));
+    }
+    .update-banner-command {
+      display: block;
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--surface-glass-strong);
+      font-size: 0.85rem;
+      overflow-wrap: anywhere;
+      user-select: all;
+    }
+    .update-banner-command[hidden] {
+      display: none;
     }
     .update-banner-actions {
       display: flex;
