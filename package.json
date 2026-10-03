@@ -78,6 +78,7 @@
       "update-info.js",
       "source-update.js",
       "ipc-guard.js",
+      "exchange-rates.js",
       "preload.js",
       "build/icon.png",
       "!**/node_modules/canvas/**"

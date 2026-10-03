@@ -18,6 +18,7 @@ const {
 } = require('./update-info');
 const { updateSourceCheckout } = require('./source-update');
 const { isAppPageUrl } = require('./ipc-guard');
+const { createExchangeRateService } = require('./exchange-rates');
 
 let mainWindow = null;
 let lastKnownSerializedState = '';
@@ -396,6 +397,11 @@ app.whenReady().then(() => {
     setImmediate(() => appImageUpdater.quitAndInstall(true, true));
     return { ok: true };
   });
+
+  const exchangeRates = createExchangeRateService({
+    cacheFile: path.join(app.getPath('userData'), 'exchange-rates.json'),
+  });
+  handleFromApp('desktop-store:get-exchange-rate', (_, currency, date) => exchangeRates.getRate(currency, date));
 
   handleFromApp('desktop-store:open-external-url', async (_, url) => {
     if (typeof url !== 'string' || !/^https:\/\//i.test(url)) {
