@@ -26,7 +26,7 @@ globalThis.document = {
   createElement: () => fakeElement(),
 };
 
-const { state, elements, countsAsInvoiced, formatCurrency, euro } = await import('../state.js');
+const { state, elements, countsAsInvoiced, formatCurrency } = await import('../state.js');
 const { runReport } = await import('../reports.js');
 const { renderDashboard } = await import('../views.js');
 
@@ -87,7 +87,7 @@ test('dashboard totals leave out draft and aborted invoices', () => {
 
   renderDashboard();
 
-  assert.equal(globalThis.document.getElementById('metric-received').textContent, euro(500));
-  assert.equal(globalThis.document.getElementById('metric-outstanding').textContent, euro(200));
-  assert.equal(globalThis.document.getElementById('metric-vat-exposure').textContent, euro(42));
+  assert.equal(globalThis.document.getElementById('metric-received').textContent, formatCurrency(500, 'EUR'));
+  assert.equal(globalThis.document.getElementById('metric-outstanding').textContent, formatCurrency(200, 'EUR'));
+  assert.equal(globalThis.document.getElementById('metric-vat-exposure').textContent, formatCurrency(42, 'EUR'));
 });
