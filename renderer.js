@@ -65,10 +65,9 @@ import {
   hideUpdateBanner,
   showUpdateBanner,
 } from './update-banner.js';
+import { loadPdfJs } from './pdf-reader.js';
 
 let activeExpenseReceipt = null;
-const PDFJS_CDN = './vendor/pdfjs/pdf.min.mjs';
-const PDFJS_WORKER_CDN = './vendor/pdfjs/pdf.worker.min.mjs';
 
 function applyTheme(themeName = state.profile.themePreset) {
   const nextTheme = normalizeThemePreset(themeName);
@@ -108,11 +107,7 @@ async function renderExpenseReceiptPreview(dataUrl) {
   elements.expenseReceiptContent.innerHTML = '<p class="empty-state">Loading receipt preview…</p>';
 
   try {
-    const module = await import(PDFJS_CDN);
-    const pdfjs = module.default || module;
-    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-      pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
-    }
+    const pdfjs = await loadPdfJs();
 
     const { bytes } = decodeDataUrl(dataUrl);
     const task = pdfjs.getDocument({ data: bytes });

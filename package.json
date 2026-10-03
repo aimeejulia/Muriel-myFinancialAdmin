@@ -57,6 +57,7 @@
       "reports.js",
       "pdf.js",
       "imports.js",
+      "pdf-reader.js",
       "update-banner.js",
       "main.js",
       "state-file.js",

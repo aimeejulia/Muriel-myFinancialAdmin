@@ -19,9 +19,8 @@ import {
   reportingCurrency,
   defaultPaymentMethods,
 } from './state.js';
+import { loadPdfJs } from './pdf-reader.js';
 
-const PDFJS_CDN = './vendor/pdfjs/pdf.min.mjs';
-const PDFJS_WORKER_CDN = './vendor/pdfjs/pdf.worker.min.mjs';
 const NEW_CLIENT_OPTION_VALUE = '__create_client__';
 
 let importHooks = {
@@ -266,11 +265,7 @@ export function getOrCreateImportedClient(clientName, clientDisplayId, vatRate) 
 }
 
 export async function extractTextFromPdf(file) {
-  const module = await import(PDFJS_CDN);
-  const pdfjs = module.default || module;
-  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-    pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
-  }
+  const pdfjs = await loadPdfJs();
 
   const buffer = await file.arrayBuffer();
   const task = pdfjs.getDocument({ data: new Uint8Array(buffer) });
