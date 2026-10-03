@@ -1,4 +1,4 @@
-import { elements } from './state.js';
+import { elements, isDesktopApp } from './state.js';
 
 const PACKAGE_LABELS = {
   snap: 'Snap',
@@ -181,4 +181,108 @@ export async function downloadAndRestart(desktopStore) {
 
   button.textContent = 'Restarting…';
   return desktopStore.installUpdate();
+}
+
+export async function checkForUpdates({ manual = false } = {}) {
+  if (!isDesktopApp || typeof window.desktopStore?.checkForUpdates !== 'function') {
+    return;
+  }
+
+  if (manual && elements.checkUpdatesBtn) {
+    elements.checkUpdatesBtn.disabled = true;
+    elements.checkUpdatesBtn.textContent = 'Checking…';
+  }
+
+  try {
+    const result = await window.desktopStore.checkForUpdates();
+
+    if (!result?.configured) {
+      if (manual) {
+        showUpdateBanner({
+          title: 'Update checks are ready',
+          message: result?.message || 'Connect the GitHub releases URL and users will see update alerts here.',
+        });
+      }
+      return;
+    }
+
+    if (result?.ok === false) {
+      if (manual) {
+        showUpdateBanner({
+          title: 'Could not check for updates',
+          message: result?.message || 'Please try again later.',
+          tone: 'warning',
+        });
+      }
+      return;
+    }
+
+    if (result?.updateAvailable) {
+      showUpdateBanner(describeUpdate(result));
+      return;
+    }
+
+    if (manual) {
+      showUpdateBanner({
+        title: 'You are up to date',
+        message: `This device is already running the latest version, ${result.currentVersion}.`,
+      });
+    }
+  } catch (error) {
+    if (manual) {
+      showUpdateBanner({
+        title: 'Could not check for updates',
+        message: error?.message || 'Please try again later.',
+        tone: 'warning',
+      });
+    }
+  } finally {
+    if (manual && elements.checkUpdatesBtn) {
+      elements.checkUpdatesBtn.disabled = false;
+      elements.checkUpdatesBtn.textContent = 'Check for updates';
+    }
+  }
+}
+
+export function attachUpdateHandlers() {
+  if (elements.checkUpdatesBtn) {
+    elements.checkUpdatesBtn.addEventListener('click', () => {
+      checkForUpdates({ manual: true });
+    });
+  }
+
+  if (elements.updateDismissBtn) {
+    elements.updateDismissBtn.addEventListener('click', () => {
+      hideUpdateBanner();
+    });
+  }
+
+  if (elements.updateDownloadBtn) {
+    elements.updateDownloadBtn.addEventListener('click', async () => {
+      const updateUrl = getLatestUpdateUrl();
+      if (!updateUrl || typeof window.desktopStore?.openExternalUrl !== 'function') return;
+      await window.desktopStore.openExternalUrl(updateUrl);
+    });
+  }
+
+  if (elements.updateInstallBtn) {
+    elements.updateInstallBtn.addEventListener('click', () => {
+      if (typeof window.desktopStore?.downloadUpdate !== 'function') return;
+      downloadAndRestart(window.desktopStore);
+    });
+  }
+
+  if (elements.updateCopyBtn) {
+    elements.updateCopyBtn.addEventListener('click', () => {
+      const command = getLatestUpdateCommand();
+      if (!command) return;
+      navigator.clipboard.writeText(command)
+        .then(() => {
+          elements.updateCopyBtn.textContent = 'Copied';
+        })
+        .catch(() => {
+          elements.updateCopyBtn.textContent = 'Could not copy';
+        });
+    });
+  }
 }
