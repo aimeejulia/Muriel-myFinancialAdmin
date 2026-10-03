@@ -136,3 +136,59 @@ test('a paid invoice from the form uses the entered amount, or the total in the 
     await app.stop();
   }
 });
+
+test('a paid invoice can be marked unpaid, and then paid again with another amount', async () => {
+  writeStateFile(dataDir, {
+    ...sampleState({
+      clients: [sampleClient, usdClient],
+      invoices: [{ ...usdInvoice, status: 'paid', paidDate: '2026-10-02', receivedAmount: 861.4 }],
+    }),
+    schemaVersion: 2,
+  });
+  const app = await launchApp(dataDir);
+  try {
+    await app.evaluate(openInvoices);
+    const answerConfirm = (answer) => app.evaluate(`window.questions = []; window.confirm = (question) => { window.questions.push(question); return ${answer}; }; true`);
+    const markUnpaid = `document.querySelector('#invoices-table-body button[data-action="mark-unpaid"]').click(); true`;
+
+    await answerConfirm(false);
+    await app.evaluate(markUnpaid);
+    assert.deepEqual(await app.evaluate('window.questions'), [
+      `Mark invoice ${usdInvoice.invoiceNumber} as unpaid? The payment date and the amount received are removed.`,
+    ]);
+    let invoice = await app.evaluate(savedInvoice);
+    assert.equal(invoice.status, 'paid');
+    assert.equal(invoice.receivedAmount, 861.4);
+
+    await answerConfirm(true);
+    await app.evaluate(markUnpaid);
+    invoice = await waitFor(async () => {
+      const saved = await app.evaluate(savedInvoice);
+      return saved.status !== 'paid' && saved;
+    });
+    assert.equal(invoice.status, 'sent');
+    assert.equal(invoice.paidDate, '');
+    assert.equal(invoice.receivedAmount, null);
+    assert.match(await app.evaluate(`document.getElementById('invoices-table-body').textContent`), /\$1,000\.00 \(≈ €876\.96\)/);
+    assert.equal(await app.evaluate(`document.querySelector('#invoices-table-body button[data-action="mark-unpaid"]')`), null);
+
+    await app.evaluate(`document.querySelector('#invoices-table-body button[data-action="mark-paid"]').click(); true`);
+    await app.evaluate(`(() => {
+      document.getElementById('markPaidDate').value = '2026-10-03';
+      document.getElementById('markPaidReceived').value = '864.15';
+      document.getElementById('mark-paid-form').requestSubmit();
+      return true;
+    })()`);
+    invoice = await waitFor(async () => {
+      const saved = await app.evaluate(savedInvoice);
+      return saved.status === 'paid' && saved;
+    });
+    assert.equal(invoice.receivedAmount, 864.15);
+    assert.equal(invoice.paidDate, '2026-10-03');
+    const cards = await app.evaluate(reportCards(2026, 'year'));
+    assert.equal(cards.Received, '€864.15');
+    assert.equal(cards.Income, '€864.15');
+  } finally {
+    await app.stop();
+  }
+});
