@@ -46,6 +46,7 @@
     "appId": "com.muriel.myfinancialadmin",
     "productName": "Muriel - myFinancialAdmin",
     "icon": "build/icon.png",
+    "npmRebuild": false,
     "files": [
       "index.html",
       "styles.css",
@@ -66,7 +67,8 @@
       "update-info.js",
       "source-update.js",
       "preload.js",
-      "build/icon.png"
+      "build/icon.png",
+      "!**/node_modules/canvas/**"
     ],
     "directories": {
       "output": "dist",
