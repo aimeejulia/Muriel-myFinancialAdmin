@@ -8,6 +8,9 @@ import {
   computedStatus,
   countsAsInvoiced,
   invoiceBookAmounts,
+  invoiceBookCurrency,
+  invoiceIncome,
+  invoiceReceivedAmount,
   invoiceCurrency,
   displayInvoiceNumber,
   matchesDashboardPeriod,
@@ -159,6 +162,17 @@ export function renderExpenses() {
   });
 }
 
+// The total in the invoice currency. For another currency than the books, also the euros: what arrived for a paid
+// invoice, or the estimate from the invoice date for one that is not paid.
+function invoiceTotalText(invoice, status) {
+  const text = formatCurrency(invoice.total, invoiceCurrency(invoice));
+  const bookCurrency = invoiceBookCurrency(invoice);
+  if (invoiceCurrency(invoice) === bookCurrency) return text;
+  return status === 'paid'
+    ? `${text} (${formatCurrency(invoiceReceivedAmount(invoice), bookCurrency)} received)`
+    : `${text} (≈ ${formatCurrency(invoiceBookAmounts(invoice).total, bookCurrency)})`;
+}
+
 export function renderInvoices() {
   elements.invoicesTableBody.innerHTML = '';
   const filter = elements.invoiceFilter.value;
@@ -201,7 +215,7 @@ export function renderInvoices() {
     statusCell.appendChild(statusBadge);
     row.appendChild(statusCell);
 
-    appendTextCell(row, formatCurrency(invoice.total, invoiceCurrency(invoice)));
+    appendTextCell(row, invoiceTotalText(invoice, status));
 
     const actionsCell = document.createElement('td');
     const actionsWrap = document.createElement('div');
@@ -246,10 +260,10 @@ export function renderDashboard() {
   const periodExpenses = state.expenses
     .filter((expense) => matchesDashboardPeriod(expense.date))
     .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const accruedNetIncome = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0) - periodExpenses;
+  const accruedNetIncome = financialInvoices.reduce((sum, invoice) => sum + invoiceIncome(invoice), 0) - periodExpenses;
   const realisedNetIncome = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'paid')
-    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0) - periodExpenses;
+    .reduce((sum, invoice) => sum + invoiceIncome(invoice), 0) - periodExpenses;
   const outstanding = financialInvoices
     .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);

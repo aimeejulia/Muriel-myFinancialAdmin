@@ -4,6 +4,8 @@ import {
   computedStatus,
   countsAsInvoiced,
   invoiceBookAmounts,
+  invoiceIncome,
+  invoiceReceivedAmount,
   invoiceBookCurrency,
   invoiceCurrency,
   getClient,
@@ -17,7 +19,7 @@ export function exportInvoicesCsv() {
   const rows = [
     [
       'Invoice Number', 'Client ID', 'Client Name', 'Issue Date', 'Due Date', 'Status', 'Subtotal', 'VAT Rate', 'VAT Amount', 'Total', 'Paid Date',
-      'Currency', 'Book Currency', 'Exchange Rate', 'Rate Date', 'Book Subtotal', 'Book VAT Amount', 'Book Total',
+      'Currency', 'Book Currency', 'Exchange Rate', 'Rate Date', 'Book Subtotal', 'Book VAT Amount', 'Book Total', 'Received',
     ],
   ];
 
@@ -43,6 +45,7 @@ export function exportInvoicesCsv() {
       bookAmounts.subtotal,
       bookAmounts.vatAmount,
       bookAmounts.total,
+      computedStatus(invoice) === 'paid' ? invoiceReceivedAmount(invoice) : '',
     ]);
   });
 
@@ -87,7 +90,8 @@ export function exportReportCsv() {
   const netInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
   const vatInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
   const grossInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
-  const paid = financialReportInvoices.filter((invoice) => computedStatus(invoice) === 'paid').reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+  const paid = financialReportInvoices.filter((invoice) => computedStatus(invoice) === 'paid').reduce((sum, invoice) => sum + invoiceReceivedAmount(invoice), 0);
+  const income = financialReportInvoices.reduce((sum, invoice) => sum + invoiceIncome(invoice), 0);
   const outstanding = financialReportInvoices.filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice))).reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const delinquent = financialReportInvoices.filter((invoice) => computedStatus(invoice) === 'delinquent').reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const deductibleExpenses = reportExpenses.filter((expense) => expense.deductible === 'yes').reduce((sum, expense) => sum + Number(expense.amount), 0);
@@ -101,11 +105,12 @@ export function exportReportCsv() {
     ['Net invoiced', netInvoiced],
     ['VAT invoiced', vatInvoiced],
     ['Gross invoiced', grossInvoiced],
-    ['Marked paid', paid],
+    ['Received', paid],
+    ['Income', income],
     ['Outstanding', outstanding],
     ['Delinquent', delinquent],
     ['Deductible expenses', deductibleExpenses],
-    ['Estimated net after deductible expenses', netInvoiced - deductibleExpenses],
+    ['Estimated net after deductible expenses', income - deductibleExpenses],
   ];
 
   const csv = rows.map((row) => row.map(escapeCsv).join(',')).join('\n');

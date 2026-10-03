@@ -4,6 +4,8 @@ import {
   computedStatus,
   countsAsInvoiced,
   invoiceBookAmounts,
+  invoiceIncome,
+  invoiceReceivedAmount,
   formatCurrency,
   reportingCurrency,
   quarterFromDate,
@@ -55,7 +57,7 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
 
   const paidTotal = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'paid')
-    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+    .reduce((sum, invoice) => sum + invoiceReceivedAmount(invoice), 0);
   const openTotal = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'sent')
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
@@ -267,7 +269,9 @@ export function runReport() {
   const gross = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const paid = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'paid')
-    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+    .reduce((sum, invoice) => sum + invoiceReceivedAmount(invoice), 0);
+  // Paid invoices count the euros that arrived, less VAT. Invoices that are not paid count the estimate.
+  const income = financialInvoices.reduce((sum, invoice) => sum + invoiceIncome(invoice), 0);
   const outstanding = financialInvoices
     .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
@@ -284,7 +288,7 @@ export function runReport() {
     .filter((expense) => expense.deductible === 'yes')
     .reduce((sum, expense) => sum + Number(expense.amount), 0);
   const allExpenses = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const estimatedNet = net - deductibleExpenses;
+  const estimatedNet = income - deductibleExpenses;
 
   const currencyCode = reportingCurrency();
   const reportMoney = (value) => formatCurrency(value, currencyCode);
@@ -295,7 +299,8 @@ export function runReport() {
     ['Net invoiced', reportMoney(net)],
     ['VAT invoiced', reportMoney(vat)],
     ['Gross invoiced', reportMoney(gross)],
-    ['Marked paid', reportMoney(paid)],
+    ['Received', reportMoney(paid)],
+    ['Income', reportMoney(income)],
     ['Outstanding', reportMoney(outstanding)],
     ['Overdue', reportMoney(overdue)],
     ['Delinquent', reportMoney(delinquent)],
