@@ -1,5 +1,4 @@
 import {
-  state,
   uiState,
   elements,
   formatCurrency,
@@ -9,12 +8,9 @@ import {
   defaultPaymentMethods,
   computedStatus,
   getClient,
-} from './state.js';
-import {
-  resolveInvoiceIssuerName,
   escapeHtml,
-  getInvoiceSenderDetails,
-} from './profile.js';
+} from './state.js';
+import { getInvoiceSenderDetails } from './profile.js';
 
 export function getInvoiceDocumentLabel(invoice) {
   return computedStatus(invoice) === 'paid' ? 'Receipt' : 'Invoice';
@@ -194,25 +190,18 @@ export function printInvoice(invoice) {
   const clientCurrency = normalizeCurrencyCode(invoice.clientCurrency || defaultCurrency);
   const hasClientCurrencyTotal = clientCurrency !== defaultCurrency && Number(invoice.clientCurrencyTotal || 0) > 0;
   const money = (value) => formatCurrency(value, defaultCurrency);
-  const client = getClient(invoice.clientId);
+  const {
+    client,
+    primarySenderName,
+    secondarySenderName,
+    senderAddress,
+    senderEmail,
+    senderWebsite,
+    senderPhone,
+    senderVatNumber,
+    senderLogoDataUrl,
+  } = getInvoiceSenderDetails(invoice);
   const paymentMethods = paymentMethodsForInvoice(invoice, client);
-  const senderName = resolveInvoiceIssuerName(invoice);
-  const senderBusiness = invoice.issuerType === 'business' && invoice.issuerBusinessId
-    ? state.profile.businesses.find((item) => item.id === invoice.issuerBusinessId)
-    : null;
-  const senderLegalName = String(state.profile.legalName || state.profile.personalName || '').trim();
-  const secondarySenderName = (
-    senderBusiness
-    && senderName
-    && senderName.toLowerCase() !== String(senderLegalName || '').toLowerCase()
-  ) ? senderName : '';
-  const primarySenderName = senderLegalName || senderName || '';
-  const senderAddress = state.profile.address || '';
-  const senderEmail = senderBusiness?.contactEmail || state.profile.email || '';
-  const senderWebsite = senderBusiness?.website || '';
-  const senderPhone = state.profile.phone || '';
-  const senderVatNumber = state.profile.vatNumber || '';
-  const senderLogoDataUrl = senderBusiness?.logoDataUrl || '';
   const jsPdfApi = window.jspdf?.jsPDF;
   if (!jsPdfApi) {
     alert('PDF generation is unavailable right now. Reload the page and try again.');

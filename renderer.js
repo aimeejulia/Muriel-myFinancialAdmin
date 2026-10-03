@@ -13,7 +13,6 @@ import {
   addDaysISO,
   canUseInvoiceNumber,
   upsertInvoice,
-  downloadFile,
   buildInvoiceNumber,
   generateClientDisplayId,
   currentQuarterInfo,
@@ -44,9 +43,6 @@ import {
   importInvoicePdfFiles,
   setPendingExpenseImportInfo,
   updateImportQueueInfo,
-  exportInvoicesCsv,
-  exportExpensesCsv,
-  exportReportCsv,
   persistExpenseFromForm,
 } from './imports.js';
 import {
@@ -57,18 +53,10 @@ import {
   renderDashboard,
   closeInvoiceRowMenus,
 } from './views.js';
-import {
-  describeUpdate,
-  downloadAndRestart,
-  getLatestUpdateCommand,
-  getLatestUpdateUrl,
-  hideUpdateBanner,
-  showUpdateBanner,
-} from './update-banner.js';
+import { attachUpdateHandlers, checkForUpdates, hideUpdateBanner } from './update-banner.js';
+import { attachExpenseReceiptHandlers, openExpenseReceiptModal } from './expense-receipt.js';
+import { exportInvoicesCsv, exportExpensesCsv, exportReportCsv } from './csv-export.js';
 
-let activeExpenseReceipt = null;
-const PDFJS_CDN = './vendor/pdfjs/pdf.min.mjs';
-const PDFJS_WORKER_CDN = './vendor/pdfjs/pdf.worker.min.mjs';
 
 function applyTheme(themeName = state.profile.themePreset) {
   const nextTheme = normalizeThemePreset(themeName);
@@ -80,154 +68,6 @@ function applyTheme(themeName = state.profile.themePreset) {
     button.classList.toggle('active', isActive);
     button.setAttribute('aria-pressed', String(isActive));
   });
-}
-
-function decodeDataUrl(dataUrl) {
-  const raw = String(dataUrl || '');
-  const commaIndex = raw.indexOf(',');
-  if (commaIndex === -1) {
-    throw new Error('Invalid stored PDF data.');
-  }
-
-  const meta = raw.slice(0, commaIndex);
-  const base64 = raw.slice(commaIndex + 1);
-  const mimeTypeMatch = meta.match(/^data:(.*?)(?:;base64)?$/i);
-  const mimeType = mimeTypeMatch?.[1] || 'application/octet-stream';
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-
-  return { mimeType, bytes };
-}
-
-async function renderExpenseReceiptPreview(dataUrl) {
-  if (!elements.expenseReceiptContent) return;
-
-  elements.expenseReceiptContent.innerHTML = '<p class="empty-state">Loading receipt preview…</p>';
-
-  try {
-    const module = await import(PDFJS_CDN);
-    const pdfjs = module.default || module;
-    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-      pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
-    }
-
-    const { bytes } = decodeDataUrl(dataUrl);
-    const task = pdfjs.getDocument({ data: bytes });
-    const pdf = await task.promise;
-
-    elements.expenseReceiptContent.innerHTML = '';
-
-    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-      const page = await pdf.getPage(pageNumber);
-      const viewport = page.getViewport({ scale: 1.2 });
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-
-      await page.render({ canvasContext: context, viewport }).promise;
-
-      const wrapper = document.createElement('div');
-      wrapper.className = 'receipt-preview-page';
-
-      const label = document.createElement('strong');
-      label.textContent = `Page ${pageNumber} of ${pdf.numPages}`;
-      wrapper.appendChild(label);
-      wrapper.appendChild(canvas);
-      elements.expenseReceiptContent.appendChild(wrapper);
-    }
-  } catch (error) {
-    console.error('Could not render expense receipt preview', error);
-    elements.expenseReceiptContent.innerHTML = '<p class="empty-state">Could not preview this PDF here, but it can still be downloaded below.</p>';
-  }
-}
-
-function closeExpenseReceiptModal() {
-  if (!elements.expenseReceiptModal || !elements.expenseReceiptContent) return;
-  elements.expenseReceiptModal.hidden = true;
-  elements.expenseReceiptContent.innerHTML = '';
-  activeExpenseReceipt = null;
-}
-
-async function openExpenseReceiptModal(expense) {
-  if (!expense?.receiptDataUrl || !elements.expenseReceiptModal) return;
-
-  activeExpenseReceipt = {
-    dataUrl: expense.receiptDataUrl,
-    fileName: expense.receiptFileName || `expense-receipt-${expense.date || todayISO()}.pdf`,
-    mimeType: expense.receiptMimeType || 'application/pdf',
-  };
-
-  if (elements.expenseReceiptTitle) {
-    elements.expenseReceiptTitle.textContent = activeExpenseReceipt.fileName;
-  }
-
-  elements.expenseReceiptModal.hidden = false;
-  await renderExpenseReceiptPreview(activeExpenseReceipt.dataUrl);
-}
-
-async function checkForUpdates({ manual = false } = {}) {
-  if (!isDesktopApp || typeof window.desktopStore?.checkForUpdates !== 'function') {
-    return;
-  }
-
-  if (manual && elements.checkUpdatesBtn) {
-    elements.checkUpdatesBtn.disabled = true;
-    elements.checkUpdatesBtn.textContent = 'Checking…';
-  }
-
-  try {
-    const result = await window.desktopStore.checkForUpdates();
-
-    if (!result?.configured) {
-      if (manual) {
-        showUpdateBanner({
-          title: 'Update checks are ready',
-          message: result?.message || 'Connect the GitHub releases URL and users will see update alerts here.',
-        });
-      }
-      return;
-    }
-
-    if (result?.ok === false) {
-      if (manual) {
-        showUpdateBanner({
-          title: 'Could not check for updates',
-          message: result?.message || 'Please try again later.',
-          tone: 'warning',
-        });
-      }
-      return;
-    }
-
-    if (result?.updateAvailable) {
-      showUpdateBanner(describeUpdate(result));
-      return;
-    }
-
-    if (manual) {
-      showUpdateBanner({
-        title: 'You are up to date',
-        message: `This device is already running the latest version, ${result.currentVersion}.`,
-      });
-    }
-  } catch (error) {
-    if (manual) {
-      showUpdateBanner({
-        title: 'Could not check for updates',
-        message: error?.message || 'Please try again later.',
-        tone: 'warning',
-      });
-    }
-  } finally {
-    if (manual && elements.checkUpdatesBtn) {
-      elements.checkUpdatesBtn.disabled = false;
-      elements.checkUpdatesBtn.textContent = 'Check for updates';
-    }
-  }
 }
 
 function syncClientIdPlaceholders() {
@@ -590,68 +430,8 @@ elements.themeButtons.forEach((button) => {
   });
 });
 
-if (elements.checkUpdatesBtn) {
-  elements.checkUpdatesBtn.addEventListener('click', () => {
-    checkForUpdates({ manual: true });
-  });
-}
-
-if (elements.updateDismissBtn) {
-  elements.updateDismissBtn.addEventListener('click', () => {
-    hideUpdateBanner();
-  });
-}
-
-if (elements.updateDownloadBtn) {
-  elements.updateDownloadBtn.addEventListener('click', async () => {
-    const updateUrl = getLatestUpdateUrl();
-    if (!updateUrl || typeof window.desktopStore?.openExternalUrl !== 'function') return;
-    await window.desktopStore.openExternalUrl(updateUrl);
-  });
-}
-
-if (elements.updateInstallBtn) {
-  elements.updateInstallBtn.addEventListener('click', () => {
-    if (typeof window.desktopStore?.downloadUpdate !== 'function') return;
-    downloadAndRestart(window.desktopStore);
-  });
-}
-
-if (elements.updateCopyBtn) {
-  elements.updateCopyBtn.addEventListener('click', () => {
-    const command = getLatestUpdateCommand();
-    if (!command) return;
-    navigator.clipboard.writeText(command)
-      .then(() => {
-        elements.updateCopyBtn.textContent = 'Copied';
-      })
-      .catch(() => {
-        elements.updateCopyBtn.textContent = 'Could not copy';
-      });
-  });
-}
-
-if (elements.expenseReceiptCloseBtn) {
-  elements.expenseReceiptCloseBtn.addEventListener('click', () => {
-    closeExpenseReceiptModal();
-  });
-}
-
-if (elements.expenseReceiptDownloadBtn) {
-  elements.expenseReceiptDownloadBtn.addEventListener('click', async () => {
-    if (!activeExpenseReceipt?.dataUrl) return;
-    const { bytes, mimeType } = decodeDataUrl(activeExpenseReceipt.dataUrl);
-    downloadFile(activeExpenseReceipt.fileName, bytes, activeExpenseReceipt.mimeType || mimeType || 'application/pdf');
-  });
-}
-
-if (elements.expenseReceiptModal) {
-  elements.expenseReceiptModal.addEventListener('click', (event) => {
-    if (event.target === elements.expenseReceiptModal) {
-      closeExpenseReceiptModal();
-    }
-  });
-}
+attachUpdateHandlers();
+attachExpenseReceiptHandlers();
 
 try {
   attachProfileHandlers();
