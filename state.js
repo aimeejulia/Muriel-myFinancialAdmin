@@ -566,7 +566,12 @@ export function escapeHtml(text) {
 }
 
 export function escapeCsv(value) {
-  const text = String(value ?? '');
+  let text = String(value ?? '');
+  // A spreadsheet runs text that starts with one of these characters as a formula, so the text gets a ' in front.
+  // Numbers stay as they are, so negative amounts keep working.
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) {
+    text = `'${text}`;
+  }
   return `"${text.replace(/"/g, '""')}"`;
 }
 
