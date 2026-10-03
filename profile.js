@@ -9,6 +9,9 @@ import {
   readFileAsDataUrl,
   serializeStateForBackup,
   restoreStateFromRaw,
+  bookCurrencyPeriods,
+  changeBookCurrency,
+  removeLastBookCurrencyChange,
 } from './state.js';
 
 let profileHooks = {
@@ -131,6 +134,17 @@ export function getInvoiceSenderDetails(invoice) {
   };
 }
 
+// Shows the book currencies and their dates. The currency field shows the last book currency.
+function renderBookCurrencies() {
+  const periods = bookCurrencyPeriods();
+  document.getElementById('profileReportingCurrency').value = periods[periods.length - 1].currency;
+  document.getElementById('profileBookCurrencyFrom').value = '';
+  document.getElementById('profile-book-currencies').textContent = periods.length > 1
+    ? periods.map((period) => (period.from ? `${period.currency} from ${period.from}` : `${period.currency} from the start`)).join(', ')
+    : '';
+  document.getElementById('profile-book-currency-undo').hidden = periods.length < 2;
+}
+
 export async function renderProfile() {
   document.getElementById('profilePersonalName').value = state.profile.personalName || '';
   document.getElementById('profileLegalName').value = state.profile.legalName || '';
@@ -138,7 +152,7 @@ export async function renderProfile() {
   document.getElementById('profilePhone').value = state.profile.phone || '';
   document.getElementById('profileVatNumber').value = state.profile.vatNumber || '';
   document.getElementById('profileAddress').value = state.profile.address || '';
-  document.getElementById('profileReportingCurrency').value = state.profile.reportingCurrency || 'EUR';
+  renderBookCurrencies();
 
   const encryptionStatusEl = document.getElementById('profile-encryption-status');
   if (encryptionStatusEl) {
@@ -277,16 +291,33 @@ export async function renderProfile() {
 }
 
 export function attachProfileHandlers() {
+  document.getElementById('profile-book-currency-undo').addEventListener('click', () => {
+    const error = removeLastBookCurrencyChange();
+    if (error) {
+      alert(error);
+      return;
+    }
+    saveState();
+    profileHooks.renderAll();
+  });
+
   elements.profileForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const formData = new FormData(elements.profileForm);
+    const bookCurrencyError = changeBookCurrency(
+      String(formData.get('profileReportingCurrency') || 'EUR').trim(),
+      String(formData.get('profileBookCurrencyFrom') || '').trim(),
+    );
+    if (bookCurrencyError) {
+      alert(bookCurrencyError);
+      return;
+    }
     state.profile.personalName = String(formData.get('profilePersonalName') || '').trim();
     state.profile.legalName = String(formData.get('profileLegalName') || '').trim();
     state.profile.email = String(formData.get('profileEmail') || '').trim();
     state.profile.phone = String(formData.get('profilePhone') || '').trim();
     state.profile.vatNumber = String(formData.get('profileVatNumber') || '').trim();
     state.profile.address = String(formData.get('profileAddress') || '').trim();
-    state.profile.reportingCurrency = String(formData.get('profileReportingCurrency') || 'EUR').trim();
     normalizeProfile();
     saveState();
     profileHooks.renderAll();

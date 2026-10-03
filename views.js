@@ -3,7 +3,6 @@ import {
   uiState,
   elements,
   formatCurrency,
-  reportingCurrency,
   clientCurrencyFor,
   computedStatus,
   countsAsInvoiced,
@@ -18,6 +17,8 @@ import {
   matchesDashboardPeriod,
   formatDashboardPeriodLabel,
   getClient,
+  groupByBookCurrency,
+  formatCurrencyTotals,
 } from './state.js';
 
 function appendTextCell(row, text, className = '') {
@@ -276,27 +277,28 @@ export function renderInvoices() {
 export function renderDashboard() {
   const periodInvoices = state.invoices.filter((invoice) => matchesDashboardPeriod(invoice.issueDate));
   const financialInvoices = periodInvoices.filter(countsAsInvoiced);
-  const periodExpenses = state.expenses
-    .filter((expense) => matchesDashboardPeriod(expense.date))
-    .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const accruedNetIncome = financialInvoices.reduce((sum, invoice) => sum + invoiceIncome(invoice), 0) - periodExpenses;
-  const realisedNetIncome = financialInvoices
+  const periodExpenses = state.expenses.filter((expense) => matchesDashboardPeriod(expense.date));
+  // Amounts in two book currencies cannot be added, so each metric shows a total for each book currency.
+  const groups = groupByBookCurrency(financialInvoices, periodExpenses);
+  const expensesOf = (group) => group.expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const accruedNetIncome = (group) => group.invoices.reduce((sum, invoice) => sum + invoiceIncome(invoice), 0) - expensesOf(group);
+  const realisedNetIncome = (group) => group.invoices
     .filter((invoice) => computedStatus(invoice) === 'paid')
-    .reduce((sum, invoice) => sum + invoiceIncome(invoice), 0) - periodExpenses;
-  const outstanding = financialInvoices
+    .reduce((sum, invoice) => sum + invoiceIncome(invoice), 0) - expensesOf(group);
+  const outstanding = (group) => group.invoices
     .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
-  const vatExposure = financialInvoices
+  const vatExposure = (group) => group.invoices
     .filter((invoice) => computedStatus(invoice) !== 'paid')
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
 
   if (elements.dashboardPeriodLabel) {
     elements.dashboardPeriodLabel.textContent = formatDashboardPeriodLabel();
   }
-  document.getElementById('metric-quarter-invoiced').textContent = formatCurrency(realisedNetIncome, reportingCurrency());
-  document.getElementById('metric-received').textContent = formatCurrency(accruedNetIncome, reportingCurrency());
-  document.getElementById('metric-outstanding').textContent = formatCurrency(outstanding, reportingCurrency());
-  document.getElementById('metric-vat-exposure').textContent = formatCurrency(vatExposure, reportingCurrency());
+  document.getElementById('metric-quarter-invoiced').textContent = formatCurrencyTotals(groups, realisedNetIncome);
+  document.getElementById('metric-received').textContent = formatCurrencyTotals(groups, accruedNetIncome);
+  document.getElementById('metric-outstanding').textContent = formatCurrencyTotals(groups, outstanding);
+  document.getElementById('metric-vat-exposure').textContent = formatCurrencyTotals(groups, vatExposure);
 
   elements.overdueTableBody.innerHTML = '';
   const overdue = periodInvoices

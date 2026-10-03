@@ -23,6 +23,8 @@ import {
   getClient,
   invoiceClientOptions,
   reportingCurrency,
+  bookCurrencyOn,
+  expenseBookCurrency,
   normalizeCurrencyCode,
   normalizeThemePreset,
 } from './state.js';
@@ -354,7 +356,7 @@ function toggleInvoicePaidDateField() {
   elements.invoicePaidDateField.hidden = !isPaid;
   elements.invoicePaidDate.required = isPaid;
   elements.invoiceReceivedField.hidden = !isPaid;
-  elements.invoiceReceivedLabel.textContent = `Amount received in ${reportingCurrency()} (after bank charges)`;
+  elements.invoiceReceivedLabel.textContent = `Amount received in ${bookCurrencyOn(elements.invoiceIssueDate.value || todayISO())} (after bank charges)`;
 
   if (isPaid && !elements.invoicePaidDate.value) {
     elements.invoicePaidDate.value = todayISO();
@@ -895,7 +897,7 @@ elements.expensesTableBody.addEventListener('click', (event) => {
   }
 
   if (button.dataset.action === 'delete-expense') {
-    const confirmed = confirm(`Delete expense from ${expense.date} for ${formatCurrency(expense.amount, reportingCurrency())}?`);
+    const confirmed = confirm(`Delete expense from ${expense.date} for ${formatCurrency(expense.amount, expenseBookCurrency(expense))}?`);
     if (!confirmed) return;
 
     state.expenses = state.expenses.filter((item) => item.id !== expense.id);

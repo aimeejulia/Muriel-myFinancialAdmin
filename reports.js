@@ -7,7 +7,10 @@ import {
   invoiceIncome,
   invoiceReceivedAmount,
   formatCurrency,
-  reportingCurrency,
+  bookCurrencyOn,
+  bookCurrencyPeriods,
+  groupByBookCurrency,
+  addDaysISO,
   quarterFromDate,
   yearFromDate,
 } from './state.js';
@@ -41,7 +44,7 @@ export function setReportChartsEmpty(message = '') {
   elements.reportChartsEmpty.textContent = message;
 }
 
-export function renderReportCharts({ filteredInvoices, financialInvoices, filteredExpenses, period }) {
+export function renderReportCharts({ filteredInvoices, financialInvoices, filteredExpenses, period, currencyCode }) {
   if (!elements.reportStatusChartCanvas || !elements.reportCashflowChartCanvas || !elements.reportIncomeChartCanvas) return;
 
   const ChartLib = globalThis.Chart;
@@ -80,7 +83,6 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
   setReportChartsEmpty('');
   destroyReportCharts();
 
-  const currencyCode = reportingCurrency();
   const reportMoney = (value) => formatCurrency(value, currencyCode);
 
   reportStatusChart = new ChartLib(elements.reportStatusChartCanvas.getContext('2d'), {
@@ -249,6 +251,71 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
   });
 }
 
+// The report figures of invoices and expenses in one book currency.
+export function reportFigures(financialInvoices, expenses) {
+  const bookTotal = (status) => financialInvoices
+    .filter((invoice) => computedStatus(invoice) === status)
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+  const net = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
+  const vat = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
+  const gross = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+  const paid = financialInvoices
+    .filter((invoice) => computedStatus(invoice) === 'paid')
+    .reduce((sum, invoice) => sum + invoiceReceivedAmount(invoice), 0);
+  // Paid invoices count the euros that arrived, less VAT. Invoices that are not paid count the estimate.
+  const income = financialInvoices.reduce((sum, invoice) => sum + invoiceIncome(invoice), 0);
+  const outstanding = financialInvoices
+    .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+  const vatExposure = financialInvoices
+    .filter((invoice) => computedStatus(invoice) !== 'paid')
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
+  const deductibleExpenses = expenses
+    .filter((expense) => expense.deductible === 'yes')
+    .reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const allExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  return {
+    net,
+    vat,
+    gross,
+    paid,
+    income,
+    outstanding,
+    overdue: bookTotal('overdue'),
+    delinquent: bookTotal('delinquent'),
+    vatExposure,
+    deductibleExpenses,
+    allExpenses,
+    estimatedNet: income - deductibleExpenses,
+  };
+}
+
+function periodStart(year, period) {
+  return period === 'year' ? `${year}-01-01` : `${year}-${String((Number(period) - 1) * 3 + 1).padStart(2, '0')}-01`;
+}
+
+function periodEnd(year, period) {
+  return period === 'year' ? `${year}-12-31` : `${year}-${String(Number(period) * 3).padStart(2, '0')}-${['31', '30', '30', '31'][Number(period) - 1]}`;
+}
+
+// The parts of the report period in which a book currency was in force, for example "2026-04-01 to 2026-12-31".
+export function bookCurrencyRangesText(currency, year, period) {
+  const start = periodStart(year, period);
+  const end = periodEnd(year, period);
+  const periods = bookCurrencyPeriods();
+  const ranges = periods
+    .map((bookPeriod, index) => {
+      const next = periods[index + 1];
+      return {
+        currency: bookPeriod.currency,
+        from: bookPeriod.from > start ? bookPeriod.from : start,
+        to: next && addDaysISO(next.from, -1) < end ? addDaysISO(next.from, -1) : end,
+      };
+    })
+    .filter((range) => range.currency === currency && range.from <= range.to);
+  return ranges.map((range) => `${range.from} to ${range.to}`).join(' and ');
+}
+
 export function runReport() {
   const year = Number(elements.reportYear.value);
   const period = elements.reportQuarter.value;
@@ -264,59 +331,53 @@ export function runReport() {
     && (period === 'year' || quarterFromDate(expense.date) === Number(period))
   ));
 
-  const net = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
-  const vat = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
-  const gross = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
-  const paid = financialInvoices
-    .filter((invoice) => computedStatus(invoice) === 'paid')
-    .reduce((sum, invoice) => sum + invoiceReceivedAmount(invoice), 0);
-  // Paid invoices count the euros that arrived, less VAT. Invoices that are not paid count the estimate.
-  const income = financialInvoices.reduce((sum, invoice) => sum + invoiceIncome(invoice), 0);
-  const outstanding = financialInvoices
-    .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
-    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
-  const overdue = financialInvoices
-    .filter((invoice) => computedStatus(invoice) === 'overdue')
-    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
-  const delinquent = financialInvoices
-    .filter((invoice) => computedStatus(invoice) === 'delinquent')
-    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
-  const vatExposure = financialInvoices
-    .filter((invoice) => computedStatus(invoice) !== 'paid')
-    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
-  const deductibleExpenses = filteredExpenses
-    .filter((expense) => expense.deductible === 'yes')
-    .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const allExpenses = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const estimatedNet = income - deductibleExpenses;
-
-  const currencyCode = reportingCurrency();
-  const reportMoney = (value) => formatCurrency(value, currencyCode);
-
-  const cards = [
-    ['Reporting period', period === 'year' ? `Full year ${year}` : `Q${period} ${year}`],
-    ['Reporting currency', currencyCode],
-    ['Net invoiced', reportMoney(net)],
-    ['VAT invoiced', reportMoney(vat)],
-    ['Gross invoiced', reportMoney(gross)],
-    ['Received', reportMoney(paid)],
-    ['Income', reportMoney(income)],
-    ['Outstanding', reportMoney(outstanding)],
-    ['Overdue', reportMoney(overdue)],
-    ['Delinquent', reportMoney(delinquent)],
-    ['VAT exposure', reportMoney(vatExposure)],
-    ['All expenses', reportMoney(allExpenses)],
-    ['Deductible expenses', reportMoney(deductibleExpenses)],
-    ['Estimated net', reportMoney(estimatedNet)],
-    ['Invoice count', String(financialInvoices.length)],
-  ];
-
-  elements.reportCards.innerHTML = cards.map(([label, value]) => `
+  const fallbackCurrency = bookCurrencyOn(periodEnd(year, period));
+  const groups = groupByBookCurrency(financialInvoices, filteredExpenses, fallbackCurrency);
+  const periodLabel = period === 'year' ? `Full year ${year}` : `Q${period} ${year}`;
+  const cardHtml = ([label, value]) => `
     <article class="report-card">
       <span>${label}</span>
       <strong>${value}</strong>
     </article>
-  `).join('');
+  `;
 
-  renderReportCharts({ filteredInvoices, financialInvoices, filteredExpenses, period });
+  const sections = groups.map((group) => {
+    const figures = reportFigures(group.invoices, group.expenses);
+    const reportMoney = (value) => formatCurrency(value, group.currency);
+    const cards = [
+      ['Reporting currency', group.currency],
+      ['Net invoiced', reportMoney(figures.net)],
+      ['VAT invoiced', reportMoney(figures.vat)],
+      ['Gross invoiced', reportMoney(figures.gross)],
+      ['Received', reportMoney(figures.paid)],
+      ['Income', reportMoney(figures.income)],
+      ['Outstanding', reportMoney(figures.outstanding)],
+      ['Overdue', reportMoney(figures.overdue)],
+      ['Delinquent', reportMoney(figures.delinquent)],
+      ['VAT exposure', reportMoney(figures.vatExposure)],
+      ['All expenses', reportMoney(figures.allExpenses)],
+      ['Deductible expenses', reportMoney(figures.deductibleExpenses)],
+      ['Estimated net', reportMoney(figures.estimatedNet)],
+      ['Invoice count', String(group.invoices.length)],
+    ];
+    const title = groups.length > 1
+      ? `<h4 class="report-group-title">${group.currency} books: ${bookCurrencyRangesText(group.currency, year, period)}</h4>`
+      : '';
+    return title + cards.map(cardHtml).join('');
+  });
+
+  elements.reportCards.innerHTML = cardHtml(['Reporting period', periodLabel]) + sections.join('');
+
+  // The charts add up amounts, so they show one book currency: the one at the end of the period.
+  const chartGroup = groups[groups.length - 1];
+  renderReportCharts({
+    filteredInvoices,
+    financialInvoices: chartGroup.invoices,
+    filteredExpenses: chartGroup.expenses,
+    period,
+    currencyCode: chartGroup.currency,
+  });
+  if (groups.length > 1 && !elements.reportChartsEmpty.textContent) {
+    setReportChartsEmpty(`The charts show the ${chartGroup.currency} books only. The totals above show each book currency.`);
+  }
 }

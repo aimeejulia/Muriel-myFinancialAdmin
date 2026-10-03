@@ -593,7 +593,7 @@
                 <textarea id="profileAddress" name="profileAddress" rows="3" placeholder="Street, city, postcode, country"></textarea>
               </div>
               <div class="field">
-                <label for="profileReportingCurrency">Default reporting currency</label>
+                <label for="profileReportingCurrency">Book currency</label>
                 <select id="profileReportingCurrency" name="profileReportingCurrency">
                   <option value="EUR">EUR - Euro</option>
                   <option value="USD">USD - US Dollar</option>
@@ -607,6 +607,13 @@
                   <option value="DKK">DKK - Danish Krone</option>
                   <option value="PLN">PLN - Polish Zloty</option>
                 </select>
+                <small id="profile-book-currencies" class="field-hint"></small>
+              </div>
+              <div class="field">
+                <label for="profileBookCurrencyFrom">Book currency from</label>
+                <input id="profileBookCurrencyFrom" name="profileBookCurrencyFrom" type="date" />
+                <small class="field-hint">Enter the first day of the new book currency, for example after a move to another tax office. Invoices and expenses before this date stay in their book currency.</small>
+                <button type="button" class="secondary-btn" id="profile-book-currency-undo" hidden>Remove the last change</button>
               </div>
               <div class="form-actions full-span">
                 <button type="submit" class="primary-btn">Save profile</button>

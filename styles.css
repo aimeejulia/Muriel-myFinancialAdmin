@@ -547,6 +547,10 @@
       font-size: 1.35rem;
       line-height: 1.1;
     }
+    .report-group-title {
+      grid-column: 1 / -1;
+      margin: 8px 0 0;
+    }
     .report-chart-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
