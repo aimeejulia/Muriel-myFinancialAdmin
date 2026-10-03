@@ -68,6 +68,13 @@ import {
   syncInvoiceCurrencyFields,
   useClientCurrency,
 } from './invoice-currency-form.js';
+import {
+  attachExpenseCurrencyHandlers,
+  fillExpenseCurrencyOptions,
+  loadExpenseCurrencyFields,
+  resetExpenseCurrencyFields,
+  syncExpenseCurrencyFields,
+} from './expense-currency-form.js';
 import { exportInvoicesCsv, exportExpensesCsv, exportReportCsv } from './csv-export.js';
 
 
@@ -251,6 +258,7 @@ function renderAll() {
   renderClients();
   renderInvoices();
   renderExpenses();
+  syncExpenseCurrencyFields();
   renderDashboard();
   runReport();
 }
@@ -313,6 +321,7 @@ function resetExpenseEditMode() {
   elements.expenseEditCancelBtn.hidden = true;
   uiState.pendingImportedExpenseReceipt = null;
   setPendingExpenseImportInfo('');
+  resetExpenseCurrencyFields();
 }
 
 function loadExpenseForEditing(expense) {
@@ -322,6 +331,7 @@ function loadExpenseForEditing(expense) {
   elements.expenseCategory.value = expense.category || 'Other';
   elements.expenseDeductible.value = expense.deductible || 'yes';
   elements.expenseNote.value = expense.note || '';
+  loadExpenseCurrencyFields(expense);
   elements.expenseSubmitBtn.textContent = 'Update expense';
   elements.expenseEditCancelBtn.hidden = false;
 
@@ -418,6 +428,8 @@ attachExpenseReceiptHandlers();
 attachDialogHandlers();
 fillInvoiceCurrencyOptions();
 attachInvoiceCurrencyHandlers();
+fillExpenseCurrencyOptions();
+attachExpenseCurrencyHandlers();
 
 try {
   attachProfileHandlers();
@@ -916,6 +928,7 @@ async function init() {
   resetClientEditMode();
   resetForms();
   elements.expenseDate.value = todayISO();
+  resetExpenseCurrencyFields();
   renderAll();
   showView('dashboard');
   syncClientIdPlaceholders();

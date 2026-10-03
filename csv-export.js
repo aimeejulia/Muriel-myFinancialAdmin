@@ -13,6 +13,8 @@ import {
   escapeCsv,
   quarterFromDate,
   yearFromDate,
+  expenseBookCurrency,
+  expenseCurrency,
 } from './state.js';
 
 export function exportInvoicesCsv() {
@@ -55,7 +57,7 @@ export function exportInvoicesCsv() {
 
 export function exportExpensesCsv() {
   const rows = [
-    ['Date', 'Category', 'Amount', 'Deductible', 'Note'],
+    ['Date', 'Category', 'Amount', 'Deductible', 'Note', 'Currency', 'Book Currency', 'Original Amount', 'Exchange Rate', 'Rate Date'],
   ];
 
   state.expenses.forEach((expense) => {
@@ -65,6 +67,11 @@ export function exportExpensesCsv() {
       expense.amount,
       expense.deductible,
       expense.note || '',
+      expenseCurrency(expense),
+      expenseBookCurrency(expense),
+      expense.originalAmount ?? expense.amount,
+      expense.exchangeRate?.rate ?? 1,
+      expense.exchangeRate?.rateDate || '',
     ]);
   });
 

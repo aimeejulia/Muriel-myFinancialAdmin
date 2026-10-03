@@ -13,6 +13,7 @@ import {
   defaultPaymentMethods,
 } from './state.js';
 import { loadPdfJs } from './pdf-reader.js';
+import { readExpenseCurrencyFields, syncExpenseCurrencyFields } from './expense-currency-form.js';
 
 const NEW_CLIENT_OPTION_VALUE = '__create_client__';
 
@@ -201,6 +202,7 @@ export function loadImportedExpenseIntoForm(importedExpense) {
   elements.expenseCategory.value = importedExpense.category || 'Other';
   elements.expenseDeductible.value = importedExpense.deductible || 'yes';
   elements.expenseNote.value = importedExpense.note || 'Imported from PDF';
+  syncExpenseCurrencyFields();
   importHooks.showView('expenses');
 }
 
@@ -356,7 +358,7 @@ export function persistExpenseFromForm(editingExpenseId = '') {
   const pendingReceipt = uiState.pendingImportedExpenseReceipt;
   const baseExpense = {
     date: formData.get('expenseDate'),
-    amount: Number(formData.get('expenseAmount')),
+    ...readExpenseCurrencyFields(),
     category: formData.get('expenseCategory'),
     deductible: formData.get('expenseDeductible'),
     note: String(formData.get('expenseNote') || '').trim(),

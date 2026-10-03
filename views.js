@@ -12,6 +12,8 @@ import {
   invoiceIncome,
   invoiceReceivedAmount,
   invoiceCurrency,
+  expenseBookCurrency,
+  expenseCurrency,
   displayInvoiceNumber,
   matchesDashboardPeriod,
   formatDashboardPeriodLabel,
@@ -110,9 +112,17 @@ export function renderClients() {
   });
 }
 
+// The amount of an expense for the list: the amount in the book currency, and the amount on the receipt when
+// the receipt is in another currency.
+function expenseAmountText(expense) {
+  const bookCurrency = expenseBookCurrency(expense);
+  const booked = formatCurrency(expense.amount, bookCurrency);
+  const currency = expenseCurrency(expense);
+  if (currency === bookCurrency || expense.originalAmount === null || expense.originalAmount === undefined) return booked;
+  return `${booked} (${formatCurrency(expense.originalAmount, currency)})`;
+}
+
 export function renderExpenses() {
-  const amountLabel = document.getElementById('expense-amount-label');
-  if (amountLabel) amountLabel.textContent = `Amount (${reportingCurrency()})`;
   elements.expensesTableBody.innerHTML = '';
 
   if (!state.expenses.length) {
@@ -126,7 +136,7 @@ export function renderExpenses() {
 
     appendTextCell(row, expense.date || '');
     appendTextCell(row, expense.category || '');
-    appendTextCell(row, formatCurrency(expense.amount, reportingCurrency()));
+    appendTextCell(row, expenseAmountText(expense));
     appendTextCell(row, expense.deductible || '');
 
     const receiptCell = document.createElement('td');

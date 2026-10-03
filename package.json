@@ -73,6 +73,8 @@
       "expense-receipt.js",
       "dialogs.js",
       "invoice-currency-form.js",
+      "expense-currency-form.js",
+      "book-rate.js",
       "update-banner.js",
       "main.js",
       "state-file.js",
