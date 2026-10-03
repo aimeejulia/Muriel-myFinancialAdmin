@@ -10,6 +10,7 @@ const {
   updateCommand,
 } = require('./update-info');
 const { updateSourceCheckout } = require('./source-update');
+const { isAppPageUrl } = require('./ipc-guard');
 
 let mainWindow = null;
 let lastKnownSerializedState = '';
@@ -291,6 +292,19 @@ function popupPolicy(url) {
   };
 }
 
+const APP_PAGE_PATH = path.join(__dirname, 'index.html');
+
+// Registers an IPC handler that only the top frame of the app page can call.
+function handleFromApp(channel, handler) {
+  ipcMain.handle(channel, (event, ...args) => {
+    const frame = event.senderFrame;
+    if (!frame || frame.parent || !isAppPageUrl(frame.url, APP_PAGE_PATH)) {
+      throw new Error(`Refused ${channel}: the request did not come from the Muriel page.`);
+    }
+    return handler(event, ...args);
+  });
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -316,7 +330,7 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  mainWindow.loadFile(APP_PAGE_PATH);
 }
 
 app.whenReady().then(() => {
@@ -330,7 +344,7 @@ app.whenReady().then(() => {
     callback(permission === 'clipboard-sanitized-write');
   });
 
-  ipcMain.handle('desktop-store:read-state', () => {
+  handleFromApp('desktop-store:read-state', () => {
     try {
       return readStateFile();
     } catch (error) {
@@ -345,7 +359,7 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('desktop-store:write-state', (_, serializedState) => {
+  handleFromApp('desktop-store:write-state', (_, serializedState) => {
     try {
       const result = writeStateFile(serializedState);
       stateSavedThisSession = true;
@@ -356,15 +370,15 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('desktop-store:get-state-file-path', () => {
+  handleFromApp('desktop-store:get-state-file-path', () => {
     return getStateFilePath();
   });
 
-  ipcMain.handle('desktop-store:get-app-version', () => {
+  handleFromApp('desktop-store:get-app-version', () => {
     return app.getVersion();
   });
 
-  ipcMain.handle('desktop-store:check-for-updates', async () => {
+  handleFromApp('desktop-store:check-for-updates', async () => {
     const currentVersion = app.getVersion();
     const repo = extractGithubRepo(getPackageJson());
     const installType = currentInstallType();
@@ -410,7 +424,7 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('desktop-store:download-update', async () => {
+  handleFromApp('desktop-store:download-update', async () => {
     const installType = currentInstallType();
     if (installType === 'source') {
       const result = await updateSourceCheckout({ appPath: app.getAppPath() });
@@ -442,7 +456,7 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('desktop-store:install-update', () => {
+  handleFromApp('desktop-store:install-update', () => {
     if (currentInstallType() === 'source' && sourceUpdateReady) {
       // Start the updated code. The quit handlers save the data first.
       setImmediate(() => {
@@ -461,7 +475,7 @@ app.whenReady().then(() => {
     return { ok: true };
   });
 
-  ipcMain.handle('desktop-store:open-external-url', async (_, url) => {
+  handleFromApp('desktop-store:open-external-url', async (_, url) => {
     if (typeof url !== 'string' || !/^https:\/\//i.test(url)) {
       return { ok: false, error: 'Only secure external URLs are allowed.' };
     }
@@ -474,7 +488,7 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('desktop-store:export-backup', async (_, serializedState) => {
+  handleFromApp('desktop-store:export-backup', async (_, serializedState) => {
     try {
       const now = new Date();
       const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -496,7 +510,7 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('desktop-store:import-backup', async () => {
+  handleFromApp('desktop-store:import-backup', async () => {
     try {
       const result = await dialog.showOpenDialog(mainWindow, {
         title: 'Restore backup',
@@ -516,14 +530,14 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('desktop-store:get-encryption-status', () => {
+  handleFromApp('desktop-store:get-encryption-status', () => {
     return {
       ok: true,
       available: safeStorage.isEncryptionAvailable(),
     };
   });
 
-  ipcMain.handle('desktop-store:open-readme', () => {
+  handleFromApp('desktop-store:open-readme', () => {
     try {
       const readmePath = getReadmePath();
       shell.openPath(readmePath);
