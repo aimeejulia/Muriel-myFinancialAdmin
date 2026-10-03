@@ -82,6 +82,9 @@ test('a Snap install is detected by the update check', async (t) => {
   try {
     const result = await app.evaluate('window.desktopStore.checkForUpdates()');
     if (!result.ok) {
+      // afterEach does not run for a skipped test, so the test removes its data folder itself.
+      await app.stop();
+      await removeDataDir(dataDir);
       t.skip(`GitHub is not reachable: ${result.message}`);
       return;
     }

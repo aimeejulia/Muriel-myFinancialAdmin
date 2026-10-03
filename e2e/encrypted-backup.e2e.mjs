@@ -36,7 +36,9 @@ test('plain state files become encrypted and private on the next save', async (t
   assert.equal(await app.evaluate(invoiceTableHas('INV-2026-09-001')), true);
   const encryptionStatus = await app.evaluate(`import('./state.js').then((module) => module.getDesktopEncryptionStatus())`);
   if (!encryptionStatus.available) {
+    // afterEach does not run for a skipped test, so the test removes its data folder itself.
     await app.stop();
+    await removeDataDir(dataDir);
     t.skip('encrypted storage is not available in this session');
     return;
   }

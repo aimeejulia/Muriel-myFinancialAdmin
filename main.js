@@ -104,10 +104,6 @@ function writeStateFile(serializedState) {
   return { ok: true, path: statePath };
 }
 
-function getReadmePath() {
-  return path.join(__dirname, 'README.md');
-}
-
 function getPackageJson() {
   try {
     return JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
@@ -461,16 +457,6 @@ app.whenReady().then(() => {
       ok: true,
       available: safeStorage.isEncryptionAvailable(),
     };
-  });
-
-  handleFromApp('desktop-store:open-readme', () => {
-    try {
-      const readmePath = getReadmePath();
-      shell.openPath(readmePath);
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, error: error.message };
-    }
   });
 
   createWindow();
