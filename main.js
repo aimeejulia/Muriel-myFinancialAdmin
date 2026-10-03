@@ -2,7 +2,12 @@ const { app, BrowserWindow, ipcMain, shell, safeStorage, dialog } = require('ele
 const fs = require('fs');
 const https = require('https');
 const path = require('path');
-const { writeFileAtomic, isStateJson, readFirstValidStateFile } = require('./state-file');
+const {
+  writeFileAtomic,
+  isStateJson,
+  readFirstValidStateFile,
+  decryptStatePayload,
+} = require('./state-file');
 const {
   canUpdateInApp,
   compareVersions,
@@ -31,49 +36,6 @@ function buildEncryptedPayload(plainText) {
   });
 }
 
-function tryDecryptPayload(raw) {
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-
-  if (!parsed || parsed.encrypted !== true || typeof parsed.data !== 'string') {
-    return null;
-  }
-
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error('Encryption is unavailable on this system, cannot decrypt stored state.');
-  }
-
-  const encryptedBuffer = Buffer.from(parsed.data, 'base64');
-  const candidateNames = Array.from(new Set([
-    typeof app.getName === 'function' ? app.getName() : '',
-    'muriel-myfinancialadmin',
-    'darwin-myfinancialadmin',
-  ])).filter(Boolean);
-
-  const originalName = typeof app.getName === 'function' ? app.getName() : '';
-
-  for (const candidateName of candidateNames) {
-    try {
-      if (typeof app.setName === 'function') {
-        app.setName(candidateName);
-      }
-      return safeStorage.decryptString(encryptedBuffer);
-    } catch {
-      // Try the next known app name to remain compatible with older encrypted state.
-    }
-  }
-
-  if (originalName && typeof app.setName === 'function') {
-    app.setName(originalName);
-  }
-
-  throw new Error('Unable to decrypt stored state for the current or legacy app name.');
-}
-
 function getStateFilePath() {
   return path.join(app.getPath('userData'), 'muriel-myfinancialadmin-state.json');
 }
@@ -99,7 +61,7 @@ function readStateFile() {
   const statePath = getStateFilePath();
   const backupStatePath = getBackupStateFilePath();
   const candidatePaths = [statePath, backupStatePath, ...getLegacyStateFilePaths()];
-  const result = readFirstValidStateFile(candidatePaths, (raw) => tryDecryptPayload(raw) ?? raw);
+  const result = readFirstValidStateFile(candidatePaths, (raw) => decryptStatePayload(raw, { app, safeStorage }) ?? raw);
 
   if (!result.path) {
     if (result.failedPaths.length > 0) {
