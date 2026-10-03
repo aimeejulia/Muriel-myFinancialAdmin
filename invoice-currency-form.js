@@ -8,6 +8,7 @@ import {
   clientCurrencyFor,
   reportingCurrency,
 } from './state.js';
+import { canGetExchangeRates, getBookExchangeRate } from './book-rate.js';
 
 // The source of the rate in the form. It changes to "entered by hand" when the user types a rate.
 let rateDetails = { rateDate: '', source: '', manual: false };
@@ -72,41 +73,29 @@ function showRateHint() {
 }
 
 // Gets the ECB rate for the service date, or for the issue date when there is no service date.
-// For two currencies that are not the euro, the rate is the cross rate of their euro rates.
 export async function refreshInvoiceExchangeRate() {
   const currency = currentCurrency();
   const bookCurrency = reportingCurrency();
   const date = rateDate();
   syncInvoiceCurrencyFields();
-  if (currency === bookCurrency || !date || typeof window.desktopStore?.getExchangeRate !== 'function') return;
+  if (currency === bookCurrency || !date || !canGetExchangeRates()) return;
 
   rateRequest += 1;
   const request = rateRequest;
   elements.invoiceExchangeRateHint.textContent = 'Getting the exchange rate from the ECB…';
-  const [invoiceRate, bookRate] = await Promise.all([
-    window.desktopStore.getExchangeRate(currency, date),
-    window.desktopStore.getExchangeRate(bookCurrency, date),
-  ]);
+  const result = await getBookExchangeRate(currency, bookCurrency, date);
   if (request !== rateRequest) return;
 
-  const failed = [invoiceRate, bookRate].find((result) => !result?.ok);
-  if (failed) {
+  if (!result.ok) {
     elements.invoiceExchangeRate.value = '';
     rateDetails = { rateDate: date, source: '', manual: true };
-    elements.invoiceExchangeRateHint.textContent = failed?.error || 'Could not get the exchange rate. Enter the rate by hand.';
+    elements.invoiceExchangeRateHint.textContent = result.error;
     syncInvoiceCurrencyFields();
     return;
   }
 
-  const rate = Number((invoiceRate.rate / bookRate.rate).toPrecision(8));
-  elements.invoiceExchangeRate.value = String(rate);
-  rateDetails = {
-    rateDate: invoiceRate.rateDate,
-    source: bookCurrency === 'EUR' || currency === 'EUR'
-      ? (currency === 'EUR' ? bookRate.source : invoiceRate.source)
-      : `Cross rate of the ECB reference rates of ${invoiceRate.rateDate}`,
-    manual: false,
-  };
+  elements.invoiceExchangeRate.value = String(result.rate);
+  rateDetails = { rateDate: result.rateDate, source: result.source, manual: false };
   showRateHint();
   syncInvoiceCurrencyFields();
 }

@@ -402,6 +402,20 @@
           <input id="expenseAmount" name="expenseAmount" type="number" min="0" step="0.01" required />
         </div>
         <div class="field">
+          <label for="expenseCurrency">Currency</label>
+          <select id="expenseCurrency" name="expenseCurrency"></select>
+        </div>
+        <div class="field" id="expense-exchange-rate-field" hidden>
+          <label for="expenseExchangeRate" id="expense-exchange-rate-label">Exchange rate</label>
+          <input id="expenseExchangeRate" name="expenseExchangeRate" type="number" min="0" step="any" />
+          <small id="expense-exchange-rate-hint" class="field-hint" aria-live="polite"></small>
+        </div>
+        <div class="field" id="expense-paid-field" hidden>
+          <label for="expensePaid" id="expense-paid-label">Amount paid in EUR (after bank charges)</label>
+          <input id="expensePaid" name="expensePaid" type="number" min="0" step="0.01" />
+          <small class="field-hint">The amount that left your account. It starts at the amount at the exchange rate.</small>
+        </div>
+        <div class="field">
           <label for="expenseCategory">Category</label>
           <select id="expenseCategory" name="expenseCategory">
             <option>Software</option>

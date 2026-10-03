@@ -111,8 +111,8 @@ test('the CSV exports have the invoices, expenses and report figures', async () 
       '"INV-2026-09-001","0001","Client Example","2026-03-10","2099-09-15","sent","100","21","21","121","","EUR","EUR","1","","100","21","121",""',
     ].join('\n'));
     assert.equal(files['expenses_export.csv'], [
-      '"Date","Category","Amount","Deductible","Note"',
-      '"2026-03-12","Software","45.5","yes","Domain renewal"',
+      '"Date","Category","Amount","Deductible","Note","Currency","Book Currency","Original Amount","Exchange Rate","Rate Date"',
+      '"2026-03-12","Software","45.5","yes","Domain renewal","EUR","EUR","45.5","1",""',
     ].join('\n'));
     assert.equal(files['report_2026_full_year.csv'], [
       '"Metric","Value"',

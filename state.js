@@ -199,6 +199,15 @@ export const elements = {
   expenseCategory: byId('expenseCategory'),
   expenseDeductible: byId('expenseDeductible'),
   expenseNote: byId('expenseNote'),
+  expenseCurrency: byId('expenseCurrency'),
+  expenseAmountLabel: byId('expense-amount-label'),
+  expenseExchangeRateField: byId('expense-exchange-rate-field'),
+  expenseExchangeRateLabel: byId('expense-exchange-rate-label'),
+  expenseExchangeRate: byId('expenseExchangeRate'),
+  expenseExchangeRateHint: byId('expense-exchange-rate-hint'),
+  expensePaidField: byId('expense-paid-field'),
+  expensePaidLabel: byId('expense-paid-label'),
+  expensePaid: byId('expensePaid'),
   expenseSubmitBtn: byId('expense-submit-btn'),
   expenseEditCancelBtn: byId('expense-edit-cancel-btn'),
   invoiceSortToggle: byId('invoice-sort-toggle'),
@@ -686,6 +695,16 @@ export function invoiceBookAmounts(invoice) {
     vatAmount: Number(invoice?.vatAmount || 0),
     total: Number(invoice?.total || 0),
   };
+}
+
+// The currency of the receipt of an expense. Older expenses are in the book currency.
+export function expenseCurrency(expense) {
+  return normalizeReportingCurrency(expense?.currency || expenseBookCurrency(expense));
+}
+
+// The currency of the accounts when the expense was saved. The amount of an expense is always in this currency.
+export function expenseBookCurrency(expense) {
+  return normalizeReportingCurrency(expense?.bookCurrency || reportingCurrency());
 }
 
 // The euros (in the book currency) that arrived for a paid invoice, after bank charges. Without a recorded amount,
