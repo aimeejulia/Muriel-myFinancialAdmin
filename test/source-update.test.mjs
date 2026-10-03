@@ -42,6 +42,7 @@ test('a clean checkout on main is pulled, and npm ci runs when package-lock.json
     'git rev-parse HEAD',
     'git diff --name-only aaa bbb',
     'npm ci --no-audit --no-fund',
+    "node -e require('electron')",
   ]);
 });
 
@@ -125,4 +126,18 @@ test('a failed npm ci tells the user to run it by hand', async () => {
 
   assert.equal(result.ok, false);
   assert.match(result.error, /npm ci did not work: npm ERR! network Run npm ci in the Muriel folder/);
+});
+
+test('a failed download of the Electron binary after npm ci is reported', async () => {
+  const { run } = fakeRunner({
+    'git rev-parse --abbrev-ref HEAD': 'main\n',
+    'git rev-parse HEAD': headSequence('aaa', 'bbb'),
+    'git diff --name-only aaa bbb': 'package-lock.json\n',
+    "node -e require('electron')": new Error('Electron failed to install correctly.'),
+  });
+
+  const result = await updateSourceCheckout({ appPath: '/src/muriel', run });
+
+  assert.equal(result.ok, false);
+  assert.match(result.error, /npm ci did not work: Electron failed to install correctly/);
 });
