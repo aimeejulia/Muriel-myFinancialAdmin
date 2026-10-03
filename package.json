@@ -47,6 +47,16 @@
     "productName": "Muriel - myFinancialAdmin",
     "icon": "build/icon.png",
     "npmRebuild": false,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true,
+      "enableEmbeddedAsarIntegrityValidation": false,
+      "grantFileProtocolExtraPrivileges": true,
+      "loadBrowserProcessSpecificV8Snapshot": false
+    },
     "files": [
       "index.html",
       "styles.css",
