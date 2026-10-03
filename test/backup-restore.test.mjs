@@ -9,7 +9,7 @@ globalThis.document = {
   createElement: () => ({}),
 };
 
-const { state, restoreStateFromRaw, serializeStateForBackup } = await import('../state.js');
+const { state, restoreStateFromRaw, serializeStateForBackup, STATE_SCHEMA_VERSION } = await import('../state.js');
 
 const currentInvoice = { id: 'invoice-1', invoiceNumber: 'INV-2026-03-001', clientId: 'client-1' };
 const backupState = {
@@ -54,7 +54,7 @@ test('a truncated file is rejected', async () => {
 });
 
 test('a backup from a newer schema version is rejected', async () => {
-  await assertRejected(JSON.stringify({ app: 'muriel-myfinancialadmin', schemaVersion: 2, state: backupState }), /newer version/);
+  await assertRejected(JSON.stringify({ app: 'muriel-myfinancialadmin', schemaVersion: STATE_SCHEMA_VERSION + 1, state: backupState }), /newer version/);
 });
 
 test('an exported backup is restored', async () => {

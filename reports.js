@@ -3,6 +3,7 @@ import {
   elements,
   computedStatus,
   countsAsInvoiced,
+  invoiceBookAmounts,
   formatCurrency,
   reportingCurrency,
   quarterFromDate,
@@ -54,16 +55,16 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
 
   const paidTotal = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'paid')
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const openTotal = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'sent')
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const overdueTotal = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'overdue')
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const delinquentTotal = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'delinquent')
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const allExpenses = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
 
   const hasData = statusCounts.some((count) => count > 0)
@@ -164,7 +165,7 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
     const monthIndex = new Date(`${invoice.issueDate}T00:00:00`).getMonth();
     const bucket = monthToIndexMap.get(monthIndex);
     if (bucket === undefined) return;
-    invoicedByMonth[bucket] += Number(invoice.subtotal || 0);
+    invoicedByMonth[bucket] += Number(invoiceBookAmounts(invoice).subtotal || 0);
   });
 
   filteredExpenses.forEach((expense) => {
@@ -261,24 +262,24 @@ export function runReport() {
     && (period === 'year' || quarterFromDate(expense.date) === Number(period))
   ));
 
-  const net = financialInvoices.reduce((sum, invoice) => sum + Number(invoice.subtotal), 0);
-  const vat = financialInvoices.reduce((sum, invoice) => sum + Number(invoice.vatAmount), 0);
-  const gross = financialInvoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
+  const net = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
+  const vat = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
+  const gross = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const paid = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'paid')
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const outstanding = financialInvoices
     .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const overdue = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'overdue')
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const delinquent = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'delinquent')
-    .reduce((sum, invoice) => sum + Number(invoice.total), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const vatExposure = financialInvoices
     .filter((invoice) => computedStatus(invoice) !== 'paid')
-    .reduce((sum, invoice) => sum + Number(invoice.vatAmount), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
   const deductibleExpenses = filteredExpenses
     .filter((expense) => expense.deductible === 'yes')
     .reduce((sum, expense) => sum + Number(expense.amount), 0);

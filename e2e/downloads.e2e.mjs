@@ -106,8 +106,9 @@ test('the CSV exports have the invoices, expenses and report figures', async () 
     const files = Object.fromEntries(downloads.map((download) => [download.name, download.text]));
 
     assert.equal(files['invoices_export.csv'], [
-      '"Invoice Number","Client ID","Client Name","Issue Date","Due Date","Status","Subtotal","VAT Rate","VAT Amount","Total","Paid Date"',
-      '"INV-2026-09-001","0001","Client Example","2026-03-10","2099-09-15","sent","100","21","21","121",""',
+      '"Invoice Number","Client ID","Client Name","Issue Date","Due Date","Status","Subtotal","VAT Rate","VAT Amount","Total","Paid Date",'
+        + '"Currency","Book Currency","Exchange Rate","Rate Date","Book Subtotal","Book VAT Amount","Book Total"',
+      '"INV-2026-09-001","0001","Client Example","2026-03-10","2099-09-15","sent","100","21","21","121","","EUR","EUR","1","","100","21","121"',
     ].join('\n'));
     assert.equal(files['expenses_export.csv'], [
       '"Date","Category","Amount","Deductible","Note"',

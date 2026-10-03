@@ -72,6 +72,7 @@
       "csv-export.js",
       "expense-receipt.js",
       "dialogs.js",
+      "invoice-currency-form.js",
       "update-banner.js",
       "main.js",
       "state-file.js",

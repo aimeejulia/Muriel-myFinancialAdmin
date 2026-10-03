@@ -7,6 +7,8 @@ import {
   clientCurrencyFor,
   computedStatus,
   countsAsInvoiced,
+  invoiceBookAmounts,
+  invoiceCurrency,
   displayInvoiceNumber,
   matchesDashboardPeriod,
   formatDashboardPeriodLabel,
@@ -199,7 +201,7 @@ export function renderInvoices() {
     statusCell.appendChild(statusBadge);
     row.appendChild(statusCell);
 
-    appendTextCell(row, formatCurrency(invoice.total, invoice.defaultCurrency || reportingCurrency()));
+    appendTextCell(row, formatCurrency(invoice.total, invoiceCurrency(invoice)));
 
     const actionsCell = document.createElement('td');
     const actionsWrap = document.createElement('div');
@@ -244,16 +246,16 @@ export function renderDashboard() {
   const periodExpenses = state.expenses
     .filter((expense) => matchesDashboardPeriod(expense.date))
     .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const accruedNetIncome = financialInvoices.reduce((sum, invoice) => sum + Number(invoice.subtotal), 0) - periodExpenses;
+  const accruedNetIncome = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0) - periodExpenses;
   const realisedNetIncome = financialInvoices
     .filter((invoice) => computedStatus(invoice) === 'paid')
-    .reduce((sum, invoice) => sum + Number(invoice.subtotal), 0) - periodExpenses;
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0) - periodExpenses;
   const outstanding = financialInvoices
     .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
-    .reduce((sum, invoice) => sum + Number(invoice.subtotal), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
   const vatExposure = financialInvoices
     .filter((invoice) => computedStatus(invoice) !== 'paid')
-    .reduce((sum, invoice) => sum + Number(invoice.vatAmount), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
 
   if (elements.dashboardPeriodLabel) {
     elements.dashboardPeriodLabel.textContent = formatDashboardPeriodLabel();
@@ -276,7 +278,7 @@ export function renderDashboard() {
       appendTextCell(row, invoice.invoiceNumber || '');
       appendTextCell(row, client?.name || 'Unknown');
       appendTextCell(row, invoice.dueDate || '');
-      appendTextCell(row, formatCurrency(invoice.total, invoice.defaultCurrency || reportingCurrency()));
+      appendTextCell(row, formatCurrency(invoice.total, invoiceCurrency(invoice)));
       elements.overdueTableBody.appendChild(row);
     });
   }

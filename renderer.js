@@ -7,11 +7,11 @@ import {
   saveState,
   renderDesktopOnlyScreen,
   formatCurrency,
-  calculateInvoiceAmounts,
-  roundMoney,
   todayISO,
   addDaysISO,
   canUseInvoiceNumber,
+  invoiceCurrency,
+  invoiceMoneyForSave,
   upsertInvoice,
   buildInvoiceNumber,
   generateClientDisplayId,
@@ -20,7 +20,6 @@ import {
   invoiceClientOptions,
   reportingCurrency,
   normalizeCurrencyCode,
-  clientCurrencyFor,
   normalizeThemePreset,
 } from './state.js';
 import {
@@ -56,6 +55,15 @@ import {
 import { attachUpdateHandlers, checkForUpdates, hideUpdateBanner } from './update-banner.js';
 import { attachExpenseReceiptHandlers, openExpenseReceiptModal } from './expense-receipt.js';
 import { attachDialogHandlers } from './dialogs.js';
+import {
+  attachInvoiceCurrencyHandlers,
+  fillInvoiceCurrencyOptions,
+  loadInvoiceCurrencyFields,
+  readInvoiceCurrencyFields,
+  resetInvoiceCurrencyFields,
+  syncInvoiceCurrencyFields,
+  useClientCurrency,
+} from './invoice-currency-form.js';
 import { exportInvoicesCsv, exportExpensesCsv, exportReportCsv } from './csv-export.js';
 
 
@@ -101,40 +109,6 @@ function closeCreateClientModal() {
   document.getElementById('quickClientDefaultVat').value = 21;
   document.getElementById('quickClientDefaultCurrency').value = reportingCurrency();
   elements.createClientModal.hidden = true;
-}
-
-function syncInvoiceClientCurrencyFields(selectedClientId = elements.invoiceClient.value) {
-  const defaultCurrency = reportingCurrency();
-  const client = getClient(selectedClientId);
-  const clientCurrency = clientCurrencyFor(client);
-  const hasSecondaryCurrency = Boolean(client && clientCurrency !== defaultCurrency);
-
-  elements.invoiceClientSecondaryTotalField.hidden = !hasSecondaryCurrency;
-  elements.invoiceClientSecondaryTotal.required = hasSecondaryCurrency;
-  elements.invoiceClientSecondaryTotalLabel.textContent = `Total in ${clientCurrency}`;
-
-  elements.invoiceDefaultCurrencyReceivedField.hidden = !hasSecondaryCurrency;
-  elements.invoiceDefaultCurrencyReceivedLabel.textContent = `Amount received (${defaultCurrency})`;
-
-  if (!hasSecondaryCurrency) {
-    elements.invoiceClientSecondaryTotal.value = '';
-    elements.invoiceClientSecondaryTotalPreview.textContent = '';
-    elements.invoiceDefaultCurrencyReceived.value = '';
-    elements.invoiceDefaultCurrencyReceivedPreview.textContent = '';
-    return;
-  }
-
-  const amount = Number(elements.invoiceClientSecondaryTotal.value || 0);
-  elements.invoiceClientSecondaryTotalPreview.textContent = amount > 0
-    ? `Displayed on invoice as ${formatCurrency(amount, clientCurrency)}`
-    : 'Enter amount in the client currency for display on invoice.';
-
-  const { total: calcTotal } = calculateInvoiceAmounts(elements.invoiceSubtotal.value, elements.invoiceVatRate.value);
-  const calcFormatted = formatCurrency(calcTotal, defaultCurrency);
-  const receivedAmount = Number(elements.invoiceDefaultCurrencyReceived.value || 0);
-  elements.invoiceDefaultCurrencyReceivedPreview.textContent = receivedAmount > 0
-    ? `Recording as ${formatCurrency(receivedAmount, defaultCurrency)} (auto-calculated: ${calcFormatted})`
-    : `Leave blank to use auto-calculated total: ${calcFormatted}`;
 }
 
 function openMarkPaidModal(invoice) {
@@ -312,12 +286,7 @@ function resetForms() {
   elements.invoiceTotalPreview.textContent = formatCurrency(0, reportingCurrency());
   elements.invoiceIssuerSelect.value = 'legal';
   elements.invoicePaymentMethod.value = '';
-  elements.invoiceClientSecondaryTotal.value = '';
-  elements.invoiceClientSecondaryTotalPreview.textContent = '';
-  elements.invoiceClientSecondaryTotalField.hidden = true;
-  elements.invoiceDefaultCurrencyReceived.value = '';
-  elements.invoiceDefaultCurrencyReceivedPreview.textContent = '';
-  elements.invoiceDefaultCurrencyReceivedField.hidden = true;
+  resetInvoiceCurrencyFields();
   uiState.lastInvoiceClientValue = '';
   toggleInvoicePaidDateField();
   updateImportQueueInfo();
@@ -352,9 +321,7 @@ function loadExpenseForEditing(expense) {
 }
 
 function updateInvoicePreview() {
-  const { total } = calculateInvoiceAmounts(elements.invoiceSubtotal.value, elements.invoiceVatRate.value);
-  elements.invoiceTotalPreview.textContent = formatCurrency(total, reportingCurrency());
-  syncInvoiceClientCurrencyFields();
+  syncInvoiceCurrencyFields();
 }
 
 function toggleInvoicePaidDateField() {
@@ -387,18 +354,13 @@ function loadInvoiceForEditing(invoice) {
   elements.invoiceStatus.value = invoice.status === 'overdue' ? 'sent' : invoice.status || 'draft';
   elements.invoicePaidDate.value = invoice.paidDate || '';
   elements.invoicePaymentMethod.value = invoice.paymentMethodId || '';
-  elements.invoiceClientSecondaryTotal.value = String(invoice.clientCurrencyTotal || '');
-  const { total: calcTotal } = calculateInvoiceAmounts(invoice.subtotal, invoice.vatRate);
-  elements.invoiceDefaultCurrencyReceived.value =
-    Math.abs((invoice.total || 0) - calcTotal) > 0.005 ? String(invoice.total) : '';
   if (invoice.issuerType === 'business' && invoice.issuerBusinessId) {
     renderIssuerOptions(`business:${invoice.issuerBusinessId}`);
   } else {
     renderIssuerOptions('legal');
   }
   toggleInvoicePaidDateField();
-  syncInvoiceClientCurrencyFields(invoice.clientId);
-  updateInvoicePreview();
+  loadInvoiceCurrencyFields(invoice, invoiceCurrency(invoice));
   elements.invoiceSubmitBtn.textContent = 'Update invoice';
   elements.invoiceEditCancelBtn.hidden = false;
   showView('invoices');
@@ -408,6 +370,7 @@ function loadInvoiceForEditing(invoice) {
 registerProfileHooks({ renderAll });
 registerImportHooks({
   showView,
+  useClientCurrency,
   resetInvoiceEditMode,
   upsertClientOptionList,
   updateInvoicePreview,
@@ -434,6 +397,8 @@ elements.themeButtons.forEach((button) => {
 attachUpdateHandlers();
 attachExpenseReceiptHandlers();
 attachDialogHandlers();
+fillInvoiceCurrencyOptions();
+attachInvoiceCurrencyHandlers();
 
 try {
   attachProfileHandlers();
@@ -530,10 +495,14 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     return;
   }
 
+  const currencyFields = readInvoiceCurrencyFields();
+  if (currencyFields.currency !== currencyFields.bookCurrency && !currencyFields.exchangeRate) {
+    alert(`Enter the exchange rate from ${currencyFields.currency} to ${currencyFields.bookCurrency}, or wait until the app has the rate from the ECB.`);
+    return;
+  }
+  const editingInvoice = state.invoices.find((item) => item.id === uiState.editingInvoiceId);
   const vatRate = Number(formData.get('invoiceVatRate'));
-  const { subtotal, vatAmount, total: calcTotal } = calculateInvoiceAmounts(formData.get('invoiceSubtotal'), vatRate);
-  const receivedDefaultTotal = roundMoney(formData.get('invoiceDefaultCurrencyReceived'));
-  const total = receivedDefaultTotal > 0 ? receivedDefaultTotal : calcTotal;
+  const money = invoiceMoneyForSave({ subtotal: formData.get('invoiceSubtotal'), vatRate, ...currencyFields }, editingInvoice);
 
   let issuerType = 'legal';
   let issuerBusinessId = '';
@@ -548,7 +517,6 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     }
   }
 
-  const editingInvoice = state.invoices.find((item) => item.id === uiState.editingInvoiceId);
   const invoiceFields = {
     invoiceNumber,
     clientId,
@@ -558,22 +526,18 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     issueDate,
     dueDate: formData.get('invoiceDueDate'),
     description: String(formData.get('invoiceDescription') || '').trim(),
-    subtotal,
+    ...money,
     vatRate,
-    vatAmount,
-    total,
-    defaultCurrency: reportingCurrency(),
-    clientCurrency: clientCurrencyFor(getClient(clientId)),
+    currency: currencyFields.currency,
+    bookCurrency: currencyFields.bookCurrency,
+    defaultCurrency: currencyFields.bookCurrency,
+    exchangeRate: currencyFields.exchangeRate,
+    serviceDate: currencyFields.serviceDate,
     paymentMethodId: String(formData.get('invoicePaymentMethod') || '').trim() || String(getClient(clientId)?.preferredPaymentMethodId || '').trim(),
-    clientCurrencyTotal: Number(formData.get('invoiceClientSecondaryTotal') || 0),
     // Statuses such as aborted or delinquent are not in the form, so keep them when editing
     status: formData.get('invoiceStatus') || editingInvoice?.status || 'draft',
     paidDate: formData.get('invoicePaidDate'),
   };
-
-  if (invoiceFields.clientCurrency === invoiceFields.defaultCurrency) {
-    invoiceFields.clientCurrencyTotal = 0;
-  }
 
   // Auto-set status to overdue if due date is today or in the past and status is sent
   if (invoiceFields.status === 'sent' && invoiceFields.dueDate <= todayISO()) {
@@ -613,17 +577,9 @@ elements.invoiceClient.addEventListener('change', (event) => {
   if (client) {
     elements.invoiceVatRate.value = client.defaultVatRate;
     elements.invoicePaymentMethod.value = String(client.preferredPaymentMethodId || '').trim();
-    syncInvoiceClientCurrencyFields(client.id);
+    useClientCurrency(client.id);
     updateInvoicePreview();
   }
-});
-
-elements.invoiceClientSecondaryTotal.addEventListener('input', () => {
-  syncInvoiceClientCurrencyFields();
-});
-
-elements.invoiceDefaultCurrencyReceived.addEventListener('input', () => {
-  syncInvoiceClientCurrencyFields();
 });
 
 elements.quickClientCancel.addEventListener('click', closeCreateClientModal);
@@ -695,7 +651,7 @@ elements.quickClientForm.addEventListener('submit', (event) => {
   upsertClientOptionList(createdClient.id);
   uiState.lastInvoiceClientValue = createdClient.id;
   elements.invoiceVatRate.value = createdClient.defaultVatRate;
-  syncInvoiceClientCurrencyFields(createdClient.id);
+  useClientCurrency(createdClient.id);
   updateInvoicePreview();
   closeCreateClientModal();
   syncClientIdPlaceholders();
