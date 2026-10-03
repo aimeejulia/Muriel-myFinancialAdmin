@@ -302,8 +302,8 @@
                 <input id="invoiceVatRate" name="invoiceVatRate" type="number" min="0" step="0.01" value="21" required />
               </div>
               <div class="field">
-                <label>Total (auto-calculated)</label>
-                <div class="calc-output" id="invoiceTotalPreview">€0.00</div>
+                <label id="invoiceTotalLabel">Total (auto-calculated)</label>
+                <div class="calc-output" id="invoiceTotalPreview" aria-labelledby="invoiceTotalLabel" aria-live="polite">€0.00</div>
               </div>
               <div class="field" id="invoice-default-currency-received-field" hidden>
                 <label for="invoiceDefaultCurrencyReceived" id="invoice-default-currency-received-label">Amount received</label>
@@ -388,7 +388,7 @@
           <input id="expenseDate" name="expenseDate" type="date" required />
         </div>
         <div class="field">
-          <label for="expenseAmount">Amount (€)</label>
+          <label for="expenseAmount" id="expense-amount-label">Amount (EUR)</label>
           <input id="expenseAmount" name="expenseAmount" type="number" min="0" step="0.01" required />
         </div>
         <div class="field">
@@ -674,11 +674,11 @@
     </main>
   </div>
 
-  <div class="modal-backdrop" id="create-client-modal" hidden>
+  <div class="modal-backdrop" id="create-client-modal" role="dialog" aria-modal="true" aria-labelledby="create-client-title" hidden>
     <form id="quick-client-form" class="modal-card">
       <div>
         <p class="eyebrow">Invoice flow</p>
-        <h3>Create new client</h3>
+        <h3 id="create-client-title">Create new client</h3>
       </div>
       <div class="form-grid">
         <div class="field">
@@ -738,34 +738,34 @@
         </div>
       </div>
       <div class="modal-actions">
-        <button type="button" class="secondary-btn" id="quick-client-cancel">Cancel</button>
+        <button type="button" class="secondary-btn" id="quick-client-cancel" data-dialog-close>Cancel</button>
         <button type="submit" class="primary-btn">Create client</button>
       </div>
     </form>
   </div>
 
-  <div class="modal-backdrop" id="mark-paid-modal" hidden>
+  <div class="modal-backdrop" id="mark-paid-modal" role="dialog" aria-modal="true" aria-labelledby="mark-paid-title" hidden>
     <form id="mark-paid-form" class="modal-card">
       <div>
         <p class="eyebrow">Invoice status</p>
-        <h3>Mark invoice as paid</h3>
+        <h3 id="mark-paid-title">Mark invoice as paid</h3>
       </div>
       <div class="field">
         <label for="markPaidDate">Payment date</label>
         <input id="markPaidDate" name="markPaidDate" type="date" required />
       </div>
       <div class="modal-actions">
-        <button type="button" class="secondary-btn" id="mark-paid-cancel">Cancel</button>
+        <button type="button" class="secondary-btn" id="mark-paid-cancel" data-dialog-close>Cancel</button>
         <button type="submit" class="primary-btn">Save paid date</button>
       </div>
     </form>
   </div>
 
-  <div class="modal-backdrop" id="change-status-modal" hidden>
+  <div class="modal-backdrop" id="change-status-modal" role="dialog" aria-modal="true" aria-labelledby="change-status-title" hidden>
     <form id="change-status-form" class="modal-card">
       <div>
         <p class="eyebrow">Invoice status</p>
-        <h3>Change status</h3>
+        <h3 id="change-status-title">Change status</h3>
       </div>
       <div class="form-grid">
         <div class="field full-span">
@@ -792,13 +792,13 @@
         </div>
       </div>
       <div class="modal-actions">
-        <button type="button" class="secondary-btn" id="change-status-cancel">Cancel</button>
+        <button type="button" class="secondary-btn" id="change-status-cancel" data-dialog-close>Cancel</button>
         <button type="submit" class="primary-btn">Save status</button>
       </div>
     </form>
   </div>
 
-  <div class="modal-backdrop" id="invoice-preview-modal" hidden>
+  <div class="modal-backdrop" id="invoice-preview-modal" role="dialog" aria-modal="true" aria-labelledby="invoice-preview-title" hidden>
     <div class="modal-card preview-modal-card">
       <div class="preview-modal-head">
         <div>
@@ -810,14 +810,14 @@
         <div id="invoice-preview-content" class="preview-sheet"></div>
       </div>
       <div class="modal-actions" style="padding: 0 24px 24px;">
-        <button type="button" class="secondary-btn" id="invoice-preview-close">Close</button>
+        <button type="button" class="secondary-btn" id="invoice-preview-close" data-dialog-close>Close</button>
         <button type="button" class="secondary-btn" id="invoice-preview-edit">Edit invoice</button>
         <button type="button" class="primary-btn" id="invoice-preview-download">Download PDF</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="expense-receipt-modal" hidden>
+  <div class="modal-backdrop" id="expense-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="expense-receipt-title" hidden>
     <div class="modal-card preview-modal-card">
       <div class="preview-modal-head">
         <div>
@@ -829,7 +829,7 @@
         <div id="expense-receipt-content" class="receipt-preview-stack"></div>
       </div>
       <div class="modal-actions" style="padding: 0 24px 24px;">
-        <button type="button" class="secondary-btn" id="expense-receipt-close">Close</button>
+        <button type="button" class="secondary-btn" id="expense-receipt-close" data-dialog-close>Close</button>
         <button type="button" class="primary-btn" id="expense-receipt-download">Download PDF</button>
       </div>
     </div>

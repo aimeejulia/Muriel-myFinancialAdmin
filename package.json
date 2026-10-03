@@ -71,6 +71,7 @@
       "pdf-reader.js",
       "csv-export.js",
       "expense-receipt.js",
+      "dialogs.js",
       "update-banner.js",
       "main.js",
       "state-file.js",

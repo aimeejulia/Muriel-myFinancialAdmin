@@ -631,10 +631,6 @@ export function calculateInvoiceAmounts(subtotal, vatRate) {
   };
 }
 
-export function euro(value) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
-}
-
 export function formatCurrency(value, currencyCode = 'EUR') {
   const code = normalizeReportingCurrency(currencyCode);
   return new Intl.NumberFormat('en', { style: 'currency', currency: code }).format(Number(value || 0));

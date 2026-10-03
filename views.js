@@ -2,7 +2,6 @@ import {
   state,
   uiState,
   elements,
-  euro,
   formatCurrency,
   reportingCurrency,
   clientCurrencyFor,
@@ -107,6 +106,8 @@ export function renderClients() {
 }
 
 export function renderExpenses() {
+  const amountLabel = document.getElementById('expense-amount-label');
+  if (amountLabel) amountLabel.textContent = `Amount (${reportingCurrency()})`;
   elements.expensesTableBody.innerHTML = '';
 
   if (!state.expenses.length) {
@@ -120,7 +121,7 @@ export function renderExpenses() {
 
     appendTextCell(row, expense.date || '');
     appendTextCell(row, expense.category || '');
-    appendTextCell(row, euro(expense.amount));
+    appendTextCell(row, formatCurrency(expense.amount, reportingCurrency()));
     appendTextCell(row, expense.deductible || '');
 
     const receiptCell = document.createElement('td');
@@ -257,10 +258,10 @@ export function renderDashboard() {
   if (elements.dashboardPeriodLabel) {
     elements.dashboardPeriodLabel.textContent = formatDashboardPeriodLabel();
   }
-  document.getElementById('metric-quarter-invoiced').textContent = euro(realisedNetIncome);
-  document.getElementById('metric-received').textContent = euro(accruedNetIncome);
-  document.getElementById('metric-outstanding').textContent = euro(outstanding);
-  document.getElementById('metric-vat-exposure').textContent = euro(vatExposure);
+  document.getElementById('metric-quarter-invoiced').textContent = formatCurrency(realisedNetIncome, reportingCurrency());
+  document.getElementById('metric-received').textContent = formatCurrency(accruedNetIncome, reportingCurrency());
+  document.getElementById('metric-outstanding').textContent = formatCurrency(outstanding, reportingCurrency());
+  document.getElementById('metric-vat-exposure').textContent = formatCurrency(vatExposure, reportingCurrency());
 
   elements.overdueTableBody.innerHTML = '';
   const overdue = periodInvoices

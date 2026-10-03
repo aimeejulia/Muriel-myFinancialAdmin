@@ -206,7 +206,15 @@ export async function launchApp(dataDir, { env = {} } = {}) {
     }
   };
 
-  return { evaluate, stop, dialogs };
+  // Presses a key like a real keyboard, for example 'Escape' or 'Tab'.
+  const pressKey = async (key, { shift = false } = {}) => {
+    const codes = { Escape: 27, Tab: 9, Enter: 13 };
+    const base = { key, code: key, windowsVirtualKeyCode: codes[key], modifiers: shift ? 8 : 0 };
+    await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...base });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', ...base });
+  };
+
+  return { evaluate, stop, dialogs, pressKey };
 }
 
 // Reads the saved invoices back through the app, so this also works when the state file is encrypted.

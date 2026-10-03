@@ -431,6 +431,13 @@ export function attachProfileHandlers() {
     const removeButton = event.target.closest('button[data-action="remove-business"]');
     if (!removeButton) return;
 
+    const business = state.profile.businesses.find((item) => item.id === removeButton.dataset.id);
+    const usedBy = state.invoices.filter((invoice) => invoice.issuerType === 'business' && invoice.issuerBusinessId === business?.id).length;
+    const effect = usedBy > 0
+      ? ` ${usedBy} invoice(s) use it as the sender. Their PDFs will show your legal name instead.`
+      : '';
+    if (!confirm(`Remove the business "${business?.name || ''}"?${effect}`)) return;
+
     state.profile.businesses = state.profile.businesses.filter((business) => business.id !== removeButton.dataset.id);
     if (uiState.editingBusinessId === removeButton.dataset.id) {
       resetBusinessForm();
@@ -489,6 +496,14 @@ export function attachProfileHandlers() {
     if (!removeButton) return;
 
     const paymentMethodId = removeButton.dataset.id;
+    const method = state.profile.paymentMethods.find((item) => item.id === paymentMethodId);
+    const clientCount = state.clients.filter((client) => client.preferredPaymentMethodId === paymentMethodId).length;
+    const invoiceCount = state.invoices.filter((invoice) => invoice.paymentMethodId === paymentMethodId).length;
+    const effect = clientCount + invoiceCount > 0
+      ? ` ${clientCount} client(s) and ${invoiceCount} invoice(s) use it. They will use the default methods instead.`
+      : '';
+    if (!confirm(`Remove the payment method "${method?.label || ''}"?${effect}`)) return;
+
     state.profile.paymentMethods = state.profile.paymentMethods.filter((method) => method.id !== paymentMethodId);
     state.clients.forEach((client) => {
       if (client.preferredPaymentMethodId === paymentMethodId) {
