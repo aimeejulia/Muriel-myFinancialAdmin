@@ -141,3 +141,13 @@ test('a failed download of the Electron binary after npm ci is reported', async 
   assert.equal(result.ok, false);
   assert.match(result.error, /npm ci did not work: Electron failed to install correctly/);
 });
+
+test('a command gives its output, and a failed command gives the end of its output', async () => {
+  const { runCommand } = require('../source-update.js');
+  assert.equal(await runCommand(process.execPath, ['-e', 'process.stdout.write("done")'], process.cwd()), 'done');
+
+  const script = 'for (let line = 1; line <= 8; line += 1) console.error(`line ${line}`); process.exit(3);';
+  await assert.rejects(runCommand(process.execPath, ['-e', script], process.cwd()), {
+    message: 'line 4\nline 5\nline 6\nline 7\nline 8',
+  });
+});
