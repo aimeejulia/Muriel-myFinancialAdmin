@@ -23,7 +23,9 @@ function findReleaseAsset(assets, installType) {
 
 // An AppImage can replace itself when the release has the new AppImage and the
 // latest-linux.yml file, which electron-updater needs to find and verify it.
-function canUpdateInApp(installType, assets) {
+// A source checkout can update itself when it is a git checkout.
+function canUpdateInApp(installType, assets, { isGitCheckout = false } = {}) {
+  if (installType === 'source') return isGitCheckout;
   if (installType !== 'appimage' || !Array.isArray(assets)) return false;
   const names = assets.map((asset) => String(asset?.name || ''));
   return names.includes('latest-linux.yml') && names.some((name) => ASSET_PATTERNS.appimage.test(name));

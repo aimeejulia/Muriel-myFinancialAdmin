@@ -9,6 +9,7 @@ const {
   findReleaseAsset,
   updateCommand,
 } = require('./update-info');
+const { updateSourceCheckout } = require('./source-update');
 
 let mainWindow = null;
 let lastKnownSerializedState = '';
@@ -254,6 +255,7 @@ function currentInstallType() {
 }
 
 let appImageUpdater = null;
+let sourceUpdateReady = false;
 
 // electron-updater is only loaded for AppImage installs, the only type that can replace itself.
 function getAppImageUpdater() {
@@ -388,7 +390,9 @@ app.whenReady().then(() => {
         latestVersion,
         updateAvailable,
         installType,
-        canUpdateInApp: canUpdateInApp(installType, release.assets),
+        canUpdateInApp: canUpdateInApp(installType, release.assets, {
+          isGitCheckout: fs.existsSync(path.join(app.getAppPath(), '.git')),
+        }),
         assetName: asset?.name || '',
         assetUrl: asset?.url || '',
         updateCommand: updateCommand(installType, { assetName: asset?.name, appPath: app.getAppPath() }),
@@ -407,8 +411,15 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('desktop-store:download-update', async () => {
-    if (currentInstallType() !== 'appimage') {
-      return { ok: false, error: 'Only the AppImage can update itself.' };
+    const installType = currentInstallType();
+    if (installType === 'source') {
+      const result = await updateSourceCheckout({ appPath: app.getAppPath() });
+      sourceUpdateReady = result.ok;
+      return result;
+    }
+
+    if (installType !== 'appimage') {
+      return { ok: false, error: 'Only the AppImage and source checkouts can update themselves.' };
     }
 
     try {
@@ -432,6 +443,15 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('desktop-store:install-update', () => {
+    if (currentInstallType() === 'source' && sourceUpdateReady) {
+      // Start the updated code. The quit handlers save the data first.
+      setImmediate(() => {
+        app.relaunch();
+        app.quit();
+      });
+      return { ok: true };
+    }
+
     if (currentInstallType() !== 'appimage' || !appImageUpdater) {
       return { ok: false, error: 'There is no downloaded update to install.' };
     }

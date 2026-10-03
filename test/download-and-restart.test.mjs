@@ -77,10 +77,35 @@ test('a failed download does not restart and offers the manual download', async 
   await downloadAndRestart(desktopStore);
 
   assert.deepEqual(desktopStore.calls, ['onUpdateProgress', 'downloadUpdate']);
-  assert.equal(elements.updateBannerTitle.textContent, 'Could not download the update');
+  assert.equal(elements.updateBannerTitle.textContent, 'Could not update');
   assert.match(elements.updateBannerMessage.textContent, /sha512 checksum mismatch/);
   assert.equal(elements.updateBanner.dataset.tone, 'warning');
   assert.equal(elements.updateInstallBtn.hidden, true);
   assert.equal(elements.updateDownloadBtn.hidden, false);
   assert.equal(elements.updateDownloadBtn.textContent, 'Download AppImage');
+});
+
+test('a failed source checkout update keeps the command to run by hand', async () => {
+  showUpdateBanner({
+    title: 'Version 1.3.0 is available',
+    message: 'Muriel can update this folder with git and restart.',
+    tone: 'success',
+    installLabel: 'Update and restart',
+    busyLabel: 'Updating…',
+    command: 'cd /src/muriel && git pull --ff-only && npm ci',
+  });
+  const labels = [];
+  const desktopStore = fakeDesktopStore();
+  desktopStore.downloadUpdate = async function downloadUpdate() {
+    labels.push(elements.updateInstallBtn.textContent);
+    return { ok: false, error: 'The Muriel folder has changes that are not committed. Commit or remove them, then try again.' };
+  };
+
+  await downloadAndRestart(desktopStore);
+
+  assert.deepEqual(labels, ['Updating…']);
+  assert.match(elements.updateBannerMessage.textContent, /not committed.*Run this command in a terminal to update/);
+  assert.equal(elements.updateBannerCommand.hidden, false);
+  assert.equal(elements.updateBannerCommand.textContent, 'cd /src/muriel && git pull --ff-only && npm ci');
+  assert.equal(elements.updateDownloadBtn.hidden, true);
 });
