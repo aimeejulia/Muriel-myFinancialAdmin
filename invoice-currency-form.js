@@ -7,6 +7,8 @@ import {
   getClient,
   clientCurrencyFor,
   reportingCurrency,
+  bookCurrencyOn,
+  todayISO,
 } from './state.js';
 import { canGetExchangeRates, getBookExchangeRate } from './book-rate.js';
 
@@ -18,6 +20,14 @@ let rateRequest = 0;
 function currentCurrency() {
   return elements.invoiceCurrency.value || reportingCurrency();
 }
+
+// The book currency in force on the issue date of the invoice.
+function currentBookCurrency() {
+  return bookCurrencyOn(elements.invoiceIssueDate.value || todayISO());
+}
+
+// The book currency of the last rate, so a new issue date gets a new rate when the book currency changes.
+let rateBookCurrency = '';
 
 function rateDate() {
   return elements.invoiceServiceDate.value || elements.invoiceIssueDate.value;
@@ -37,7 +47,7 @@ export function fillInvoiceCurrencyOptions() {
 // Shows the labels, the rate field and the preview for the selected currency.
 export function syncInvoiceCurrencyFields() {
   const currency = currentCurrency();
-  const bookCurrency = reportingCurrency();
+  const bookCurrency = currentBookCurrency();
   const needsRate = currency !== bookCurrency;
 
   elements.invoiceSubtotalLabel.textContent = `Subtotal (${currency})`;
@@ -75,7 +85,7 @@ function showRateHint() {
 // Gets the ECB rate for the service date, or for the issue date when there is no service date.
 export async function refreshInvoiceExchangeRate() {
   const currency = currentCurrency();
-  const bookCurrency = reportingCurrency();
+  const bookCurrency = currentBookCurrency();
   const date = rateDate();
   syncInvoiceCurrencyFields();
   if (currency === bookCurrency || !date || !canGetExchangeRates()) return;
@@ -83,6 +93,7 @@ export async function refreshInvoiceExchangeRate() {
   rateRequest += 1;
   const request = rateRequest;
   elements.invoiceExchangeRateHint.textContent = 'Getting the exchange rate from the ECB…';
+  rateBookCurrency = bookCurrency;
   const result = await getBookExchangeRate(currency, bookCurrency, date);
   if (request !== rateRequest) return;
 
@@ -104,7 +115,7 @@ export function attachInvoiceCurrencyHandlers() {
   elements.invoiceCurrency.addEventListener('change', refreshInvoiceExchangeRate);
   elements.invoiceServiceDate.addEventListener('change', refreshInvoiceExchangeRate);
   elements.invoiceIssueDate.addEventListener('change', () => {
-    if (!elements.invoiceServiceDate.value) refreshInvoiceExchangeRate();
+    if (!elements.invoiceServiceDate.value || rateBookCurrency !== currentBookCurrency()) refreshInvoiceExchangeRate();
   });
   elements.invoiceExchangeRate.addEventListener('input', () => {
     rateRequest += 1;
@@ -138,6 +149,7 @@ export function loadInvoiceCurrencyFields(invoice, currency) {
   elements.invoiceCurrency.value = currency;
   elements.invoiceServiceDate.value = invoice.serviceDate || '';
   elements.invoiceExchangeRate.value = invoice.exchangeRate?.rate ? String(invoice.exchangeRate.rate) : '';
+  rateBookCurrency = currentBookCurrency();
   rateDetails = {
     rateDate: invoice.exchangeRate?.rateDate || '',
     source: invoice.exchangeRate?.source || '',
@@ -150,7 +162,7 @@ export function loadInvoiceCurrencyFields(invoice, currency) {
 // The currency fields of the form, ready to save on the invoice.
 export function readInvoiceCurrencyFields() {
   const currency = currentCurrency();
-  const bookCurrency = reportingCurrency();
+  const bookCurrency = currentBookCurrency();
   if (currency === bookCurrency) {
     return { currency, bookCurrency, serviceDate: elements.invoiceServiceDate.value, exchangeRate: null };
   }

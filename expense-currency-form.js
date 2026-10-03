@@ -4,6 +4,8 @@ import {
   expenseCurrency,
   reportingCurrency,
   roundMoney,
+  bookCurrencyOn,
+  todayISO,
 } from './state.js';
 import { canGetExchangeRates, getBookExchangeRate } from './book-rate.js';
 
@@ -16,6 +18,11 @@ let paidByHand = false;
 
 function currentCurrency() {
   return elements.expenseCurrency.value || reportingCurrency();
+}
+
+// The book currency in force on the date of the expense.
+function currentBookCurrency() {
+  return bookCurrencyOn(elements.expenseDate.value || todayISO());
 }
 
 export function fillExpenseCurrencyOptions() {
@@ -32,7 +39,7 @@ export function fillExpenseCurrencyOptions() {
 // Shows the labels and the fields for the selected currency, and calculates the amount paid from the rate.
 export function syncExpenseCurrencyFields() {
   const currency = currentCurrency();
-  const bookCurrency = reportingCurrency();
+  const bookCurrency = currentBookCurrency();
   const needsRate = currency !== bookCurrency;
 
   elements.expenseAmountLabel.textContent = `Amount (${currency})`;
@@ -61,7 +68,7 @@ function showRateHint() {
 // Gets the ECB rate for the date of the expense.
 export async function refreshExpenseExchangeRate() {
   const currency = currentCurrency();
-  const bookCurrency = reportingCurrency();
+  const bookCurrency = currentBookCurrency();
   const date = elements.expenseDate.value;
   syncExpenseCurrencyFields();
   if (currency === bookCurrency || !date || !canGetExchangeRates()) return;
@@ -108,7 +115,7 @@ export function resetExpenseCurrencyFields() {
   rateRequest += 1;
   rateDetails = { rateDate: '', source: '', manual: false };
   paidByHand = false;
-  elements.expenseCurrency.value = reportingCurrency();
+  elements.expenseCurrency.value = currentBookCurrency();
   elements.expenseExchangeRate.value = '';
   elements.expenseExchangeRateHint.textContent = '';
   elements.expensePaid.value = '';
@@ -118,7 +125,7 @@ export function resetExpenseCurrencyFields() {
 // Shows the currency, the rate and the amount paid of an expense that is edited. The rate is not fetched again.
 export function loadExpenseCurrencyFields(expense) {
   const currency = expenseCurrency(expense);
-  if (currency === reportingCurrency()) {
+  if (currency === currentBookCurrency()) {
     resetExpenseCurrencyFields();
     return;
   }
@@ -141,7 +148,7 @@ export function loadExpenseCurrencyFields(expense) {
 // The money fields of the form, ready to save on the expense. The amount is always in the book currency.
 export function readExpenseCurrencyFields() {
   const currency = currentCurrency();
-  const bookCurrency = reportingCurrency();
+  const bookCurrency = currentBookCurrency();
   if (currency === bookCurrency) {
     return {
       amount: Number(elements.expenseAmount.value),

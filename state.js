@@ -41,6 +41,7 @@ function createDefaultProfile() {
     vatNumber: '',
     address: '',
     reportingCurrency: 'EUR',
+    bookCurrencyChanges: [],
     themePreset: 'muriel',
     businesses: [],
     paymentMethods: [],
@@ -284,7 +285,7 @@ function readLegacyBrowserStateRaw() {
 }
 
 // The version of the saved data format. Saved data and exported backups both store it.
-export const STATE_SCHEMA_VERSION = 2;
+export const STATE_SCHEMA_VERSION = 3;
 
 // Version 2: an invoice has a currency, a book currency (the currency of the accounts) and book amounts.
 // Version 1 kept all amounts in the book currency of that time, so the book amounts are a copy of the amounts.
@@ -305,9 +306,23 @@ function addInvoiceBookAmounts(saved) {
   return { ...saved, invoices };
 }
 
+// Version 3: the book currency can change from a date. Each expense keeps the book currency that it was saved in,
+// so a change of the book currency never changes older expenses. Older expenses are in the book currency of that time.
+function addExpenseBookCurrency(saved) {
+  if (!Array.isArray(saved?.expenses)) return saved;
+  const bookCurrency = normalizeReportingCurrency(saved.profile?.reportingCurrency);
+  const expenses = saved.expenses.map((expense) => {
+    if (!expense || typeof expense !== 'object' || Array.isArray(expense)) return expense;
+    const expenseBook = normalizeReportingCurrency(expense.bookCurrency || bookCurrency);
+    return { ...expense, currency: expense.currency || expenseBook, bookCurrency: expenseBook };
+  });
+  return { ...saved, expenses };
+}
+
 // Each migration upgrades saved data from its version to the next version.
 const STATE_MIGRATIONS = {
   1: addInvoiceBookAmounts,
+  2: addExpenseBookCurrency,
 };
 
 // Set when the saved data comes from a newer version of Muriel, so this version never overwrites it.
@@ -423,6 +438,10 @@ export function normalizeProfile() {
   state.profile.vatNumber = String(state.profile.vatNumber || '').trim();
   state.profile.address = String(state.profile.address || '').trim();
   state.profile.reportingCurrency = normalizeReportingCurrency(state.profile.reportingCurrency);
+  state.profile.bookCurrencyChanges = (Array.isArray(state.profile.bookCurrencyChanges) ? state.profile.bookCurrencyChanges : [])
+    .filter((change) => /^\d{4}-\d{2}-\d{2}$/.test(String(change?.from || '')))
+    .map((change) => ({ from: change.from, currency: normalizeReportingCurrency(change.currency) }))
+    .sort((left, right) => left.from.localeCompare(right.from));
   state.profile.themePreset = normalizeThemePreset(state.profile.themePreset);
 
   const businesses = Array.isArray(state.profile.businesses) ? state.profile.businesses : [];
@@ -703,8 +722,9 @@ export function expenseCurrency(expense) {
 }
 
 // The currency of the accounts when the expense was saved. The amount of an expense is always in this currency.
+// Expenses from before version 3 of the data get it in the migration.
 export function expenseBookCurrency(expense) {
-  return normalizeReportingCurrency(expense?.bookCurrency || reportingCurrency());
+  return normalizeReportingCurrency(expense?.bookCurrency || bookCurrencyOn(expense?.date));
 }
 
 // The euros (in the book currency) that arrived for a paid invoice, after bank charges. Without a recorded amount,
@@ -759,8 +779,98 @@ export function formatCurrency(value, currencyCode = 'EUR') {
   return new Intl.NumberFormat('en', { style: 'currency', currency: code }).format(Number(value || 0));
 }
 
+// The book currencies of the accounts. The first one is in force from the start, each change from its date.
+// A change is never retroactive: a record keeps the book currency that it was saved in.
+export function bookCurrencyPeriods() {
+  const changes = Array.isArray(state.profile?.bookCurrencyChanges) ? state.profile.bookCurrencyChanges : [];
+  return [
+    { from: '', currency: normalizeReportingCurrency(state.profile?.reportingCurrency || 'EUR') },
+    ...changes.map((change) => ({ from: change.from, currency: normalizeReportingCurrency(change.currency) })),
+  ];
+}
+
+// The book currency in force on a date.
+export function bookCurrencyOn(date) {
+  let currency = bookCurrencyPeriods()[0].currency;
+  for (const period of bookCurrencyPeriods()) {
+    if (period.from <= String(date || '')) currency = period.currency;
+  }
+  return currency;
+}
+
+// The book currency in force today.
 export function reportingCurrency() {
-  return normalizeReportingCurrency(state.profile?.reportingCurrency || 'EUR');
+  return bookCurrencyOn(todayISO());
+}
+
+// The date of the last invoice or expense, or an empty text when there are none.
+function lastRecordDate() {
+  const dates = [
+    ...state.invoices.map((invoice) => invoice.issueDate),
+    ...state.expenses.map((expense) => expense.date),
+  ].filter(Boolean).sort();
+  return dates[dates.length - 1] || '';
+}
+
+// Changes the book currency from a date. Without a date, it changes the book currency from the start, which is
+// possible only before the first invoice or expense. Gives an error text, or an empty text when the change is done.
+export function changeBookCurrency(currencyCode, from = '') {
+  const currency = normalizeReportingCurrency(currencyCode);
+  const periods = bookCurrencyPeriods();
+  const last = periods[periods.length - 1];
+  if (currency === last.currency) return '';
+
+  const lastDate = lastRecordDate();
+  if (!from) {
+    if (periods.length > 1 || lastDate) {
+      return `Enter the date from which the book currency is ${currency}. Invoices and expenses before this date stay in their book currency.`;
+    }
+    state.profile.reportingCurrency = currency;
+    return '';
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) return `"${from}" is not a date.`;
+  if (from <= last.from) return `The date must be after ${last.from}, the date of the last change of book currency.`;
+  if (lastDate && from <= lastDate) {
+    return `The date must be after ${lastDate}, the date of the last invoice or expense. A change of book currency does not change invoices and expenses that exist.`;
+  }
+  state.profile.bookCurrencyChanges = [...(state.profile.bookCurrencyChanges || []), { from, currency }];
+  return '';
+}
+
+// Removes the last change of book currency. This is possible only when no invoice or expense is on or after its date.
+export function removeLastBookCurrencyChange() {
+  const changes = state.profile.bookCurrencyChanges || [];
+  const last = changes[changes.length - 1];
+  if (!last) return '';
+  const lastDate = lastRecordDate();
+  if (lastDate && lastDate >= last.from) {
+    return `Invoices or expenses from ${last.from} or later are in ${last.currency}, so this change stays.`;
+  }
+  state.profile.bookCurrencyChanges = changes.slice(0, -1);
+  return '';
+}
+
+// Splits invoices and expenses by their book currency, in the order of the book currency periods. Each group has
+// its own totals, because amounts in two book currencies cannot be added. Without records, the result is one empty
+// group in the fallback currency.
+export function groupByBookCurrency(invoices, expenses, fallbackCurrency = reportingCurrency()) {
+  const order = [...new Set(bookCurrencyPeriods().map((period) => period.currency))];
+  const groups = new Map();
+  const groupFor = (currency) => {
+    if (!groups.has(currency)) groups.set(currency, { currency, invoices: [], expenses: [] });
+    return groups.get(currency);
+  };
+  invoices.forEach((invoice) => groupFor(invoiceBookCurrency(invoice)).invoices.push(invoice));
+  expenses.forEach((expense) => groupFor(expenseBookCurrency(expense)).expenses.push(expense));
+  if (!groups.size) return [{ currency: fallbackCurrency, invoices: [], expenses: [] }];
+  const rank = (currency) => (order.includes(currency) ? order.indexOf(currency) : order.length);
+  return [...groups.values()].sort((left, right) => rank(left.currency) - rank(right.currency));
+}
+
+// Shows one amount for each book currency, for example "€1,000.00 + £500.00".
+export function formatCurrencyTotals(groups, amountOf) {
+  return groups.map((group) => formatCurrency(amountOf(group), group.currency)).join(' + ');
 }
 
 export function normalizeCurrencyCode(value) {

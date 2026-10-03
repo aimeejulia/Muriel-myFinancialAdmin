@@ -118,6 +118,7 @@ test('the CSV exports have the invoices, expenses and report figures', async () 
       '"Metric","Value"',
       '"Year","2026"',
       '"Period","Full year 2026"',
+      '"Book currency","EUR"',
       '"Net invoiced","100"',
       '"VAT invoiced","21"',
       '"Gross invoiced","121"',
