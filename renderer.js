@@ -44,9 +44,6 @@ import {
   importInvoicePdfFiles,
   setPendingExpenseImportInfo,
   updateImportQueueInfo,
-  exportInvoicesCsv,
-  exportExpensesCsv,
-  exportReportCsv,
   persistExpenseFromForm,
 } from './imports.js';
 import {
@@ -66,6 +63,7 @@ import {
   showUpdateBanner,
 } from './update-banner.js';
 import { loadPdfJs } from './pdf-reader.js';
+import { exportInvoicesCsv, exportExpensesCsv, exportReportCsv } from './csv-export.js';
 
 let activeExpenseReceipt = null;
 

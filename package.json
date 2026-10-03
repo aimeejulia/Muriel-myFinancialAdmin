@@ -58,6 +58,7 @@
       "pdf.js",
       "imports.js",
       "pdf-reader.js",
+      "csv-export.js",
       "update-banner.js",
       "main.js",
       "state-file.js",
