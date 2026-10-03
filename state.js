@@ -212,6 +212,8 @@ export const elements = {
   updateBanner: byId('update-banner'),
   updateBannerTitle: byId('update-banner-title'),
   updateBannerMessage: byId('update-banner-message'),
+  updateBannerCommand: byId('update-banner-command'),
+  updateCopyBtn: byId('update-copy-btn'),
   updateDownloadBtn: byId('update-download-btn'),
   updateDismissBtn: byId('update-dismiss-btn'),
   exportBackupBtn: byId('export-backup-btn'),

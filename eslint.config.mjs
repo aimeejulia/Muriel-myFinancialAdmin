@@ -8,7 +8,7 @@ export default [
   js.configs.recommended,
   {
     // Electron main process, preload and build scripts
-    files: ['main.js', 'preload.js', 'state-file.js', 'scripts/**/*.js'],
+    files: ['main.js', 'preload.js', 'state-file.js', 'update-info.js', 'scripts/**/*.js'],
     languageOptions: {
       sourceType: 'commonjs',
       globals: globals.node,
@@ -17,7 +17,7 @@ export default [
   {
     // Renderer modules loaded by index.html
     files: ['*.js'],
-    ignores: ['main.js', 'preload.js', 'state-file.js'],
+    ignores: ['main.js', 'preload.js', 'state-file.js', 'update-info.js'],
     languageOptions: {
       sourceType: 'module',
       globals: globals.browser,

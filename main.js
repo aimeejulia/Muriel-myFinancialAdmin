@@ -3,6 +3,7 @@ const fs = require('fs');
 const https = require('https');
 const path = require('path');
 const { writeFileAtomic, isStateJson, readFirstValidStateFile } = require('./state-file');
+const { detectInstallType, findReleaseAsset, updateCommand } = require('./update-info');
 
 let mainWindow = null;
 let lastKnownSerializedState = '';
@@ -339,6 +340,11 @@ app.whenReady().then(() => {
   ipcMain.handle('desktop-store:check-for-updates', async () => {
     const currentVersion = app.getVersion();
     const repo = extractGithubRepo(getPackageJson());
+    const installType = detectInstallType({
+      env: process.env,
+      isPackaged: app.isPackaged,
+      flatpakInfoExists: fs.existsSync('/.flatpak-info'),
+    });
 
     if (!repo) {
       return {
@@ -353,12 +359,17 @@ app.whenReady().then(() => {
       const release = await fetchLatestGitHubRelease(repo);
       const latestVersion = normalizeVersion(release.tag_name || release.name || currentVersion);
       const updateAvailable = compareVersions(latestVersion, currentVersion) > 0;
+      const asset = findReleaseAsset(release.assets, installType);
       return {
         ok: true,
         configured: true,
         currentVersion,
         latestVersion,
         updateAvailable,
+        installType,
+        assetName: asset?.name || '',
+        assetUrl: asset?.url || '',
+        updateCommand: updateCommand(installType, { assetName: asset?.name, appPath: app.getAppPath() }),
         releaseUrl: release.html_url || '',
         publishedAt: release.published_at || '',
         notes: String(release.body || '').slice(0, 800),

@@ -57,35 +57,17 @@ import {
   renderDashboard,
   closeInvoiceRowMenus,
 } from './views.js';
+import {
+  describeUpdate,
+  getLatestUpdateCommand,
+  getLatestUpdateUrl,
+  hideUpdateBanner,
+  showUpdateBanner,
+} from './update-banner.js';
 
-let latestUpdateUrl = '';
 let activeExpenseReceipt = null;
 const PDFJS_CDN = './vendor/pdfjs/pdf.min.mjs';
 const PDFJS_WORKER_CDN = './vendor/pdfjs/pdf.worker.min.mjs';
-
-function hideUpdateBanner() {
-  if (!elements.updateBanner) return;
-  elements.updateBanner.hidden = true;
-  elements.updateBanner.dataset.tone = 'info';
-  latestUpdateUrl = '';
-  if (elements.updateDownloadBtn) {
-    elements.updateDownloadBtn.hidden = true;
-  }
-}
-
-function showUpdateBanner({ title, message, tone = 'info', downloadUrl = '' }) {
-  if (!elements.updateBanner || !elements.updateBannerTitle || !elements.updateBannerMessage) return;
-
-  elements.updateBanner.hidden = false;
-  elements.updateBanner.dataset.tone = tone;
-  elements.updateBannerTitle.textContent = title;
-  elements.updateBannerMessage.textContent = message;
-  latestUpdateUrl = downloadUrl;
-
-  if (elements.updateDownloadBtn) {
-    elements.updateDownloadBtn.hidden = !downloadUrl;
-  }
-}
 
 function applyTheme(themeName = state.profile.themePreset) {
   const nextTheme = normalizeThemePreset(themeName);
@@ -221,12 +203,7 @@ async function checkForUpdates({ manual = false } = {}) {
     }
 
     if (result?.updateAvailable) {
-      showUpdateBanner({
-        title: `Version ${result.latestVersion} is available`,
-        message: `You are using version ${result.currentVersion}. Download the latest release to update the app while keeping saved data.`,
-        tone: 'success',
-        downloadUrl: result.releaseUrl || '',
-      });
+      showUpdateBanner(describeUpdate(result));
       return;
     }
 
@@ -626,8 +603,23 @@ if (elements.updateDismissBtn) {
 
 if (elements.updateDownloadBtn) {
   elements.updateDownloadBtn.addEventListener('click', async () => {
-    if (!latestUpdateUrl || typeof window.desktopStore?.openExternalUrl !== 'function') return;
-    await window.desktopStore.openExternalUrl(latestUpdateUrl);
+    const updateUrl = getLatestUpdateUrl();
+    if (!updateUrl || typeof window.desktopStore?.openExternalUrl !== 'function') return;
+    await window.desktopStore.openExternalUrl(updateUrl);
+  });
+}
+
+if (elements.updateCopyBtn) {
+  elements.updateCopyBtn.addEventListener('click', () => {
+    const command = getLatestUpdateCommand();
+    if (!command) return;
+    navigator.clipboard.writeText(command)
+      .then(() => {
+        elements.updateCopyBtn.textContent = 'Copied';
+      })
+      .catch(() => {
+        elements.updateCopyBtn.textContent = 'Could not copy';
+      });
   });
 }
 
