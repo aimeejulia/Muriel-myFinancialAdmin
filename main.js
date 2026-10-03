@@ -268,28 +268,9 @@ function getAppImageUpdater() {
   return appImageUpdater;
 }
 
-function isAllowedPopupUrl(url) {
-  if (typeof url !== 'string') return false;
-  // Allow only local receipt previews; block web/content popups.
-  return url === 'about:blank' || url.startsWith('data:application/pdf') || url.startsWith('blob:');
-}
-
-function popupPolicy(url) {
-  if (!isAllowedPopupUrl(url)) {
-    return { action: 'deny' };
-  }
-
-  return {
-    action: 'allow',
-    overrideBrowserWindowOptions: {
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
-        webSecurity: true,
-      },
-    },
-  };
+// The app opens no windows of its own. Receipts and invoices show in modals and download as files.
+function denyPopup() {
+  return { action: 'deny' };
 }
 
 const APP_PAGE_PATH = path.join(__dirname, 'index.html');
@@ -322,7 +303,7 @@ function createWindow() {
     },
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => popupPolicy(url));
+  mainWindow.webContents.setWindowOpenHandler(denyPopup);
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const currentUrl = mainWindow.webContents.getURL();
     if (url !== currentUrl) {
@@ -335,7 +316,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   app.on('web-contents-created', (_, contents) => {
-    contents.setWindowOpenHandler(({ url }) => popupPolicy(url));
+    contents.setWindowOpenHandler(denyPopup);
   });
 
   const { session } = require('electron');
