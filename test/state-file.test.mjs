@@ -6,7 +6,12 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { writeFileAtomic, isStateJson, readFirstValidStateFile } = require('../state-file.js');
+const {
+  writeFileAtomic,
+  isStateJson,
+  readFirstValidStateFile,
+  decryptStatePayload,
+} = require('../state-file.js');
 
 const plain = (raw) => raw;
 const validState = JSON.stringify({ clients: [], invoices: [{ id: 'invoice-1' }], expenses: [] });
@@ -93,4 +98,52 @@ test('no saved files is not a failure', () => {
 
   assert.equal(result.path, '');
   assert.deepEqual(result.failedPaths, []);
+});
+
+// A fake Electron app and safeStorage: only the key of keyName can decrypt.
+function fakeElectron(keyName) {
+  const app = {
+    name: 'muriel-myfinancialadmin',
+    names: [],
+    getName() { return this.name; },
+    setName(name) { this.name = name; this.names.push(name); },
+  };
+  const safeStorage = {
+    isEncryptionAvailable: () => true,
+    decryptString(buffer) {
+      if (app.name !== keyName) throw new Error('wrong key');
+      return buffer.toString('utf8');
+    },
+  };
+  return { app, safeStorage };
+}
+const encryptedPayload = JSON.stringify({ version: 1, encrypted: true, data: Buffer.from(validState).toString('base64') });
+
+test('state encrypted with an older app name is decrypted, and the app name is set back', () => {
+  const electron = fakeElectron('darwin-myfinancialadmin');
+
+  assert.equal(decryptStatePayload(encryptedPayload, electron), validState);
+  assert.equal(electron.app.getName(), 'muriel-myfinancialadmin');
+});
+
+test('state encrypted with the current app name keeps the app name', () => {
+  const electron = fakeElectron('muriel-myfinancialadmin');
+
+  assert.equal(decryptStatePayload(encryptedPayload, electron), validState);
+  assert.equal(electron.app.getName(), 'muriel-myfinancialadmin');
+});
+
+test('when no app name can decrypt the state, the error is thrown and the app name is set back', () => {
+  const electron = fakeElectron('another-app');
+
+  assert.throws(() => decryptStatePayload(encryptedPayload, electron), /Unable to decrypt/);
+  assert.equal(electron.app.getName(), 'muriel-myfinancialadmin');
+});
+
+test('text that is not an encrypted payload is not decrypted', () => {
+  const electron = fakeElectron('muriel-myfinancialadmin');
+
+  assert.equal(decryptStatePayload(validState, electron), null);
+  assert.equal(decryptStatePayload('not json', electron), null);
+  assert.deepEqual(electron.app.names, []);
 });

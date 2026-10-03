@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const {
   canUpdateInApp,
+  compareVersions,
   detectInstallType,
   findReleaseAsset,
   updateCommand,
@@ -77,4 +78,29 @@ test('a source checkout can update itself only when it is a git checkout', () =>
   assert.equal(canUpdateInApp('source', [], { isGitCheckout: true }), true);
   assert.equal(canUpdateInApp('source', [], { isGitCheckout: false }), false);
   assert.equal(canUpdateInApp('source', []), false);
+});
+
+test('versions compare by their numbers', () => {
+  assert.equal(compareVersions('1.3.0', '1.2.0'), 1);
+  assert.equal(compareVersions('1.2.0', '1.3.0'), -1);
+  assert.equal(compareVersions('1.10.0', '1.9.0'), 1);
+  assert.equal(compareVersions('v1.3.0', '1.3.0'), 0);
+  assert.equal(compareVersions('1.3', '1.3.0'), 0);
+  assert.equal(compareVersions('2.0.0', '1.99.99'), 1);
+});
+
+test('a pre-release comes before its release', () => {
+  assert.equal(compareVersions('1.4.0-rc.1', '1.4.0'), -1);
+  assert.equal(compareVersions('1.4.0', '1.4.0-rc.1'), 1);
+  assert.equal(compareVersions('1.4.0-rc.1', '1.3.0'), 1);
+});
+
+test('pre-releases compare like semantic versioning', () => {
+  const ordered = ['1.0.0-alpha', '1.0.0-alpha.1', '1.0.0-alpha.beta', '1.0.0-beta', '1.0.0-beta.2', '1.0.0-beta.11', '1.0.0-rc.1', '1.0.0'];
+  for (let index = 0; index < ordered.length - 1; index += 1) {
+    assert.equal(compareVersions(ordered[index], ordered[index + 1]), -1, `${ordered[index]} < ${ordered[index + 1]}`);
+    assert.equal(compareVersions(ordered[index + 1], ordered[index]), 1, `${ordered[index + 1]} > ${ordered[index]}`);
+  }
+  assert.equal(compareVersions('1.0.0-rc.1', '1.0.0-rc.1'), 0);
+  assert.equal(compareVersions('1.0.0+build.5', '1.0.0'), 0);
 });

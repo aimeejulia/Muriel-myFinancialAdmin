@@ -82,3 +82,37 @@ test('a backup made by serializeStateForBackup can be restored', async () => {
   assert.equal(result.ok, true);
   assert.deepEqual(state.invoices.map((invoice) => invoice.id), ['invoice-1']);
 });
+
+test('a backup with records that the app cannot show is rejected and the current data is kept', async () => {
+  const badBackup = {
+    clients: [{ id: 'client-2', name: 42 }],
+    invoices: [
+      { id: 'invoice-2', invoiceNumber: 'INV-1', clientId: 'client-2', total: 'a lot' },
+      { id: 'invoice-2', invoiceNumber: 'INV-2', clientId: 'client-2' },
+    ],
+    expenses: [{ amount: 10 }],
+  };
+
+  const result = await restoreStateFromRaw(JSON.stringify(badBackup));
+
+  assert.equal(result.ok, false);
+  assert.match(result.error, /records that Muriel cannot use/);
+  assert.match(result.error, /client 1: name must be text/);
+  assert.match(result.error, /invoice 1: total must be an amount/);
+  assert.match(result.error, /invoice 2 has the same id as another invoice/);
+  assert.match(result.error, /1 more problems were found/);
+  assert.deepEqual(state.invoices.map((invoice) => invoice.id), [currentInvoice.id]);
+});
+
+test('older backups with optional fields missing and amounts as text are still restored', async () => {
+  const olderBackup = {
+    clients: [{ id: 'client-2', name: 'Older Client' }],
+    invoices: [{ id: 'invoice-2', invoiceNumber: 'INV-2025-01-001', clientId: 'client-2', subtotal: '100.00', total: 121 }],
+    expenses: [{ id: 'expense-1', amount: '12.50' }],
+  };
+
+  const result = await restoreStateFromRaw(JSON.stringify(olderBackup));
+
+  assert.equal(result.ok, true);
+  assert.equal(state.clients[0].name, 'Older Client');
+});
