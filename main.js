@@ -5,8 +5,10 @@ const path = require('path');
 const { writeFileAtomic, isStateJson, readFirstValidStateFile } = require('./state-file');
 const {
   canUpdateInApp,
+  compareVersions,
   detectInstallType,
   findReleaseAsset,
+  normalizeVersion,
   updateCommand,
 } = require('./update-info');
 const { updateSourceCheckout } = require('./source-update');
@@ -186,25 +188,6 @@ function extractGithubRepo(metadata = {}) {
   }
 
   return '';
-}
-
-function normalizeVersion(version) {
-  return String(version || '').trim().replace(/^v/i, '');
-}
-
-function compareVersions(a, b) {
-  const aParts = normalizeVersion(a).split('.').map((part) => Number.parseInt(part, 10) || 0);
-  const bParts = normalizeVersion(b).split('.').map((part) => Number.parseInt(part, 10) || 0);
-  const length = Math.max(aParts.length, bParts.length);
-
-  for (let index = 0; index < length; index += 1) {
-    const left = aParts[index] || 0;
-    const right = bParts[index] || 0;
-    if (left > right) return 1;
-    if (left < right) return -1;
-  }
-
-  return 0;
 }
 
 function fetchLatestGitHubRelease(repo) {
