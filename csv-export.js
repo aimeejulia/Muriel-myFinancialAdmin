@@ -3,6 +3,9 @@ import {
   elements,
   computedStatus,
   countsAsInvoiced,
+  invoiceBookAmounts,
+  invoiceBookCurrency,
+  invoiceCurrency,
   getClient,
   downloadFile,
   escapeCsv,
@@ -12,11 +15,15 @@ import {
 
 export function exportInvoicesCsv() {
   const rows = [
-    ['Invoice Number', 'Client ID', 'Client Name', 'Issue Date', 'Due Date', 'Status', 'Subtotal', 'VAT Rate', 'VAT Amount', 'Total', 'Paid Date'],
+    [
+      'Invoice Number', 'Client ID', 'Client Name', 'Issue Date', 'Due Date', 'Status', 'Subtotal', 'VAT Rate', 'VAT Amount', 'Total', 'Paid Date',
+      'Currency', 'Book Currency', 'Exchange Rate', 'Rate Date', 'Book Subtotal', 'Book VAT Amount', 'Book Total',
+    ],
   ];
 
   state.invoices.forEach((invoice) => {
     const client = getClient(invoice.clientId);
+    const bookAmounts = invoiceBookAmounts(invoice);
     rows.push([
       invoice.invoiceNumber,
       client?.displayId || '',
@@ -29,6 +36,13 @@ export function exportInvoicesCsv() {
       invoice.vatAmount,
       invoice.total,
       invoice.paidDate || '',
+      invoiceCurrency(invoice),
+      invoiceBookCurrency(invoice),
+      invoice.exchangeRate?.rate ?? 1,
+      invoice.exchangeRate?.rateDate || '',
+      bookAmounts.subtotal,
+      bookAmounts.vatAmount,
+      bookAmounts.total,
     ]);
   });
 
@@ -70,12 +84,12 @@ export function exportReportCsv() {
     && (period === 'year' || quarterFromDate(expense.date) === Number(period))
   ));
 
-  const netInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoice.subtotal), 0);
-  const vatInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoice.vatAmount), 0);
-  const grossInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoice.total), 0);
-  const paid = financialReportInvoices.filter((invoice) => computedStatus(invoice) === 'paid').reduce((sum, invoice) => sum + Number(invoice.total), 0);
-  const outstanding = financialReportInvoices.filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice))).reduce((sum, invoice) => sum + Number(invoice.total), 0);
-  const delinquent = financialReportInvoices.filter((invoice) => computedStatus(invoice) === 'delinquent').reduce((sum, invoice) => sum + Number(invoice.total), 0);
+  const netInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
+  const vatInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
+  const grossInvoiced = financialReportInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+  const paid = financialReportInvoices.filter((invoice) => computedStatus(invoice) === 'paid').reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+  const outstanding = financialReportInvoices.filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice))).reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
+  const delinquent = financialReportInvoices.filter((invoice) => computedStatus(invoice) === 'delinquent').reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const deductibleExpenses = reportExpenses.filter((expense) => expense.deductible === 'yes').reduce((sum, expense) => sum + Number(expense.amount), 0);
   const periodLabel = period === 'year' ? `Full year ${year}` : `Q${period} ${year}`;
   const fileSuffix = period === 'year' ? `${year}_full_year` : `${year}_Q${period}`;

@@ -2,8 +2,10 @@ import {
   uiState,
   elements,
   formatCurrency,
-  reportingCurrency,
   normalizeCurrencyCode,
+  invoiceCurrency,
+  invoiceBookCurrency,
+  invoiceBookAmounts,
   getPaymentMethodById,
   defaultPaymentMethods,
   computedStatus,
@@ -26,9 +28,29 @@ function paymentMethodsForInvoice(invoice, client) {
   return defaultPaymentMethods();
 }
 
+// For an invoice in another currency than the books: the rate and the amounts in the book currency.
+// Spanish invoices must show the VAT in euros (RD 1619/2012, artículo 12.1).
+export function bookCurrencySummary(invoice) {
+  const currency = invoiceCurrency(invoice);
+  const bookCurrency = invoiceBookCurrency(invoice);
+  if (currency === bookCurrency || !invoice.exchangeRate?.rate) return null;
+
+  const bookAmounts = invoiceBookAmounts(invoice);
+  const bookMoney = (value) => formatCurrency(value, bookCurrency);
+  const rate = invoice.exchangeRate;
+  return {
+    rateText: `Exchange rate: 1 ${bookCurrency} = ${rate.rate} ${currency} (${rate.source || 'entered by hand'})`,
+    rows: [
+      [`Subtotal (${bookCurrency})`, bookMoney(bookAmounts.subtotal)],
+      [`VAT ${Number(invoice.vatRate || 0)}% (${bookCurrency})`, bookMoney(bookAmounts.vatAmount)],
+      [`Total (${bookCurrency})`, bookMoney(bookAmounts.total)],
+    ],
+  };
+}
+
 export function buildInvoicePreviewMarkup(invoice) {
   const documentLabel = getInvoiceDocumentLabel(invoice);
-  const defaultCurrency = normalizeCurrencyCode(invoice.defaultCurrency || reportingCurrency());
+  const defaultCurrency = invoiceCurrency(invoice);
   const clientCurrency = normalizeCurrencyCode(invoice.clientCurrency || defaultCurrency);
   const hasClientCurrencyTotal = clientCurrency !== defaultCurrency && Number(invoice.clientCurrencyTotal || 0) > 0;
   const money = (value) => formatCurrency(value, defaultCurrency);
@@ -122,6 +144,17 @@ export function buildInvoicePreviewMarkup(invoice) {
       <div class="preview-total-row"><span>Total (${escapeHtml(defaultCurrency)})</span><strong>${escapeHtml(money(invoice.total))}</strong></div>
       ${hasClientCurrencyTotal ? `<div class="preview-total-row"><span>Total (${escapeHtml(clientCurrency)})</span><strong>${escapeHtml(formatCurrency(invoice.clientCurrencyTotal, clientCurrency))}</strong></div>` : ''}
     </div>
+    ${bookSummaryMarkup(bookCurrencySummary(invoice))}
+  `;
+}
+
+function bookSummaryMarkup(summary) {
+  if (!summary) return '';
+  return `
+    <div class="preview-totals preview-book-totals">
+      <p class="preview-rate">${escapeHtml(summary.rateText)}</p>
+      ${summary.rows.map(([label, value]) => `<div class="preview-total-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}
+    </div>
   `;
 }
 
@@ -146,7 +179,7 @@ export function closeInvoicePreview() {
 export function buildReminder(invoice, tone) {
   const client = getClient(invoice.clientId);
   const name = client?.contactName || client?.name || 'there';
-  const defaultCurrency = normalizeCurrencyCode(invoice.defaultCurrency || reportingCurrency());
+  const defaultCurrency = invoiceCurrency(invoice);
   const money = (value) => formatCurrency(value, defaultCurrency);
 
   if (tone === 'polite') {
@@ -186,7 +219,7 @@ Best regards.`;
 
 export function printInvoice(invoice) {
   const documentLabel = getInvoiceDocumentLabel(invoice);
-  const defaultCurrency = normalizeCurrencyCode(invoice.defaultCurrency || reportingCurrency());
+  const defaultCurrency = invoiceCurrency(invoice);
   const clientCurrency = normalizeCurrencyCode(invoice.clientCurrency || defaultCurrency);
   const hasClientCurrencyTotal = clientCurrency !== defaultCurrency && Number(invoice.clientCurrencyTotal || 0) > 0;
   const money = (value) => formatCurrency(value, defaultCurrency);
@@ -381,6 +414,35 @@ export function printInvoice(invoice) {
     pdf.text(entry[0], totalsX + 12, rowY);
     pdf.text(entry[1], totalsX + totalsBoxWidth - 12, rowY, { align: 'right' });
   });
+
+  const bookSummary = bookCurrencySummary(invoice);
+  if (bookSummary) {
+    cursorY += 10 + totals.length * 22 + 18;
+    if (cursorY + 40 + bookSummary.rows.length * 22 > pageHeight - margin) {
+      pdf.addPage();
+      cursorY = margin;
+    }
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor(71, 85, 105);
+    const rateLines = pdf.splitTextToSize(sanitize(bookSummary.rateText), totalsBoxWidth + 120);
+    pdf.text(rateLines, totalsX + totalsBoxWidth, cursorY, { align: 'right' });
+    cursorY += rateLines.length * 12 + 4;
+    pdf.setDrawColor(203, 213, 225);
+    pdf.rect(totalsX, cursorY, totalsBoxWidth, 10 + bookSummary.rows.length * 22);
+    bookSummary.rows.forEach((entry, index) => {
+      const rowY = cursorY + 20 + index * 22;
+      if (index > 0) {
+        pdf.setDrawColor(226, 232, 240);
+        pdf.line(totalsX, rowY - 12, totalsX + totalsBoxWidth, rowY - 12);
+      }
+      pdf.setFont('helvetica', index === bookSummary.rows.length - 1 ? 'bold' : 'normal');
+      pdf.setFontSize(11);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text(entry[0], totalsX + 12, rowY);
+      pdf.text(entry[1], totalsX + totalsBoxWidth - 12, rowY, { align: 'right' });
+    });
+  }
 
   if (cursorY + 120 > pageHeight - margin) {
     pdf.addPage();

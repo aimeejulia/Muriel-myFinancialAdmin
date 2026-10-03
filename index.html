@@ -294,7 +294,7 @@
                 <textarea id="invoiceDescription" name="invoiceDescription" rows="3" placeholder="e.g. Website maintenance for April 2026" required></textarea>
               </div>
               <div class="field">
-                <label for="invoiceSubtotal">Subtotal (default currency)</label>
+                <label for="invoiceSubtotal" id="invoice-subtotal-label">Subtotal</label>
                 <input id="invoiceSubtotal" name="invoiceSubtotal" type="number" min="0" step="0.01" required />
               </div>
               <div class="field">
@@ -304,16 +304,21 @@
               <div class="field">
                 <label id="invoiceTotalLabel">Total (auto-calculated)</label>
                 <div class="calc-output" id="invoiceTotalPreview" aria-labelledby="invoiceTotalLabel" aria-live="polite">€0.00</div>
+                <small id="invoice-book-preview" class="field-hint"></small>
               </div>
-              <div class="field" id="invoice-default-currency-received-field" hidden>
-                <label for="invoiceDefaultCurrencyReceived" id="invoice-default-currency-received-label">Amount received</label>
-                <input id="invoiceDefaultCurrencyReceived" name="invoiceDefaultCurrencyReceived" type="number" min="0" step="0.01" />
-                <small id="invoice-default-currency-received-preview" class="field-hint"></small>
+              <div class="field">
+                <label for="invoiceCurrency">Currency</label>
+                <select id="invoiceCurrency" name="invoiceCurrency"></select>
               </div>
-              <div class="field" id="invoice-client-secondary-total-field" hidden>
-                <label for="invoiceClientSecondaryTotal" id="invoice-client-secondary-total-label">Total in client currency</label>
-                <input id="invoiceClientSecondaryTotal" name="invoiceClientSecondaryTotal" type="number" min="0" step="0.01" />
-                <small id="invoice-client-secondary-total-preview" class="field-hint"></small>
+              <div class="field">
+                <label for="invoiceServiceDate">Service date (optional)</label>
+                <input id="invoiceServiceDate" name="invoiceServiceDate" type="date" />
+                <small class="field-hint">The exchange rate uses this date. Leave it empty to use the issue date.</small>
+              </div>
+              <div class="field" id="invoice-exchange-rate-field" hidden>
+                <label for="invoiceExchangeRate" id="invoice-exchange-rate-label">Exchange rate</label>
+                <input id="invoiceExchangeRate" name="invoiceExchangeRate" type="number" min="0" step="any" />
+                <small id="invoice-exchange-rate-hint" class="field-hint" aria-live="polite"></small>
               </div>
               <div class="field">
                 <label for="invoiceStatus">Status</label>

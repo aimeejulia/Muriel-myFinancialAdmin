@@ -178,14 +178,14 @@ export const elements = {
   invoiceNumber: byId('invoiceNumber'),
   invoiceDescription: byId('invoiceDescription'),
   invoiceTotalPreview: byId('invoiceTotalPreview'),
-  invoiceClientSecondaryTotalField: byId('invoice-client-secondary-total-field'),
-  invoiceClientSecondaryTotalLabel: byId('invoice-client-secondary-total-label'),
-  invoiceClientSecondaryTotal: byId('invoiceClientSecondaryTotal'),
-  invoiceClientSecondaryTotalPreview: byId('invoice-client-secondary-total-preview'),
-  invoiceDefaultCurrencyReceivedField: byId('invoice-default-currency-received-field'),
-  invoiceDefaultCurrencyReceivedLabel: byId('invoice-default-currency-received-label'),
-  invoiceDefaultCurrencyReceived: byId('invoiceDefaultCurrencyReceived'),
-  invoiceDefaultCurrencyReceivedPreview: byId('invoice-default-currency-received-preview'),
+  invoiceSubtotalLabel: byId('invoice-subtotal-label'),
+  invoiceBookPreview: byId('invoice-book-preview'),
+  invoiceCurrency: byId('invoiceCurrency'),
+  invoiceServiceDate: byId('invoiceServiceDate'),
+  invoiceExchangeRateField: byId('invoice-exchange-rate-field'),
+  invoiceExchangeRateLabel: byId('invoice-exchange-rate-label'),
+  invoiceExchangeRate: byId('invoiceExchangeRate'),
+  invoiceExchangeRateHint: byId('invoice-exchange-rate-hint'),
   expenseDate: byId('expenseDate'),
   expenseAmount: byId('expenseAmount'),
   expenseCategory: byId('expenseCategory'),
@@ -267,11 +267,31 @@ function readLegacyBrowserStateRaw() {
 }
 
 // The version of the saved data format. Saved data and exported backups both store it.
-export const STATE_SCHEMA_VERSION = 1;
+export const STATE_SCHEMA_VERSION = 2;
+
+// Version 2: an invoice has a currency, a book currency (the currency of the accounts) and book amounts.
+// Version 1 kept all amounts in the book currency of that time, so the book amounts are a copy of the amounts.
+function addInvoiceBookAmounts(saved) {
+  if (!Array.isArray(saved?.invoices)) return saved;
+  const invoices = saved.invoices.map((invoice) => {
+    if (!invoice || typeof invoice !== 'object' || Array.isArray(invoice)) return invoice;
+    const bookCurrency = normalizeReportingCurrency(invoice.defaultCurrency || saved.profile?.reportingCurrency);
+    return {
+      currency: bookCurrency,
+      bookCurrency,
+      exchangeRate: null,
+      serviceDate: '',
+      ...invoice,
+      bookAmounts: invoice.bookAmounts || { subtotal: invoice.subtotal, vatAmount: invoice.vatAmount, total: invoice.total },
+    };
+  });
+  return { ...saved, invoices };
+}
 
 // Each migration upgrades saved data from its version to the next version.
-// For example, a version 2 that adds a list needs { 1: (saved) => ({ ...saved, newList: [] }) }.
-const STATE_MIGRATIONS = {};
+const STATE_MIGRATIONS = {
+  1: addInvoiceBookAmounts,
+};
 
 // Set when the saved data comes from a newer version of Muriel, so this version never overwrites it.
 let stateIsFromNewerVersion = false;
@@ -329,6 +349,13 @@ function assignLoadedState(nextState) {
         subtotal: roundMoney(invoice?.subtotal),
         vatAmount: roundMoney(invoice?.vatAmount),
         total: roundMoney(invoice?.total),
+        ...(invoice?.bookAmounts ? {
+          bookAmounts: {
+            subtotal: roundMoney(invoice.bookAmounts.subtotal),
+            vatAmount: roundMoney(invoice.bookAmounts.vatAmount),
+            total: roundMoney(invoice.bookAmounts.total),
+          },
+        } : {}),
       }))
     : [];
   state.expenses = nextState.expenses;
@@ -629,6 +656,58 @@ export function calculateInvoiceAmounts(subtotal, vatRate) {
     vatAmount,
     total: roundMoney(roundedSubtotal + vatAmount),
   };
+}
+
+// The currencies that invoices, clients and the books can use.
+export const SUPPORTED_CURRENCIES = [...SUPPORTED_REPORTING_CURRENCIES];
+
+// The currency that the client sees on the invoice.
+export function invoiceCurrency(invoice) {
+  return normalizeReportingCurrency(invoice?.currency || invoice?.defaultCurrency || reportingCurrency());
+}
+
+// The currency of the accounts when the invoice was made. Reports and tax figures use it.
+export function invoiceBookCurrency(invoice) {
+  return normalizeReportingCurrency(invoice?.bookCurrency || invoice?.defaultCurrency || reportingCurrency());
+}
+
+// The amounts of the invoice in its book currency. They are frozen when the invoice is saved.
+export function invoiceBookAmounts(invoice) {
+  return invoice?.bookAmounts || {
+    subtotal: Number(invoice?.subtotal || 0),
+    vatAmount: Number(invoice?.vatAmount || 0),
+    total: Number(invoice?.total || 0),
+  };
+}
+
+// Converts invoice amounts to the book currency. The rate is invoice currency units for one book currency unit.
+// The VAT is calculated again on the converted base, as the tax uses the base in the book currency.
+export function convertToBookAmounts(subtotal, vatRate, rate) {
+  return calculateInvoiceAmounts(Number(subtotal || 0) / Number(rate), vatRate);
+}
+
+// The amounts and book amounts for an invoice that is saved. An edit keeps the stored amounts when the subtotal,
+// the VAT rate, the currencies and the rate did not change, so frozen book amounts and older totals stay as they are.
+export function invoiceMoneyForSave({ subtotal, vatRate, currency, bookCurrency, exchangeRate }, previous) {
+  const amounts = calculateInvoiceAmounts(subtotal, vatRate);
+  const rate = currency === bookCurrency ? 1 : Number(exchangeRate?.rate);
+  const unchanged = Boolean(previous)
+    && roundMoney(previous.subtotal) === amounts.subtotal
+    && Number(previous.vatRate) === Number(vatRate)
+    && invoiceCurrency(previous) === currency
+    && invoiceBookCurrency(previous) === bookCurrency
+    && Number(previous.exchangeRate?.rate || 1) === rate;
+  if (unchanged) {
+    return {
+      subtotal: previous.subtotal,
+      vatAmount: previous.vatAmount,
+      total: previous.total,
+      bookAmounts: invoiceBookAmounts(previous),
+    };
+  }
+
+  const bookAmounts = currency === bookCurrency ? { ...amounts } : convertToBookAmounts(amounts.subtotal, vatRate, rate);
+  return { ...amounts, bookAmounts };
 }
 
 export function formatCurrency(value, currencyCode = 'EUR') {

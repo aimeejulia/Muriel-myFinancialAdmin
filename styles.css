@@ -259,6 +259,14 @@
     .update-banner[data-tone="success"] {
       background: linear-gradient(135deg, rgba(242, 104, 181, 0.14), rgba(244, 160, 111, 0.14), rgba(243, 207, 104, 0.16));
     }
+    .preview-book-totals {
+      margin-top: 12px;
+    }
+    .preview-rate {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
     .update-banner-command {
       display: block;
       margin-top: 8px;

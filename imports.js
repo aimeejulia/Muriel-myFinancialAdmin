@@ -21,6 +21,7 @@ let importHooks = {
   resetInvoiceEditMode: () => {},
   upsertClientOptionList: () => {},
   updateInvoicePreview: () => {},
+  useClientCurrency: () => {},
   toggleInvoicePaidDateField: () => {},
 };
 
@@ -332,6 +333,7 @@ export function loadImportedDraftIntoForm(draft) {
   importHooks.resetInvoiceEditMode();
   const clientId = getOrCreateImportedClient(draft.clientName, draft.clientDisplayId, draft.vatRate);
   importHooks.upsertClientOptionList(clientId);
+  importHooks.useClientCurrency(clientId);
   uiState.lastInvoiceClientValue = clientId || '';
 
   elements.invoiceIssueDate.value = draft.issueDate || todayISO();
