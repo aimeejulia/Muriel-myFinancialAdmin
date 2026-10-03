@@ -70,6 +70,8 @@ test('report VAT is the sum of the VAT on each invoice', () => {
 test('invoices saved without rounding are rounded when they are loaded', async () => {
   const oldInvoice = {
     id: 'invoice-1',
+    invoiceNumber: 'INV-2025-06-001',
+    clientId: 'client-1',
     subtotal: 33.33,
     vatRate: 21,
     vatAmount: 6.999299999999999,

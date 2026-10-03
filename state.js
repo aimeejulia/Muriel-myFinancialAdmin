@@ -439,6 +439,39 @@ function isListOfRecords(value) {
   return Array.isArray(value) && value.every((item) => item && typeof item === 'object' && !Array.isArray(item));
 }
 
+const isText = (value) => typeof value === 'string';
+const isAmount = (value) => value === undefined || value === null || value === ''
+  || (Number.isFinite(Number(value)) && (typeof value === 'number' || typeof value === 'string'));
+
+// Finds records that the app cannot show: each record needs a unique id, and the fields that the app reads
+// as text or as amounts must have that type. Optional fields can be missing, so older backups stay valid.
+export function findBackupRecordProblems({ clients, invoices, expenses }) {
+  const problems = [];
+  const checkList = (records, listName, checks) => {
+    const ids = new Set();
+    records.forEach((record, index) => {
+      const label = `${listName} ${index + 1}`;
+      if (!isText(record.id) || !record.id) problems.push(`${label} has no id.`);
+      else if (ids.has(record.id)) problems.push(`${label} has the same id as another ${listName}.`);
+      ids.add(record.id);
+      for (const [field, isValid, description] of checks) {
+        if (!isValid(record[field])) problems.push(`${label}: ${field} must be ${description}.`);
+      }
+    });
+  };
+
+  checkList(clients, 'client', [['name', isText, 'text']]);
+  checkList(invoices, 'invoice', [
+    ['invoiceNumber', isText, 'text'],
+    ['clientId', isText, 'text'],
+    ['subtotal', isAmount, 'an amount'],
+    ['vatAmount', isAmount, 'an amount'],
+    ['total', isAmount, 'an amount'],
+  ]);
+  checkList(expenses, 'expense', [['amount', isAmount, 'an amount']]);
+  return problems;
+}
+
 // Accepts an exported backup, or a plain saved state that has all of the data lists.
 function parseBackupRaw(raw) {
   let parsed;
@@ -468,6 +501,13 @@ function parseBackupRaw(raw) {
     || !isListOfRecords(payload.expenses)
   ) {
     return { error: 'This file is not a Muriel backup. Your current data was not changed.' };
+  }
+
+  const problems = findBackupRecordProblems(payload);
+  if (problems.length > 0) {
+    const shown = problems.slice(0, 3).join(' ');
+    const more = problems.length > 3 ? ` ${problems.length - 3} more problems were found.` : '';
+    return { error: `This backup has records that Muriel cannot use. Your current data was not changed. ${shown}${more}` };
   }
 
   return {
