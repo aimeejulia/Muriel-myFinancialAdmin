@@ -17,6 +17,7 @@
     "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
     "clean:dist": "rm -rf dist",
     "lint": "eslint .",
+    "release": "node ./scripts/release.js",
     "check:appimage-config": "node ./scripts/validate-appimage-config.js",
     "check:release-version": "node ./scripts/validate-release-version.js",
     "test:e2e": "node --test --test-concurrency=1 --test-timeout=60000 --disable-warning=MODULE_TYPELESS_PACKAGE_JSON e2e/*.e2e.mjs",
@@ -93,10 +94,26 @@
         }
       }
     },
+    "appImage": {
+      "artifactName": "Muriel-myFinancialAdmin-${version}.${ext}"
+    },
     "flatpak": {
+      "artifactName": "Muriel-myFinancialAdmin-${version}-${arch}.${ext}",
       "runtime": "org.freedesktop.Platform",
       "runtimeVersion": "24.08",
-      "sdk": "org.freedesktop.Sdk"
+      "sdk": "org.freedesktop.Sdk",
+      "baseVersion": "24.08",
+      "finishArgs": [
+        "--socket=wayland",
+        "--socket=x11",
+        "--share=ipc",
+        "--device=dri",
+        "--socket=pulseaudio",
+        "--filesystem=home",
+        "--share=network",
+        "--talk-name=org.freedesktop.Notifications",
+        "--talk-name=org.freedesktop.secrets"
+      ]
     },
     "snap": {
       "confinement": "strict",

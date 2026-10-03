@@ -80,12 +80,12 @@ npm run check:appimage-config
 
 Expected output location:
 
-- `dist/Muriel - myFinancialAdmin-*.AppImage`
+- `dist/Muriel-myFinancialAdmin-<version>.AppImage`
 
 Run from terminal:
 
 ```bash
-./dist/Muriel\ -\ myFinancialAdmin-1.0.1.AppImage
+./dist/Muriel-myFinancialAdmin-*.AppImage
 ```
 
 ### Optional Desktop Shortcut (Choose One Method)
@@ -93,14 +93,15 @@ Run from terminal:
 Method A: Manual launcher entry
 
 ```bash
-chmod +x ./dist/Muriel\ -\ myFinancialAdmin-1.0.1.AppImage
+APPIMAGE="$(ls "$PWD"/dist/Muriel-myFinancialAdmin-*.AppImage)"
+chmod +x "$APPIMAGE"
 mkdir -p ~/.local/share/applications
 desktop-file-install --dir=$HOME/.local/share/applications \
-  --set-key=Exec --set-value="$PWD/dist/Muriel - myFinancialAdmin-1.0.1.AppImage" \
+  --set-key=Exec --set-value="$APPIMAGE" \
   <(echo "[Desktop Entry]
 Name=Muriel - myFinancialAdmin
 Comment=Local-first financial admin desktop app
-Exec=${PWD}/dist/Muriel - myFinancialAdmin-1.0.1.AppImage
+Exec=${APPIMAGE}
 Icon=com.muriel.myfinancialadmin
 Type=Application
 Categories=Office;Finance;
@@ -173,7 +174,7 @@ npm run package:snap
 
 Typical output:
 
-- `dist/muriel-myfinancialadmin_1.0.0_amd64.snap`
+- `dist/muriel-myfinancialadmin_<version>_amd64.snap`
 
 ## Troubleshooting
 
@@ -219,6 +220,50 @@ npm run test:e2e
 The end-to-end tests start the app, so they need a desktop session.
 Each test uses a new temporary data folder.
 The tests do not read or change the saved data in `~/.config/muriel-myfinancialadmin`.
+
+## Publish A Release
+
+The release script builds the AppImage, the Snap, and the Flatpak. Then it publishes them on GitHub with `latest-linux.yml`. The AppImage needs `latest-linux.yml` to update itself.
+
+Before you start, install the Flatpak tools once:
+
+```bash
+sudo apt install -y flatpak flatpak-builder
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+```
+
+Log in to GitHub once:
+
+```bash
+gh auth login
+```
+
+To publish a release:
+
+1. Set the new version in `package.json` and `package-lock.json`.
+2. Add a section for the new version to `CHANGELOG.md`.
+3. Merge these changes into `main`.
+4. Update your checkout of `main`.
+5. Tag the release commit and push the tag:
+
+   ```bash
+   git tag v1.3.0
+   git push origin v1.3.0
+   ```
+
+6. Publish the release:
+
+   ```bash
+   npm run release -- --title "v1.3.0 - short summary"
+   ```
+
+The script stops before the build if a requirement is missing. It tells you what to correct. The release notes come from the section of `CHANGELOG.md` for the version.
+
+To build and examine the files without a publish, use a dry run:
+
+```bash
+npm run release -- --dry-run
+```
 
 ## Release QA Checklist
 
