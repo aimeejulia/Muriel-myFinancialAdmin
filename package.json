@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
-    "electron": "^41.2.1",
+    "electron": "44.5.1",
     "electron-builder": "^26.8.1",
     "eslint": "^9.39.5",
     "globals": "^17.13.0"
@@ -46,6 +46,7 @@
     "appId": "com.muriel.myfinancialadmin",
     "productName": "Muriel - myFinancialAdmin",
     "icon": "build/icon.png",
+    "npmRebuild": false,
     "files": [
       "index.html",
       "styles.css",
@@ -66,7 +67,8 @@
       "update-info.js",
       "source-update.js",
       "preload.js",
-      "build/icon.png"
+      "build/icon.png",
+      "!**/node_modules/canvas/**"
     ],
     "directories": {
       "output": "dist",

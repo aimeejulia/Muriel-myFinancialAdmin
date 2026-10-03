@@ -52,6 +52,9 @@ async function updateSourceCheckout({ appPath, run = runCommand }) {
   if (changedFiles.includes('package-lock.json')) {
     try {
       await run('npm', ['ci', '--no-audit', '--no-fund'], appPath);
+      // Since Electron 42, npm ci does not download the Electron binary. Loading the electron
+      // package downloads it, so the restart can find the binary.
+      await run('node', ['-e', "require('electron')"], appPath);
     } catch (error) {
       return {
         ok: false,
