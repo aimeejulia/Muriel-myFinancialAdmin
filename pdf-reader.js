@@ -1,7 +1,8 @@
-const PDFJS_PATH = './vendor/pdfjs/pdf.min.mjs';
-const PDFJS_WORKER_PATH = './vendor/pdfjs/pdf.worker.min.mjs';
+// pdf.js comes from the pdfjs-dist package, like chart.js and jspdf, so package.json sets its version.
+const PDFJS_PATH = './node_modules/pdfjs-dist/build/pdf.min.mjs';
+const PDFJS_WORKER_PATH = './node_modules/pdfjs-dist/build/pdf.worker.min.mjs';
 
-// Loads the vendored pdf.js and sets its worker.
+// Loads pdf.js and sets its worker.
 export async function loadPdfJs() {
   const module = await import(PDFJS_PATH);
   const pdfjs = module.default || module;
