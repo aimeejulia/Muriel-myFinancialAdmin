@@ -554,6 +554,17 @@ export function downloadFile(filename, content, mimeType = 'text/plain;charset=u
   URL.revokeObjectURL(url);
 }
 
+export function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  };
+  return String(text || '').replace(/[&<>"']/g, (char) => map[char]);
+}
+
 export function escapeCsv(value) {
   const text = String(value ?? '');
   return `"${text.replace(/"/g, '""')}"`;

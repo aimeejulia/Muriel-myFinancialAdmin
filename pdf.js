@@ -8,11 +8,9 @@ import {
   defaultPaymentMethods,
   computedStatus,
   getClient,
-} from './state.js';
-import {
   escapeHtml,
-  getInvoiceSenderDetails,
-} from './profile.js';
+} from './state.js';
+import { getInvoiceSenderDetails } from './profile.js';
 
 export function getInvoiceDocumentLabel(invoice) {
   return computedStatus(invoice) === 'paid' ? 'Receipt' : 'Invoice';
