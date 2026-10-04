@@ -16,6 +16,7 @@ import {
   invoiceReceivedAmount,
   roundMoney,
   readDecimal,
+  displayInvoiceNumber,
   attachDecimalInputs,
   invoiceMoneyForSave,
   upsertInvoice,
@@ -131,8 +132,15 @@ function receivedLabel(invoice) {
   return `Amount received in ${invoiceBookCurrency(invoice)} (after bank charges)`;
 }
 
+// The invoice that a modal changes, so the user sees that it is the correct one.
+function invoiceSubject(invoice) {
+  const client = getClient(invoice.clientId);
+  return [displayInvoiceNumber(invoice), client?.name || 'Unknown client', formatCurrency(invoice.total, invoiceCurrency(invoice))].join(' · ');
+}
+
 function openMarkPaidModal(invoice) {
   uiState.pendingMarkPaidInvoiceId = invoice.id;
+  elements.markPaidSubject.textContent = invoiceSubject(invoice);
   elements.markPaidDateInput.value = invoice.paidDate || todayISO();
   elements.markPaidReceivedLabel.textContent = receivedLabel(invoice);
   elements.markPaidReceived.value = invoiceReceivedAmount(invoice).toFixed(2);
@@ -164,6 +172,7 @@ function syncChangeStatusFields() {
 
 function openChangeStatusModal(invoice) {
   uiState.pendingChangeStatusInvoiceId = invoice.id;
+  elements.changeStatusSubject.textContent = invoiceSubject(invoice);
   elements.changeStatusSelect.value = invoice.status === 'paid' ? 'sent' : (invoice.status || 'sent');
   elements.changeStatusAbortedNumberHandling.value = invoice.abortedNumberHandling || 'cancelled';
   elements.changeStatusPaidDate.value = invoice.paidDate || todayISO();
