@@ -645,17 +645,17 @@
                   <option value="PLN">PLN - Polish Zloty</option>
                 </select>
                 <small id="profile-book-currencies" class="field-hint"></small>
+                <button type="button" class="secondary-btn" id="profile-book-currency-undo" hidden>Remove the last change</button>
               </div>
-              <div class="field">
+              <div class="field" id="profile-book-currency-from-field" hidden>
                 <label for="profileBookCurrencyFrom">Book currency from</label>
                 <input id="profileBookCurrencyFrom" name="profileBookCurrencyFrom" type="date" />
                 <small class="field-hint">Enter the first day of the new book currency, for example after a move to another tax office. Invoices and expenses before this date stay in their book currency.</small>
-                <button type="button" class="secondary-btn" id="profile-book-currency-undo" hidden>Remove the last change</button>
               </div>
               <div class="form-actions full-span">
-                <button type="submit" class="primary-btn">Save profile</button>
+                <button type="submit" class="primary-btn">Save your details</button>
               </div>
-              <p id="profile-save-feedback" class="form-feedback success full-span" role="status" aria-live="polite" hidden>Profile changes saved.</p>
+              <p id="profile-save-feedback" class="form-feedback success full-span" role="status" aria-live="polite" hidden>Your details are saved.</p>
               <p id="profile-encryption-status" class="storage-status full-span" role="status" aria-live="polite"></p>
             </form>
           </section>
@@ -663,13 +663,14 @@
           <section class="panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">Business names</p>
+                <p class="eyebrow">Trading names</p>
                 <h3>Trading names for invoices</h3>
               </div>
             </div>
+            <p class="panel-hint">A trading name is saved when you click Add trading name or Save trading name.</p>
             <div class="form-grid">
               <div class="field full-span">
-                <label for="profileBusinessName">Add business name</label>
+                <label for="profileBusinessName">Trading name</label>
                 <input id="profileBusinessName" name="profileBusinessName" placeholder="Your Business Name" />
               </div>
               <div class="field">
@@ -699,6 +700,7 @@
                 <h3>Methods for invoices</h3>
               </div>
             </div>
+            <p class="panel-hint">A payment method is saved when you click Add payment method or Save payment method.</p>
             <div class="form-grid">
               <div class="field">
                 <label for="profilePaymentMethodLabel">Method label</label>

@@ -144,6 +144,17 @@ function renderBookCurrencies() {
     ? periods.map((period) => (period.from ? `${period.currency} from ${formatDate(period.from)}` : `${period.currency} from the start`)).join(', ')
     : '';
   document.getElementById('profile-book-currency-undo').hidden = periods.length < 2;
+  syncBookCurrencyFromField();
+}
+
+// A date is necessary only for a change of the book currency when invoices or expenses exist. Without records, the
+// book currency changes from the start. So the date field shows only when the user selects another book currency.
+function syncBookCurrencyFromField() {
+  const periods = bookCurrencyPeriods();
+  const changed = document.getElementById('profileReportingCurrency').value !== periods[periods.length - 1].currency;
+  const needsDate = changed && (state.invoices.length > 0 || state.expenses.length > 0);
+  document.getElementById('profile-book-currency-from-field').hidden = !needsDate;
+  document.getElementById('profileBookCurrencyFrom').required = needsDate;
 }
 
 export async function renderProfile() {
@@ -170,7 +181,7 @@ export async function renderProfile() {
 
   elements.businessNameList.innerHTML = '';
   if (!state.profile.businesses.length) {
-    elements.businessNameList.innerHTML = '<p class="empty-state">No business names added yet.</p>';
+    elements.businessNameList.innerHTML = '<p class="empty-state">No trading names added yet.</p>';
     return;
   }
 
@@ -292,6 +303,7 @@ export async function renderProfile() {
 }
 
 export function attachProfileHandlers() {
+  document.getElementById('profileReportingCurrency').addEventListener('change', syncBookCurrencyFromField);
   document.getElementById('profile-book-currency-undo').addEventListener('click', () => {
     const error = removeLastBookCurrencyChange();
     if (error) {
@@ -403,7 +415,7 @@ export function attachProfileHandlers() {
       return business.name.toLowerCase() === name.toLowerCase();
     });
     if (exists) {
-      alert('This business name already exists.');
+      alert('This trading name already exists.');
       return;
     }
 
@@ -468,7 +480,7 @@ export function attachProfileHandlers() {
     const effect = usedBy > 0
       ? ` ${usedBy} invoice(s) use it as the sender. Their PDFs will show your legal name instead.`
       : '';
-    if (!confirm(`Remove the business "${business?.name || ''}"?${effect}`)) return;
+    if (!confirm(`Remove the trading name "${business?.name || ''}"?${effect}`)) return;
 
     state.profile.businesses = state.profile.businesses.filter((business) => business.id !== removeButton.dataset.id);
     if (uiState.editingBusinessId === removeButton.dataset.id) {

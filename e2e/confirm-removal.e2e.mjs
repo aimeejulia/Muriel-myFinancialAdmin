@@ -31,13 +31,13 @@ const savedProfile = `import('./state.js').then((module) => ({
   methods: module.state.profile.paymentMethods.map((method) => method.id),
 }))`;
 
-test('removing a business asks first and names what changes', async () => {
+test('removing a trading name asks first and names what changes', async () => {
   const app = await launchApp(dataDir);
   try {
     await app.evaluate(answerConfirm(false));
     await app.evaluate(`document.querySelector('#business-name-list button[data-action="remove-business"]').click(); true`);
     assert.deepEqual(await app.evaluate('window.questions'), [
-      'Remove the business "Studio Example"? 1 invoice(s) use it as the sender. Their PDFs will show your legal name instead.',
+      'Remove the trading name "Studio Example"? 1 invoice(s) use it as the sender. Their PDFs will show your legal name instead.',
     ]);
     assert.deepEqual((await app.evaluate(savedProfile)).businesses, ['business-1']);
 
