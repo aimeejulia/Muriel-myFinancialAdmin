@@ -330,7 +330,8 @@ function resetForms() {
   elements.invoiceIssueDate.value = todayISO();
   elements.invoiceDueDate.value = addDaysISO(todayISO(), 14);
   elements.invoiceVatRate.value = 21;
-  elements.invoiceStatus.value = 'sent';
+  // A new invoice is a draft until it is sent, so it does not count as invoiced before that.
+  elements.invoiceStatus.value = 'draft';
   elements.invoicePaidDate.value = '';
   elements.invoiceNumber.value = '';
   elements.invoiceTotalPreview.textContent = formatCurrency(0, reportingCurrency());
@@ -878,6 +879,14 @@ elements.invoicesTableBody.addEventListener('click', (event) => {
   if (button.dataset.action === 'mark-paid') {
     closeInvoiceRowMenus();
     openMarkPaidModal(invoice);
+    return;
+  }
+
+  if (button.dataset.action === 'mark-sent') {
+    closeInvoiceRowMenus();
+    invoice.status = 'sent';
+    saveState();
+    renderAll();
     return;
   }
 

@@ -246,14 +246,15 @@ export function renderInvoices() {
 
     // The row shows the main action and Preview. The other actions are in the More menu, so rows stay one line high.
     // A draft is not sent yet, so it has no payment and no reminder, and an aborted invoice has no reminder.
+    // Every invoice can be edited, for example to correct a typo.
     if (status === 'draft') {
-      actionsWrap.appendChild(actionButton('edit-invoice', 'Edit', 'chip-btn'));
+      actionsWrap.appendChild(actionButton('mark-sent', 'Mark sent', 'chip-btn'));
     } else if (!['paid', 'aborted'].includes(status)) {
       actionsWrap.appendChild(actionButton('mark-paid', 'Mark paid', 'chip-btn'));
     }
     actionsWrap.appendChild(actionButton('preview-invoice', 'Preview'));
 
-    const moreActions = [];
+    const moreActions = [actionButton('edit-invoice', 'Edit')];
     if (status !== 'paid') moreActions.push(actionButton('change-status', 'Status'));
     if (!['draft', 'paid', 'aborted'].includes(status)) moreActions.push(actionButton('reminder', 'Reminder'));
     if (status === 'paid') moreActions.push(actionButton('mark-unpaid', 'Mark unpaid'));
