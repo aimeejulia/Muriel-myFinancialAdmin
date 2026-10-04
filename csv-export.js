@@ -16,7 +16,7 @@ import {
   expenseCurrency,
   groupByBookCurrency,
 } from './state.js';
-import { reportFigures } from './reports.js';
+import { paymentsInPeriod, reportFigures } from './reports.js';
 
 export function exportInvoicesCsv() {
   const rows = [
@@ -98,7 +98,7 @@ export function exportReportCsv() {
   const periodLabel = period === 'year' ? `Full year ${year}` : `Q${period} ${year}`;
   const fileSuffix = period === 'year' ? `${year}_full_year` : `${year}_Q${period}`;
   // Amounts in two book currencies cannot be added, so each book currency gets its own figures.
-  const groups = groupByBookCurrency(financialReportInvoices, reportExpenses);
+  const groups = groupByBookCurrency(financialReportInvoices, reportExpenses, undefined, paymentsInPeriod(year, period));
 
   const rows = [
     ['Metric', 'Value'],
@@ -106,7 +106,7 @@ export function exportReportCsv() {
     ['Period', periodLabel],
   ];
   groups.forEach((group) => {
-    const figures = reportFigures(group.invoices, group.expenses);
+    const figures = reportFigures(group.invoices, group.expenses, group.payments);
     rows.push(
       ['Book currency', group.currency],
       ['Net invoiced', figures.net],

@@ -919,16 +919,18 @@ export function removeLastBookCurrencyChange() {
 // Splits invoices and expenses by their book currency, in the order of the book currency periods. Each group has
 // its own totals, because amounts in two book currencies cannot be added. Without records, the result is one empty
 // group in the fallback currency.
-export function groupByBookCurrency(invoices, expenses, fallbackCurrency = reportingCurrency()) {
+// Payments are paid invoices of the period by payment date. They can be from another period than the invoices.
+export function groupByBookCurrency(invoices, expenses, fallbackCurrency = reportingCurrency(), payments = []) {
   const order = [...new Set(bookCurrencyPeriods().map((period) => period.currency))];
   const groups = new Map();
   const groupFor = (currency) => {
-    if (!groups.has(currency)) groups.set(currency, { currency, invoices: [], expenses: [] });
+    if (!groups.has(currency)) groups.set(currency, { currency, invoices: [], expenses: [], payments: [] });
     return groups.get(currency);
   };
   invoices.forEach((invoice) => groupFor(invoiceBookCurrency(invoice)).invoices.push(invoice));
   expenses.forEach((expense) => groupFor(expenseBookCurrency(expense)).expenses.push(expense));
-  if (!groups.size) return [{ currency: fallbackCurrency, invoices: [], expenses: [] }];
+  payments.forEach((invoice) => groupFor(invoiceBookCurrency(invoice)).payments.push(invoice));
+  if (!groups.size) return [{ currency: fallbackCurrency, invoices: [], expenses: [], payments: [] }];
   const rank = (currency) => (order.includes(currency) ? order.indexOf(currency) : order.length);
   return [...groups.values()].sort((left, right) => rank(left.currency) - rank(right.currency));
 }

@@ -280,6 +280,7 @@ When you mark an invoice paid, enter the amount that arrived in your bank accoun
 - The income of a paid invoice is the amount that arrived, less the VAT.
 - The income of an unpaid invoice is an estimate: its subtotal at the exchange rate of the invoice date.
 - The VAT figures use the amounts at the exchange rate of the invoice date.
+- In a report, **Received** counts the payments with a payment date in the period. The other figures use the issue date of the invoices.
 
 If you entered a wrong amount, click **More** > **Mark unpaid** on the invoice. Then mark it paid again with the correct amount.
 

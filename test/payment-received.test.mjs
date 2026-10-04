@@ -97,3 +97,17 @@ test('reports show what was received and the income', () => {
   assert.equal(card('Net invoiced'), formatCurrency(976.96, 'EUR'), 'the tax figures keep the amounts of the invoice date');
   assert.equal(card('Marked paid'), undefined);
 });
+
+test('Received counts the payments of the period by payment date', () => {
+  state.invoices = [
+    { ...eurInvoice, id: 'q1-paid-q2', issueDate: '2026-03-25', status: 'paid', paidDate: '2026-04-05', receivedAmount: 121 },
+    { ...eurInvoice, id: 'q2-paid-q2', issueDate: '2026-04-10', status: 'paid', paidDate: '2026-04-20', receivedAmount: 100 },
+    { ...eurInvoice, id: 'q2-paid-q3', issueDate: '2026-06-28', status: 'paid', paidDate: '2026-07-02', receivedAmount: 50 },
+  ];
+  elements.reportQuarter.value = '2';
+
+  runReport();
+
+  assert.equal(card('Received'), formatCurrency(221, 'EUR'), 'the payments of April, also for the invoice of March');
+  assert.equal(card('Net invoiced'), formatCurrency(200, 'EUR'), 'the tax figures keep the issue date');
+});
