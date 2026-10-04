@@ -85,3 +85,25 @@ test('Escape closes a form modal without saving', async () => {
     await app.stop();
   }
 });
+
+test('the mark paid and status modals name the invoice that they change', async () => {
+  const app = await launchApp(dataDir);
+  try {
+    const subject = await app.evaluate(`(() => {
+      document.querySelector('.nav-link[data-view="invoices"]').click();
+      document.querySelector('#invoices-table-body button[data-action="mark-paid"]').click();
+      const markPaid = document.getElementById('mark-paid-subject').textContent;
+      document.getElementById('mark-paid-cancel').click();
+      document.querySelector('#invoices-table-body button[data-action="change-status"]').click();
+      const status = document.getElementById('change-status-subject').textContent;
+      return { markPaid, status, described: document.getElementById('change-status-modal').getAttribute('aria-describedby') };
+    })()`);
+    assert.deepEqual(subject, {
+      markPaid: 'INV-2026-09-001 · Test Client · €121.00',
+      status: 'INV-2026-09-001 · Test Client · €121.00',
+      described: 'change-status-subject',
+    });
+  } finally {
+    await app.stop();
+  }
+});

@@ -742,6 +742,7 @@
       gap: 14px;
     }
     .modal-card h3 { margin: 0; }
+    .modal-subject { margin: 4px 0 0; color: var(--muted); font-weight: 600; }
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
     .preview-modal-card {
       width: min(960px, 100%);

@@ -105,6 +105,8 @@ export const elements = {
   invoiceFormPanel: byId('invoice-form-panel'),
   invoiceFormTitle: byId('invoice-form-title'),
   newInvoiceBtn: byId('new-invoice-btn'),
+  markPaidSubject: byId('mark-paid-subject'),
+  changeStatusSubject: byId('change-status-subject'),
   profileForm: byId('profile-form'),
   profileSaveFeedback: byId('profile-save-feedback'),
   reportYear: byId('reportYear'),
