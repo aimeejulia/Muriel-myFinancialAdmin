@@ -1,158 +1,128 @@
 # Release QA Checklist
 
-Use this checklist before publishing any release.
+Do these checks before you publish a release. The steps in [Publish a release](README.md#publish-a-release) tell you when.
 
-## 0) Environment Check
+Copy this checklist into the pull request or the release notes draft. When an item passes, mark it. Do not publish the release if an item fails.
 
-- [x] Node version is 22.12.0 or newer.
-- [x] npm version is 10 or newer.
-- [x] Working tree is clean or intentionally staged.
-
-Commands:
+## 1. Make sure that the checkout is ready
 
 ```bash
 node -v
 npm -v
 git status
+git log -1 --oneline
 ```
 
-## 0.5) Build Configuration Validation
+- [ ] Node.js is 22.12.0 or newer.
+- [ ] npm is 10 or newer.
+- [ ] The checkout is on `main`, with no changes to tracked files.
+- [ ] The version in `package.json` is the new version.
+- [ ] `CHANGELOG.md` has a section for the new version.
+- [ ] The release tag, for example `v1.4.0`, is on the current commit.
 
-Before building AppImage or multi-target builds, validate the desktop integration configuration:
+## 2. Run the tests
 
 ```bash
-npm run check:appimage-config
+npm run lint
+npm test
+npm run test:e2e
 ```
 
-This ensures the AppImage will support double-click execution from file managers. The validation automatically runs before `npm run package:appimage` and `npm run package:linux`, but you can run it manually to verify your configuration before starting a build.
+- [ ] The lint shows no errors.
+- [ ] All unit tests pass.
+- [ ] All end-to-end tests pass. A test that the ECB skips is not a failure.
 
-## 1) Build Artifacts
+## 3. Build the packages
 
-Build each Linux artifact separately:
+Build all packages without a publish:
 
 ```bash
-npm run package:appimage
-npm run package:snap
-npm run package:flatpak
+npm run release -- --dry-run
 ```
 
-Optional combined build:
+- [ ] The dry run shows no errors.
+- [ ] `dist` contains the AppImage, the Snap, the Flatpak and `latest-linux.yml`.
+- [ ] The package file names have no spaces.
 
-```bash
-npm run package:linux
-```
+If the Flatpak is missing, install the Flatpak tools, as [Build the packages](README.md#build-the-packages) tells you. Then do the dry run again.
 
-Use the combined command only if the required toolchains for every configured
-target are already installed.
+## 4. Do a test of each package
 
-Confirm files exist:
+CAUTION: Make a backup of your data before you start the test AppImage. The AppImage uses your real data folder.
 
-```bash
-ls -lah dist/*.AppImage
-ls -lah dist/*.snap
-ls -lah dist/*.flatpak
-```
+To make a backup, click **Profile** > **Export backup** in your installed Muriel. The Snap and the Flatpak use their own data folders.
 
-If `dist/*.flatpak` is missing but you see a folder like `dist/__flatpak-x86_64`,
-the Flatpak packaging process started but could not finish because the Flatpak
-toolchain is missing.
-
-Install required tools and build again:
-
-```bash
-sudo apt update && sudo apt install -y flatpak flatpak-builder
-npm run package:flatpak
-```
-
-- [x] AppImage exists in dist.
-- [x] Snap exists in dist.
-- [ ] Flatpak exists in dist.
-
-## 2) AppImage Local Test
+### AppImage
 
 ```bash
 chmod +x dist/*.AppImage
 ./dist/*.AppImage
 ```
 
-Checks:
-
-- [x] App launches.
-- [x] No startup crash.
-- [ ] Create a client successfully.
-- [ ] Create an invoice successfully.
-- [ ] Create an expense successfully.
-- [ ] Close and reopen app, data is still there.
-
-## 3) Snap Local Test
-
-Install and run:
+### Snap
 
 ```bash
 sudo snap install --dangerous dist/*.snap
 snap run muriel-myfinancialadmin
 ```
 
-Cleanup after test:
+After the test, remove the Snap:
 
 ```bash
 sudo snap remove muriel-myfinancialadmin
 ```
 
-Checks:
-
-- [ ] App launches from snap run.
-- [ ] Core flows work (client, invoice, expense).
-- [ ] Data persists after restart.
-
-## 4) Flatpak Local Test
-
-Install and run:
+### Flatpak
 
 ```bash
 flatpak install --user --reinstall ./dist/*.flatpak
 flatpak run com.muriel.myfinancialadmin
 ```
 
-Cleanup after test:
+After the test, remove the Flatpak:
 
 ```bash
-flatpak uninstall com.muriel.myfinancialadmin
+flatpak uninstall --user com.muriel.myfinancialadmin
 ```
 
-Checks:
+### Checks for each package
 
-- [ ] App launches from flatpak run.
-- [ ] Core flows work (client, invoice, expense).
-- [ ] Data persists after restart.
+Do these checks in the AppImage, the Snap and the Flatpak:
 
-## 5) Regression Smoke Tests
+| Check | AppImage | Snap | Flatpak |
+|---|---|---|---|
+| The app starts without errors. | [ ] | [ ] | [ ] |
+| The app icon is the Muriel icon, not the Electron icon. | [ ] | [ ] | [ ] |
+| **Profile** shows that the saved data is encrypted. | [ ] | [ ] | [ ] |
+| You can add a client. | [ ] | [ ] | [ ] |
+| You can make an invoice and download its PDF. | [ ] | [ ] | [ ] |
+| You can record an expense. | [ ] | [ ] | [ ] |
+| After a restart, the data is still there. | [ ] | [ ] | [ ] |
 
-- [ ] Invoice preview opens.
-- [ ] Reminder copy buttons work.
-- [ ] CSV exports work.
-- [ ] PDF import still works.
-- [ ] Expense receipt view still works.
-- [ ] Profile save feedback displays and hides correctly.
+## 5. Do the smoke tests
 
-## 6) Security and Packaging Checks
+Do these checks in the AppImage:
 
-- [ ] No new errors in VS Code Problems panel.
-- [ ] No obvious console runtime errors.
-- [ ] CSP still present in index.html.
-- [ ] Packaging did not fall back to default Electron icon (if app icon is configured).
+- [ ] An invoice in another currency gets an ECB exchange rate.
+- [ ] The invoice PDF shows the VAT and the totals in the book currency.
+- [ ] **Mark paid** asks for the amount received, and **Reports** shows it as **Received**.
+- [ ] **Mark unpaid** makes a paid invoice unpaid again.
+- [ ] An expense in another currency gets an ECB exchange rate.
+- [ ] **Reminder** on an invoice copies a reminder to the clipboard.
+- [ ] The three CSV exports download.
+- [ ] **Import PDF** reads an invoice PDF.
+- [ ] **Upload expense PDF** reads an expense receipt, and the receipt preview opens.
+- [ ] **Export backup** saves a backup file, and **Restore backup** restores it.
+- [ ] **Save profile** shows the message "Profile changes saved." and then hides it.
+- [ ] The developer tools console shows no errors. To open it, press Ctrl+Shift+I.
 
-## 7) Release Notes and Metadata
+## 6. Make sure that the metadata is correct
 
-- [x] Version number updated where needed.
-- [x] Changelog/release notes written in [CHANGELOG.md](CHANGELOG.md).
-- [ ] Flatpak metadata release entry updated.
-- [ ] Store descriptions and screenshots are current.
+- [ ] `flatpak/com.muriel.myfinancialadmin.metainfo.xml` has a release entry for the new version.
+- [ ] The descriptions and screenshots are correct for the new version.
 
-## 8) Go/No-Go
+## 7. Publish
 
-- [ ] All required checks passed.
-- [ ] Artifacts uploaded to release draft.
-- [ ] Ready to publish.
+- [ ] All items above pass.
 
-> Current status: AppImage and Snap passes the release gate, while Flatpak packaging still needs a fix before the final go/no-go decision.
+Publish the release, as [Publish a release](README.md#publish-a-release) tells you.
