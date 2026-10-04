@@ -31,6 +31,22 @@ test('dates in a PDF are read as day, month and year', () => {
   assert.equal(parseDateToIso(undefined), '');
 });
 
+test('a date that does not exist is not read', () => {
+  assert.equal(parseDateToIso('31/02/2026'), '');
+  assert.equal(parseDateToIso('13/25/2026'), '');
+  assert.equal(parseDateToIso('0/3/2026'), '');
+  assert.equal(parseDateToIso('2026-02-30'), '');
+  assert.equal(parseDateToIso('2026-13-01'), '');
+  assert.equal(parseDateToIso('29/02/2028'), '2028-02-29', 'a leap day exists in a leap year');
+  assert.equal(parseDateToIso('29/02/2026'), '');
+});
+
+test('an invoice PDF with a date that does not exist gets today', () => {
+  const fields = extractPdfInvoiceFields('Invoice #A-200 | Issue date: 31/02/2026 | Total: 121.00', 'a.pdf');
+
+  assert.equal(fields.issueDate, todayISO());
+});
+
 test('the fields of an invoice PDF are read', () => {
   const fields = extractPdfInvoiceFields(
     'Invoice Number: INV-2026-03-004 | Issue date: 10/03/2026 | Due date: 2026-04-09 | Bill to: Acme Ltd | Client ID: 0007 | '
