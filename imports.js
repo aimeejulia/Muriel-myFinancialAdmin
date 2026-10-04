@@ -62,25 +62,24 @@ export function parseAmount(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+// Gives the date as YYYY-MM-DD, or an empty text when the parts are not a date that exists, for example 31/02.
+function isoDateFromParts(year, month, day) {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return '';
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 export function parseDateToIso(value) {
   if (!value) return '';
   const dateText = String(value).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateText)) return dateText;
+  const isoDate = dateText.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoDate) return isoDateFromParts(Number(isoDate[1]), Number(isoDate[2]), Number(isoDate[3]));
 
-  const slashDate = dateText.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (slashDate) {
-    const day = Number(slashDate[1]);
-    const month = Number(slashDate[2]);
-    const year = Number(slashDate[3].length === 2 ? `20${slashDate[3]}` : slashDate[3]);
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  }
-
-  const dashDate = dateText.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
-  if (dashDate) {
-    const day = Number(dashDate[1]);
-    const month = Number(dashDate[2]);
-    const year = Number(dashDate[3].length === 2 ? `20${dashDate[3]}` : dashDate[3]);
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  // Day, month and year with slashes or dashes, as in 10/03/2026 or 10-03-26
+  const dayFirstDate = dateText.match(/^(\d{1,2})([/-])(\d{1,2})\2(\d{2,4})$/);
+  if (dayFirstDate) {
+    const year = Number(dayFirstDate[4].length === 2 ? `20${dayFirstDate[4]}` : dayFirstDate[4]);
+    return isoDateFromParts(year, Number(dayFirstDate[3]), Number(dayFirstDate[1]));
   }
 
   return '';
