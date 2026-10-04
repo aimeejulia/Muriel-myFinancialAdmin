@@ -509,14 +509,17 @@
               <article class="report-chart-card">
                 <h4>Status breakdown</h4>
                 <canvas id="report-status-chart"></canvas>
+                <p class="report-chart-card-empty" hidden></p>
               </article>
               <article class="report-chart-card">
                 <h4>Cashflow mix</h4>
                 <canvas id="report-cashflow-chart"></canvas>
+                <p class="report-chart-card-empty" hidden></p>
               </article>
               <article class="report-chart-card wide">
                 <h4>Income trend</h4>
                 <canvas id="report-income-chart"></canvas>
+                <p class="report-chart-card-empty" hidden></p>
               </article>
             </div>
             <p id="report-charts-empty" class="report-charts-empty" hidden></p>
@@ -529,31 +532,31 @@
                 <h3>How to read this report</h3>
               </div>
             </div>
-            <p class="report-notes-intro">Use this panel to quickly understand what the numbers include, what they exclude, and what to do next when the figures change.</p>
+            <p class="report-notes-intro">The report shows the figures of the selected quarter or year. They are in your book currency.</p>
             <div class="report-notes-groups">
               <section class="report-note-group">
-                <h4>How this snapshot works</h4>
+                <h4>What the figures include</h4>
                 <ul class="notes-list">
-                  <li>Totals are based on invoice issue date inside the selected quarter or full year.</li>
-                  <li>Received counts the payments with a payment date in the selected period, also for invoices from an earlier period.</li>
-                  <li>Net invoiced uses invoice subtotals, while paid and outstanding focus on collection status.</li>
-                  <li>Income trend compares invoiced value, expenses, and estimated net over time.</li>
+                  <li>Net invoiced, VAT invoiced and Gross invoiced count the invoices with an issue date in the period. Drafts and aborted invoices are not included.</li>
+                  <li>Received counts the payments with a payment date in the period, also for invoices from an earlier period.</li>
+                  <li>Income is the amount received less the VAT for a paid invoice. For an unpaid invoice, it is an estimate: the subtotal at the exchange rate of the invoice date.</li>
+                  <li>Expenses count by the date of the expense. Estimated net is the income less the deductible expenses.</li>
+                  <li>If the book currency changed in the period, the report shows the totals of each book currency separately.</li>
                 </ul>
               </section>
               <section class="report-note-group">
-                <h4>What to watch weekly</h4>
+                <h4>What to watch</h4>
                 <ul class="notes-list">
-                  <li>Outstanding receivables should trend down as reminders are sent and payments are booked.</li>
-                  <li>VAT exposure should not keep rising for more than one reporting period.</li>
-                  <li>Delinquent totals indicate cashflow risk and should trigger follow-up action.</li>
+                  <li>Overdue and Delinquent show money that is late. Send a reminder from the invoice list: More &gt; Reminder.</li>
+                  <li>VAT exposure is the VAT on invoices that are not paid yet. You declare this VAT for the issue date, also before the client pays.</li>
+                  <li>Outstanding is the total with VAT that clients still have to pay for the invoices of the period.</li>
                 </ul>
               </section>
               <section class="report-note-group">
-                <h4>Data and operations notes</h4>
+                <h4>Export</h4>
                 <ul class="notes-list">
-                  <li>Aborted invoices are excluded from financial totals and reporting cards.</li>
-                  <li>Paid status and payment dates are manual entries unless automation is connected later.</li>
-                  <li>CSV exports mirror report cards and can be shared with advisors or imported elsewhere.</li>
+                  <li>Export CSV saves the figures of the report in a file for your accountant or a spreadsheet.</li>
+                  <li>The CSV file has dates such as 2026-03-10 and numbers such as 1234.5, so other programs can read it.</li>
                 </ul>
               </section>
             </div>

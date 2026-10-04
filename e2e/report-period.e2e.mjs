@@ -78,3 +78,41 @@ test('Enter in the year field runs the report and keeps the page', async () => {
     await app.stop();
   }
 });
+
+test('a chart without data shows a short text in place of empty axes', async () => {
+  writeStateFile(dataDir, sampleState({
+    invoices: [{ ...sampleInvoice, id: 'draft', issueDate: '2025-05-10', status: 'draft' }],
+  }));
+  const app = await launchApp(dataDir);
+  try {
+    const charts = (quarter) => app.evaluate(`(() => {
+      document.querySelector('.nav-link[data-view="reports"]').click();
+      const year = document.getElementById('reportYear');
+      year.value = '2025';
+      year.dispatchEvent(new Event('input'));
+      const period = document.getElementById('reportQuarter');
+      period.value = '${quarter}';
+      period.dispatchEvent(new Event('change'));
+      return {
+        grid: !document.getElementById('report-charts').hidden,
+        message: document.getElementById('report-charts-empty').hidden ? '' : document.getElementById('report-charts-empty').textContent,
+        cards: [...document.querySelectorAll('.report-chart-card')].map((card) => card.querySelector('canvas').hidden
+          ? card.querySelector('.report-chart-card-empty').textContent
+          : 'chart'),
+      };
+    })()`);
+
+    assert.deepEqual(await charts('2'), {
+      grid: true,
+      message: '',
+      cards: ['chart', 'No amounts in this period.', 'No amounts in this period.'],
+    });
+    const empty = await charts('1');
+    assert.deepEqual({ grid: empty.grid, message: empty.message }, {
+      grid: false,
+      message: 'No invoices or expenses in this period, so there are no charts.',
+    });
+  } finally {
+    await app.stop();
+  }
+});

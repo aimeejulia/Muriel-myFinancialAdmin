@@ -568,6 +568,8 @@
       grid-template-rows: auto 1fr;
       gap: 8px;
     }
+    .report-chart-card-empty { color: var(--muted); margin: 24px 0; text-align: center; }
+    .report-chart-card canvas[hidden], .report-chart-grid[hidden] { display: none; }
     .report-chart-card h4 {
       margin: 0;
       font-size: 0.95rem;
