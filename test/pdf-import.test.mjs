@@ -53,7 +53,6 @@ test('the fields of an invoice PDF are read', () => {
     + 'Description: Website redesign | Subtotal: €1.000,00 | VAT rate: 21% | VAT amount: €210,00 | Total due: €1.210,00',
     'scan.pdf',
   );
-  delete fields.description;
 
   assert.deepEqual(fields, {
     invoiceNumber: 'INV-2026-03-004',
@@ -63,9 +62,22 @@ test('the fields of an invoice PDF are read', () => {
     vatRate: 21,
     vatAmount: 210,
     total: 1210,
+    description: 'Website redesign',
     clientName: 'Acme Ltd',
     clientDisplayId: '0007',
   });
+});
+
+test('the description of an invoice PDF ends at the next field', () => {
+  const description = (text) => extractPdfInvoiceFields(text, 'a.pdf').description;
+
+  assert.equal(description('Description: Website redesign Subtotal: 1,000.00 VAT rate: 21% Total: 1,210.00'), 'Website redesign');
+  assert.equal(description('Service: Monthly retainer, March VAT 21% Total due 121.00'), 'Monthly retainer, March');
+  assert.equal(description('Details: Translation of the user guide Qty 1 Unit price 300.00'), 'Translation of the user guide');
+  assert.equal(description('Total: 121.00 Description: Logo design and brand colours'), 'Logo design and brand colours');
+  assert.equal(description('Description: Hosting - Total: 10.00'), 'Hosting');
+  assert.equal(description('Description: Client onboarding workshop | Total: 500.00'), 'Client onboarding workshop');
+  assert.equal(description('Service: Rate review and net pricing advice Subtotal 800.00'), 'Rate review and net pricing advice');
 });
 
 test('missing invoice amounts are calculated from the ones that the PDF has', () => {
