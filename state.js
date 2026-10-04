@@ -999,6 +999,19 @@ export function currentQuarterInfo() {
   return { year: now.getFullYear(), quarter: Math.floor(now.getMonth() / 3) + 1 };
 }
 
+// The quarter that the dashboard and the reports show first: the last quarter up to today with issued invoices or
+// expenses, so the first weeks of a new quarter do not show only zeros. Without records it is the current quarter.
+export function startPeriodInfo() {
+  const today = todayISO();
+  const dates = [
+    ...state.invoices.filter(countsAsInvoiced).map((invoice) => invoice.issueDate),
+    ...state.expenses.map((expense) => expense.date),
+  ].filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) && date <= today).sort();
+  const last = dates[dates.length - 1];
+  if (!last) return currentQuarterInfo();
+  return { year: yearFromDate(last), quarter: quarterFromDate(last) };
+}
+
 export function selectedDashboardPeriod() {
   const fallback = currentQuarterInfo();
   const year = Number(elements.dashboardYear.value);

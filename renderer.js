@@ -19,7 +19,7 @@ import {
   upsertInvoice,
   buildInvoiceNumber,
   generateClientDisplayId,
-  currentQuarterInfo,
+  startPeriodInfo,
   getClient,
   invoiceClientOptions,
   reportingCurrency,
@@ -922,7 +922,7 @@ async function init() {
   applyTheme(state.profile.themePreset);
   document.getElementById('clientDefaultCurrency').value = reportingCurrency();
   document.getElementById('quickClientDefaultCurrency').value = reportingCurrency();
-  const now = currentQuarterInfo();
+  const now = startPeriodInfo();
   elements.dashboardYear.value = now.year;
   elements.dashboardPeriod.value = `q${now.quarter}`;
   elements.reportYear.value = now.year;
