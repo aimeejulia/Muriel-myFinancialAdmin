@@ -147,11 +147,12 @@ export function extractPdfInvoiceFields(text, fileName = '') {
 
 export function inferExpenseCategoryFromText(normalizedText = '') {
   const text = normalizedText.toLowerCase();
-  if (/saas|software|subscription|license|hosting|cloud|domain/.test(text)) return 'Software';
-  if (/flight|train|uber|taxi|travel|hotel|airbnb/.test(text)) return 'Travel';
-  if (/office|stationery|printer|chair|desk/.test(text)) return 'Office';
-  if (/ad|ads|campaign|marketing|seo|newsletter/.test(text)) return 'Marketing';
-  if (/lawyer|legal|accountant|consult|professional/.test(text)) return 'Professional services';
+  // Whole words only, so for example "made" or "address" is not the word "ad".
+  if (/\b(?:saas|software|subscriptions?|licen[cs]es?|hosting|cloud|domains?)\b/.test(text)) return 'Software';
+  if (/\b(?:flights?|trains?|uber|taxis?|travel|hotels?|airbnb)\b/.test(text)) return 'Travel';
+  if (/\b(?:office|stationery|printers?|chairs?|desks?)\b/.test(text)) return 'Office';
+  if (/\b(?:ads?|campaigns?|marketing|seo|newsletters?)\b/.test(text)) return 'Marketing';
+  if (/\b(?:lawyers?|legal|accountants?|consult\w*|professional)\b/.test(text)) return 'Professional services';
   return 'Other';
 }
 
