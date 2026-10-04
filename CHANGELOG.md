@@ -11,8 +11,28 @@
 - You can record an expense in the currency of the receipt. Muriel gets the ECB exchange rate and fills in the amount paid in the book currency.
 - You can change the book currency from a date. Invoices and expenses before the date keep their book currency.
 - A report or dashboard for a period with two book currencies shows the totals of each book currency separately.
+- An invoice can have several lines, each with a description, a quantity and a unit price.
+- New invoice opens the invoice form above the list. The list has the full width, with the issue date and the due date.
+- Each invoice row shows its main action and Preview. The other actions are in a More menu.
+- A new invoice starts as a draft. Mark sent marks it sent. Every invoice can be edited from More > Edit.
+- The Mark paid and Status windows show the number, the client and the total of the invoice.
+- A Get started panel on the Dashboard shows the first steps for a new user.
+- You can search the invoice list and the client list, and show the invoices of one client.
+- Amounts and dates use the number and date formats of your desktop (LC_NUMERIC and LC_TIME).
 
 ### Fixed
+- An amount with a decimal comma, such as 12,50, is read as 12.50. Before, it was saved as 1250.
+- The Dashboard shows the open and overdue invoices of all periods. Before, an overdue invoice from an earlier quarter was not shown.
+- The Dashboard and the reports open on the last quarter with invoices or expenses, and the report updates when you change the period.
+- The Dashboard shows the outstanding amount with VAT, as the report does.
+- In a report, Received counts the payments by their payment date.
+- A draft has no Mark paid and no Reminder, and Overdue is not a status to select.
+- The invoice preview and the PDF keep the lines of an address and of payment details. The preview does not show the status.
+- Form errors show at their fields, not in message boxes. Reminder says Copied on the button.
+- The Profile page says trading name everywhere, and says when each part is saved. The Book currency from field shows only when necessary.
+- Clearer labels: Mark paid in the payment window, Net income on the Dashboard, and a smaller Check for updates link in the sidebar.
+- The theme buttons look different, and the reports show no empty charts.
+- In a narrow window, the sidebar is a bar at the top.
 - A date that does not exist in an imported PDF, for example 31/02/2026, is not used.
 - An imported expense gets its category from whole words. Before, "made" or "address" made an expense Marketing.
 - The description of an imported invoice ends at the next field. Before, it also contained the amounts after it.
