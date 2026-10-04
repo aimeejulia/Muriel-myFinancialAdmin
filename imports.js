@@ -85,6 +85,16 @@ export function parseDateToIso(value) {
   return '';
 }
 
+// The text of a PDF is read as one line, so a description ends at a separator or at the label of the next field.
+// A label is a field only when a colon or a number follows it, so "Client onboarding" stays in the description.
+const NEXT_FIELD_LABEL = /\||\b(?:Sub\s*total|Net|VAT(?:\s*(?:rate|amount))?|Tax(?:\s*(?:rate|amount))?|Grand\s*total|Total(?:\s*(?:due|amount))?|Amount(?:\s*due)?|Qty|Quantity|Unit\s*price|Price|Rate|Issue\s*date|Invoice\s*date|Due\s*date|Payment\s*due|Client\s*ID|Bill(?:ed)?\s*to)\b(?=\s*(?:[:#]|[€$£]?\s*\d))/i;
+
+function descriptionUntilNextField(text) {
+  const description = String(text || '');
+  const next = description.search(NEXT_FIELD_LABEL);
+  return (next === -1 ? description : description.slice(0, next)).replace(/[\s|,:;-]+$/, '').trim();
+}
+
 export function extractPdfInvoiceFields(text, fileName = '') {
   const normalized = text.replace(/\s+/g, ' ').trim();
 
@@ -95,7 +105,7 @@ export function extractPdfInvoiceFields(text, fileName = '') {
   const totalMatch = normalized.match(/(?:\bGrand\s*total\b|\bTotal\b(?!\s*(?:vat|tax))\s*(?:due|amount)?)\s*[:#-]?\s*([€$£]?\s*[\d.,]+)/i);
   const vatAmountMatch = normalized.match(/(?:VAT\s*(?:amount)?|Tax)\s*[:#-]?\s*([€$£]?\s*[\d.,]+)/i);
   const vatRateMatch = normalized.match(/(?:VAT|Tax)\s*(?:rate)?\s*[:#-]?\s*(\d{1,2}(?:[.,]\d{1,2})?)\s*%/i);
-  const descriptionMatch = normalized.match(/(?:Description|Service|Details)\s*[:#-]?\s*([^\n]{5,120})/i);
+  const descriptionMatch = normalized.match(/(?:Description|Service|Details)\s*[:#-]?\s*(.{5,120})/i);
   const clientIdMatch = normalized.match(/Client\s*ID\s*[:#-]?\s*([A-Z0-9-]+)/i);
   const clientNameMatch = normalized.match(/(?:Client|Bill\s*to|Billed\s*to)\s*[:#-]?\s*([A-Za-z0-9 .,&'-]{3,80})/i);
 
@@ -139,7 +149,7 @@ export function extractPdfInvoiceFields(text, fileName = '') {
     vatRate: Number(vatRate.toFixed(2)),
     vatAmount: Number(computedVatAmount.toFixed(2)),
     total: Number(computedTotal.toFixed(2)),
-    description: (descriptionMatch?.[1] || 'Imported from PDF').trim(),
+    description: descriptionUntilNextField(descriptionMatch?.[1]) || 'Imported from PDF',
     clientName: (clientNameMatch?.[1] || '').trim(),
     clientDisplayId: (clientIdMatch?.[1] || '').trim(),
   };
