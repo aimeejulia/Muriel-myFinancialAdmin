@@ -71,7 +71,7 @@ export function buildInvoicePreviewMarkup(invoice) {
   const senderLines = [
     primarySenderName ? `<p class="preview-primary-name">${escapeHtml(primarySenderName)}</p>` : '',
     secondarySenderName ? `<p class="preview-secondary-name">${escapeHtml(secondarySenderName)}</p>` : '',
-    senderAddress ? `<p>${escapeHtml(senderAddress)}</p>` : '',
+    senderAddress ? `<p class="preview-multiline">${escapeHtml(senderAddress)}</p>` : '',
     senderEmail ? `<p>Email: ${escapeHtml(senderEmail)}</p>` : '',
     senderWebsite ? `<p>Website: ${escapeHtml(senderWebsite)}</p>` : '',
     senderPhone ? `<p>Phone: ${escapeHtml(senderPhone)}</p>` : '',
@@ -80,7 +80,7 @@ export function buildInvoicePreviewMarkup(invoice) {
 
   const clientLines = [
     client?.name ? `<p class="preview-primary-name">${escapeHtml(client.name)}</p>` : '',
-    client?.address ? `<p>${escapeHtml(client.address)}</p>` : '',
+    client?.address ? `<p class="preview-multiline">${escapeHtml(client.address)}</p>` : '',
     client?.vatNumber ? `<p>VAT/Tax ID: ${escapeHtml(client.vatNumber)}</p>` : '',
     `<p>Client ID: ${escapeHtml(client?.displayId || '')}</p>`,
   ].filter(Boolean).join('');
@@ -91,7 +91,7 @@ export function buildInvoicePreviewMarkup(invoice) {
       <strong>Payment details</strong>
       ${paymentMethods.map((method) => `
         <p class="preview-primary-name">${escapeHtml(method.type ? `${method.label} (${method.type})` : method.label)}</p>
-        ${method.details ? `<p>${escapeHtml(method.details)}</p>` : ''}
+        ${method.details ? `<p class="preview-multiline">${escapeHtml(method.details)}</p>` : ''}
       `).join('')}
     </div>
   `
@@ -107,7 +107,6 @@ export function buildInvoicePreviewMarkup(invoice) {
       <div class="preview-meta">
         <div><strong style="color: var(--text);">Issue date:</strong> ${escapeHtml(formatDate(invoice.issueDate))}</div>
         <div><strong style="color: var(--text);">Due date:</strong> ${escapeHtml(formatDate(invoice.dueDate))}</div>
-        <div><strong style="color: var(--text);">Status:</strong> ${escapeHtml(computedStatus(invoice))}</div>
       </div>
     </div>
     <div class="preview-party-grid">
@@ -257,20 +256,25 @@ export function printInvoice(invoice) {
     pdf.setTextColor(15, 23, 42);
     pdf.text(text, x, y);
   };
+  // Addresses and payment details have one item on each line, so their line breaks stay in the PDF.
+  const splitKeepingLineBreaks = (text, maxWidth) => String(text || '').split(/\r?\n/)
+    .map((line) => sanitize(line))
+    .filter(Boolean)
+    .flatMap((line) => pdf.splitTextToSize(line, maxWidth));
   const drawValue = (text, x, y, options = {}) => {
     pdf.setFont('helvetica', options.bold ? 'bold' : 'normal');
     pdf.setFontSize(options.size || 11);
     pdf.setTextColor(17, 24, 39);
-    const lines = pdf.splitTextToSize(sanitize(text), options.maxWidth || columnWidth);
-    pdf.text(lines, x, y);
+    const lines = splitKeepingLineBreaks(text, options.maxWidth || columnWidth);
+    if (lines.length) pdf.text(lines, x, y);
     return lines.length;
   };
   const drawMuted = (text, x, y, options = {}) => {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(options.size || 10);
     pdf.setTextColor(107, 114, 128);
-    const lines = pdf.splitTextToSize(sanitize(text), options.maxWidth || columnWidth);
-    pdf.text(lines, x, y);
+    const lines = splitKeepingLineBreaks(text, options.maxWidth || columnWidth);
+    if (lines.length) pdf.text(lines, x, y);
     return lines.length;
   };
 
