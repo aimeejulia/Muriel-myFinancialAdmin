@@ -128,6 +128,17 @@ test('the category of an expense comes from words in the PDF', () => {
   assert.equal(inferExpenseCategoryFromText(), 'Other');
 });
 
+test('the category of an expense comes from whole words, not parts of words', () => {
+  assert.equal(inferExpenseCategoryFromText('Fuel Total: 60.00 Payment made by card'), 'Other');
+  assert.equal(inferExpenseCategoryFromText('Shipping address: Calle Mayor 1'), 'Other');
+  assert.equal(inferExpenseCategoryFromText('Staff training workshop'), 'Other');
+  assert.equal(inferExpenseCategoryFromText('Ad campaign on social media'), 'Marketing');
+  assert.equal(inferExpenseCategoryFromText('Google Ads'), 'Marketing');
+  assert.equal(inferExpenseCategoryFromText('Domains and licences'), 'Software');
+  assert.equal(inferExpenseCategoryFromText('Two flights to Lisbon'), 'Travel');
+  assert.equal(inferExpenseCategoryFromText('Consulting services'), 'Professional services');
+});
+
 test('an imported invoice uses an existing client with the same name or ID', () => {
   state.clients = [{ id: 'client-1', displayId: '0001', name: 'Acme Ltd' }];
 
