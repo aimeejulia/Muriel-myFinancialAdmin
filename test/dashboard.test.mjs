@@ -55,7 +55,7 @@ function showDashboard(period) {
 test('the dashboard shows the open invoices of all periods', () => {
   showDashboard('q4');
 
-  assert.equal(globalThis.document.getElementById('metric-outstanding').textContent, formatCurrency(550, 'EUR'));
+  assert.equal(globalThis.document.getElementById('metric-outstanding').textContent, formatCurrency(665.5, 'EUR'), 'the totals with VAT');
   assert.equal(globalThis.document.getElementById('metric-vat-exposure').textContent, formatCurrency(115.5, 'EUR'));
   assert.equal(globalThis.document.getElementById('metric-received').textContent, formatCurrency(100, 'EUR'), 'income stays in the period');
 });

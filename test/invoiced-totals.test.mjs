@@ -88,6 +88,6 @@ test('dashboard totals leave out draft and aborted invoices', () => {
   renderDashboard();
 
   assert.equal(globalThis.document.getElementById('metric-received').textContent, formatCurrency(500, 'EUR'));
-  assert.equal(globalThis.document.getElementById('metric-outstanding').textContent, formatCurrency(200, 'EUR'));
+  assert.equal(globalThis.document.getElementById('metric-outstanding').textContent, formatCurrency(242, 'EUR'));
   assert.equal(globalThis.document.getElementById('metric-vat-exposure').textContent, formatCurrency(42, 'EUR'));
 });
