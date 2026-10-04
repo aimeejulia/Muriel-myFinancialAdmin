@@ -285,6 +285,8 @@ export function renderDashboard() {
   const realisedNetIncome = (group) => group.invoices
     .filter((invoice) => computedStatus(invoice) === 'paid')
     .reduce((sum, invoice) => sum + invoiceIncome(invoice), 0) - expensesOf(group);
+  // Money that is still open does not depend on the period: an invoice from an earlier quarter can still be unpaid.
+  const openGroups = groupByBookCurrency(state.invoices.filter(countsAsInvoiced), []);
   const outstanding = (group) => group.invoices
     .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
@@ -297,11 +299,11 @@ export function renderDashboard() {
   }
   document.getElementById('metric-quarter-invoiced').textContent = formatCurrencyTotals(groups, realisedNetIncome);
   document.getElementById('metric-received').textContent = formatCurrencyTotals(groups, accruedNetIncome);
-  document.getElementById('metric-outstanding').textContent = formatCurrencyTotals(groups, outstanding);
-  document.getElementById('metric-vat-exposure').textContent = formatCurrencyTotals(groups, vatExposure);
+  document.getElementById('metric-outstanding').textContent = formatCurrencyTotals(openGroups, outstanding);
+  document.getElementById('metric-vat-exposure').textContent = formatCurrencyTotals(openGroups, vatExposure);
 
   elements.overdueTableBody.innerHTML = '';
-  const overdue = periodInvoices
+  const overdue = state.invoices
     .filter((invoice) => computedStatus(invoice) === 'overdue')
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   if (!overdue.length) {
@@ -321,7 +323,8 @@ export function renderDashboard() {
   const statuses = ['draft', 'sent', 'overdue', 'delinquent', 'aborted', 'paid'];
   elements.statusSummary.innerHTML = '';
   statuses.forEach((status) => {
-    const count = periodInvoices.filter((invoice) => computedStatus(invoice) === status).length;
+    // A click on a status shows those invoices of all periods in the invoice list, so the count is of all periods too.
+    const count = state.invoices.filter((invoice) => computedStatus(invoice) === status).length;
     const row = document.createElement('button');
     row.className = 'status-row';
     row.type = 'button';
