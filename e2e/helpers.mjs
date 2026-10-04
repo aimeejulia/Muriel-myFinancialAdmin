@@ -133,7 +133,8 @@ export async function launchApp(dataDir, { env = {} } = {}) {
     '--remote-debugging-port=0',
   ], {
     stdio: ['ignore', 'ignore', 'pipe'],
-    env: { ...process.env, XDG_CONFIG_HOME: path.dirname(dataDir), ...env },
+    // The same locale on every computer, so amounts and dates look the same in every test run.
+    env: { ...process.env, LANG: 'en_GB.UTF-8', LC_ALL: '', LC_NUMERIC: '', LC_TIME: '', XDG_CONFIG_HOME: path.dirname(dataDir), ...env },
   });
   runningApps.add(child);
   child.on('exit', () => runningApps.delete(child));

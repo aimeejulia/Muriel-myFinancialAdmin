@@ -13,6 +13,7 @@ import {
   addDaysISO,
   quarterFromDate,
   yearFromDate,
+  formatDate,
 } from './state.js';
 
 let reportStatusChart = null;
@@ -313,7 +314,7 @@ export function bookCurrencyRangesText(currency, year, period) {
       };
     })
     .filter((range) => range.currency === currency && range.from <= range.to);
-  return ranges.map((range) => `${range.from} to ${range.to}`).join(' and ');
+  return ranges.map((range) => `${formatDate(range.from)} to ${formatDate(range.to)}`).join(' and ');
 }
 
 export function runReport() {

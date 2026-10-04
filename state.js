@@ -812,9 +812,36 @@ export function invoiceMoneyForSave({ subtotal, vatRate, currency, bookCurrency,
   return { ...amounts, bookAmounts };
 }
 
+// The locales of the desktop for numbers and dates. The app sets them when it starts. Without them, amounts use
+// English formats and dates show as YYYY-MM-DD.
+const displayLocales = { number: 'en', date: '' };
+
+export function setDisplayLocales({ number, date } = {}) {
+  displayLocales.number = number || 'en';
+  displayLocales.date = date || '';
+}
+
 export function formatCurrency(value, currencyCode = 'EUR') {
   const code = normalizeReportingCurrency(currencyCode);
-  return new Intl.NumberFormat('en', { style: 'currency', currency: code }).format(Number(value || 0));
+  return new Intl.NumberFormat(displayLocales.number, { style: 'currency', currency: code }).format(Number(value || 0));
+}
+
+// Shows a YYYY-MM-DD date in the date format of the desktop, for example 04/10/2026 or 10/04/2026. The date is read
+// from its text, so the time zone cannot move it to another day.
+export function formatDate(isoDate) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(isoDate || ''));
+  if (!match || !displayLocales.date) return String(isoDate || '');
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return new Intl.DateTimeFormat(displayLocales.date, { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' }).format(date);
+}
+
+// Writes a number into a number field with the decimal mark of the desktop, for example 145,20 or 145.20.
+export function formatDecimalInput(value, fractionDigits = 2) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '';
+  const text = fractionDigits === null ? String(number) : number.toFixed(fractionDigits);
+  const decimalMark = new Intl.NumberFormat(displayLocales.number).formatToParts(1.5).find((part) => part.type === 'decimal')?.value || '.';
+  return decimalMark === ',' ? text.replace('.', ',') : text;
 }
 
 // The book currencies of the accounts. The first one is in force from the start, each change from its date.
@@ -868,9 +895,9 @@ export function changeBookCurrency(currencyCode, from = '') {
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) return `"${from}" is not a date.`;
-  if (from <= last.from) return `The date must be after ${last.from}, the date of the last change of book currency.`;
+  if (from <= last.from) return `The date must be after ${formatDate(last.from)}, the date of the last change of book currency.`;
   if (lastDate && from <= lastDate) {
-    return `The date must be after ${lastDate}, the date of the last invoice or expense. A change of book currency does not change invoices and expenses that exist.`;
+    return `The date must be after ${formatDate(lastDate)}, the date of the last invoice or expense. A change of book currency does not change invoices and expenses that exist.`;
   }
   state.profile.bookCurrencyChanges = [...(state.profile.bookCurrencyChanges || []), { from, currency }];
   return '';
@@ -883,7 +910,7 @@ export function removeLastBookCurrencyChange() {
   if (!last) return '';
   const lastDate = lastRecordDate();
   if (lastDate && lastDate >= last.from) {
-    return `Invoices or expenses from ${last.from} or later are in ${last.currency}, so this change stays.`;
+    return `Invoices or expenses from ${formatDate(last.from)} or later are in ${last.currency}, so this change stays.`;
   }
   state.profile.bookCurrencyChanges = changes.slice(0, -1);
   return '';

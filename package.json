@@ -82,6 +82,7 @@
       "source-update.js",
       "ipc-guard.js",
       "exchange-rates.js",
+      "system-locale.js",
       "preload.js",
       "build/icon.png",
       "!**/node_modules/canvas/**"

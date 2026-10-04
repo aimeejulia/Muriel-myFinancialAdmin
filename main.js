@@ -19,6 +19,7 @@ const {
 const { updateSourceCheckout } = require('./source-update');
 const { isAppPageUrl } = require('./ipc-guard');
 const { createExchangeRateService } = require('./exchange-rates');
+const { systemLocales } = require('./system-locale');
 
 let mainWindow = null;
 let lastKnownSerializedState = '';
@@ -457,6 +458,8 @@ app.whenReady().then(() => {
       return { ok: false, error: error.message };
     }
   });
+
+  handleFromApp('desktop-store:get-locales', () => systemLocales(process.env, app.getLocale()));
 
   handleFromApp('desktop-store:get-encryption-status', () => {
     return {

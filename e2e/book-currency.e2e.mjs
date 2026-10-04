@@ -48,7 +48,7 @@ test('the book currency changes from a date, and older records keep their book c
       'Enter the date from which the book currency is GBP. Invoices and expenses before this date stay in their book currency.',
     ]);
     assert.deepEqual(await app.evaluate(saveBookCurrency('GBP', '2026-03-10')), [
-      'The date must be after 2026-03-10, the date of the last invoice or expense. A change of book currency does not change invoices and expenses that exist.',
+      'The date must be after 10/03/2026, the date of the last invoice or expense. A change of book currency does not change invoices and expenses that exist.',
     ]);
     assert.deepEqual((await app.evaluate(savedProfile)).bookCurrencyChanges, []);
 
@@ -58,7 +58,7 @@ test('the book currency changes from a date, and older records keep their book c
       periods: document.getElementById('profile-book-currencies').textContent,
       currency: document.getElementById('profileReportingCurrency').value,
       undoVisible: !document.getElementById('profile-book-currency-undo').hidden,
-    })`), { periods: 'EUR from the start, GBP from 2026-04-01', currency: 'GBP', undoVisible: true });
+    })`), { periods: 'EUR from the start, GBP from 01/04/2026', currency: 'GBP', undoVisible: true });
 
     // A new invoice uses the book currency of its issue date.
     const invoiceForm = (issueDate) => app.evaluate(`(() => {
@@ -110,7 +110,7 @@ test('the book currency changes from a date, and older records keep their book c
       charts: document.getElementById('report-charts-empty').textContent,
     })`);
     assert.deepEqual(report, {
-      titles: ['EUR books: 2026-01-01 to 2026-03-31', 'GBP books: 2026-04-01 to 2026-12-31'],
+      titles: ['EUR books: 01/01/2026 to 31/03/2026', 'GBP books: 01/04/2026 to 31/12/2026'],
       deductible: ['€50.00', '£30.00'],
       charts: 'The charts show the GBP books only. The totals above show each book currency.',
     });
@@ -122,7 +122,7 @@ test('the book currency changes from a date, and older records keep their book c
       document.getElementById('profile-book-currency-undo').click();
       return window.alerts;
     })()`;
-    assert.deepEqual(await app.evaluate(undo), ['Invoices or expenses from 2026-04-01 or later are in GBP, so this change stays.']);
+    assert.deepEqual(await app.evaluate(undo), ['Invoices or expenses from 01/04/2026 or later are in GBP, so this change stays.']);
   } finally {
     await app.stop();
   }

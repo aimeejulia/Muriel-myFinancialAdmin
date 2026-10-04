@@ -252,6 +252,14 @@ CAUTION: Keep backup files in a safe place. A backup file is not encrypted, so a
 
 Muriel examines a backup before it restores it. It does not restore a file that has errors. It also does not restore a backup from a newer version of Muriel. In that case, update Muriel first.
 
+## Number and date formats
+
+Muriel shows amounts and dates in the formats of your desktop region settings. For numbers, it uses `LC_NUMERIC`. For dates, it uses `LC_TIME`. If these are not set, it uses `LANG`. For example, with `es_ES` formats, Muriel shows `12.345,00 €` and `10/03/2026`.
+
+In an amount field, you can type a comma or a full stop as the decimal mark. For example, `12,50` and `12.50` are the same amount.
+
+CSV exports always use dates such as `2026-03-10` and numbers such as `12345.5`, so that other programs can read them.
+
 ## Currencies and taxes
 
 Muriel keeps your accounts in one currency, the book currency. You select the book currency in **Profile**. All reports use the book currency.

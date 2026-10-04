@@ -10,6 +10,8 @@ import {
   readDecimal,
   bookCurrencyOn,
   todayISO,
+  formatDate,
+  formatDecimalInput,
 } from './state.js';
 import { canGetExchangeRates, getBookExchangeRate } from './book-rate.js';
 
@@ -80,7 +82,7 @@ function showRateHint() {
     return;
   }
   elements.invoiceExchangeRateHint.textContent = rateDetails.manual
-    ? `Entered by hand for ${rateDetails.rateDate}.`
+    ? `Entered by hand for ${formatDate(rateDetails.rateDate)}.`
     : `${rateDetails.source}.`;
 }
 
@@ -107,7 +109,7 @@ export async function refreshInvoiceExchangeRate() {
     return;
   }
 
-  elements.invoiceExchangeRate.value = String(result.rate);
+  elements.invoiceExchangeRate.value = formatDecimalInput(result.rate, null);
   rateDetails = { rateDate: result.rateDate, source: result.source, manual: false };
   showRateHint();
   syncInvoiceCurrencyFields();
@@ -150,7 +152,7 @@ export function loadInvoiceCurrencyFields(invoice, currency) {
   rateRequest += 1;
   elements.invoiceCurrency.value = currency;
   elements.invoiceServiceDate.value = invoice.serviceDate || '';
-  elements.invoiceExchangeRate.value = invoice.exchangeRate?.rate ? String(invoice.exchangeRate.rate) : '';
+  elements.invoiceExchangeRate.value = invoice.exchangeRate?.rate ? formatDecimalInput(invoice.exchangeRate.rate, null) : '';
   rateBookCurrency = currentBookCurrency();
   rateDetails = {
     rateDate: invoice.exchangeRate?.rateDate || '',

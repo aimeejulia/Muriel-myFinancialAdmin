@@ -11,6 +11,7 @@ import {
   normalizeCurrencyCode,
   reportingCurrency,
   defaultPaymentMethods,
+  formatDecimalInput,
 } from './state.js';
 import { loadPdfJs } from './pdf-reader.js';
 import { readExpenseCurrencyFields, syncExpenseCurrencyFields } from './expense-currency-form.js';
@@ -209,7 +210,7 @@ export function setPendingExpenseImportInfo(message = '') {
 
 export function loadImportedExpenseIntoForm(importedExpense) {
   elements.expenseDate.value = importedExpense.date || todayISO();
-  elements.expenseAmount.value = String(importedExpense.amount || 0);
+  elements.expenseAmount.value = formatDecimalInput(importedExpense.amount || 0);
   elements.expenseCategory.value = importedExpense.category || 'Other';
   elements.expenseDeductible.value = importedExpense.deductible || 'yes';
   elements.expenseNote.value = importedExpense.note || 'Imported from PDF';
@@ -354,8 +355,8 @@ export function loadImportedDraftIntoForm(draft) {
   elements.invoiceStatus.value = 'sent';
   elements.invoiceNumber.value = draft.invoiceNumber || '';
   elements.invoiceDescription.value = draft.description || 'Imported from PDF';
-  elements.invoiceSubtotal.value = String(draft.subtotal || 0);
-  elements.invoiceVatRate.value = String(draft.vatRate || 21);
+  elements.invoiceSubtotal.value = formatDecimalInput(draft.subtotal || 0);
+  elements.invoiceVatRate.value = formatDecimalInput(draft.vatRate || 21, null);
   elements.invoicePaidDate.value = '';
   elements.invoiceIssuerSelect.value = 'legal';
   importHooks.toggleInvoicePaidDateField();
