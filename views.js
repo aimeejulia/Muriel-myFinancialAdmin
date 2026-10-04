@@ -79,7 +79,16 @@ export function renderClients() {
     return;
   }
 
-  const sortedClients = [...state.clients].sort((a, b) => {
+  const search = elements.clientSearch.value;
+  const shownClients = search.trim()
+    ? state.clients.filter((client) => matchesSearch(search, [client.name, client.contactName, client.email, client.vatNumber, client.displayId]))
+    : state.clients;
+  if (!shownClients.length) {
+    appendEmptyStateRow(elements.clientsTableBody, 7, 'No clients match the search.');
+    return;
+  }
+
+  const sortedClients = [...shownClients].sort((a, b) => {
     const aNumber = Number(String(a?.displayId || '').match(/(\d+)$/)?.[1] || Number.MAX_SAFE_INTEGER);
     const bNumber = Number(String(b?.displayId || '').match(/(\d+)$/)?.[1] || Number.MAX_SAFE_INTEGER);
 
@@ -185,9 +194,36 @@ function invoiceTotalText(invoice, status) {
     : `${text} (≈ ${formatCurrency(invoiceBookAmounts(invoice).total, bookCurrency)})`;
 }
 
+// True when each word of the search is in one of the texts, without regard to case and accents.
+function matchesSearch(search, texts) {
+  const simplify = (text) => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const haystack = simplify(texts.join(' '));
+  return simplify(search).split(/\s+/).filter(Boolean).every((word) => haystack.includes(word));
+}
+
+// Keeps the selected client when the client list changes.
+function renderInvoiceClientFilter() {
+  const selected = elements.invoiceClientFilter.value;
+  elements.invoiceClientFilter.innerHTML = '';
+  const all = document.createElement('option');
+  all.value = '';
+  all.textContent = 'All clients';
+  elements.invoiceClientFilter.appendChild(all);
+  [...state.clients].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))).forEach((client) => {
+    const option = document.createElement('option');
+    option.value = client.id;
+    option.textContent = client.name || client.displayId || 'Unknown';
+    elements.invoiceClientFilter.appendChild(option);
+  });
+  elements.invoiceClientFilter.value = state.clients.some((client) => client.id === selected) ? selected : '';
+}
+
 export function renderInvoices() {
   elements.invoicesTableBody.innerHTML = '';
+  renderInvoiceClientFilter();
   const filter = elements.invoiceFilter.value;
+  const clientId = elements.invoiceClientFilter.value;
+  const search = elements.invoiceSearch.value;
 
   let invoices = [...state.invoices].sort((a, b) => {
     const diff = new Date(a.issueDate) - new Date(b.issueDate);
@@ -195,6 +231,14 @@ export function renderInvoices() {
   });
   if (filter !== 'all') {
     invoices = invoices.filter((invoice) => computedStatus(invoice) === filter);
+  }
+  if (clientId) {
+    invoices = invoices.filter((invoice) => invoice.clientId === clientId);
+  }
+  if (search.trim()) {
+    invoices = invoices.filter((invoice) => matchesSearch(search, [
+      displayInvoiceNumber(invoice), getClient(invoice.clientId)?.name, invoice.description,
+    ]));
   }
 
   if (!invoices.length) {
