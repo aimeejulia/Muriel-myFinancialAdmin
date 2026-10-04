@@ -121,3 +121,20 @@ test('a currency without ECB rates gives a message to enter the rate by hand', a
   assert.equal(result.ok, false);
   assert.match(result.error, /The ECB has no XYZ exchange rate for 2026-09-28/);
 });
+
+test('a cache file that cannot be written does not stop the rate', async () => {
+  cacheFile = path.join(dir, 'missing-folder', 'exchange-rates.json');
+  const result = await service().getRate('USD', '2026-09-25');
+
+  assert.equal(result.ok, true);
+  assert.equal(result.rate, 1.1403);
+  assert.equal(fs.existsSync(cacheFile), false);
+});
+
+test('a broken cache file is read as an empty cache', async () => {
+  fs.writeFileSync(cacheFile, '[1, 2');
+  const result = await service().getRate('USD', '2026-09-25');
+
+  assert.equal(result.rate, 1.1403);
+  assert.equal(requests.length, 1);
+});
