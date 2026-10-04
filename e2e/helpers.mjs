@@ -213,6 +213,8 @@ export async function launchApp(dataDir, { env = {} } = {}) {
     const codes = { Escape: 27, Tab: 9, Enter: 13 };
     const base = { key, code: key, windowsVirtualKeyCode: codes[key], modifiers: shift ? 8 : 0 };
     await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...base });
+    // Enter also types a carriage return, which submits a form.
+    if (key === 'Enter') await send('Input.dispatchKeyEvent', { type: 'char', text: '\r', ...base });
     await send('Input.dispatchKeyEvent', { type: 'keyUp', ...base });
   };
 
@@ -237,9 +239,12 @@ export function invoiceTableHas(invoiceNumber) {
 
 export function reportCards(year, period) {
   return `(() => {
-    document.getElementById('reportYear').value = ${JSON.stringify(String(year))};
-    document.getElementById('reportQuarter').value = ${JSON.stringify(String(period))};
-    document.getElementById('run-quarter-report').click();
+    const year = document.getElementById('reportYear');
+    year.value = ${JSON.stringify(String(year))};
+    year.dispatchEvent(new Event('input'));
+    const period = document.getElementById('reportQuarter');
+    period.value = ${JSON.stringify(String(period))};
+    period.dispatchEvent(new Event('change'));
     return Object.fromEntries([...document.querySelectorAll('.report-card')]
       .map((card) => [card.querySelector('span').textContent, card.querySelector('strong').textContent]));
   })()`;
