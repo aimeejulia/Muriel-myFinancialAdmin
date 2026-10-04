@@ -197,16 +197,19 @@
       box-shadow: 0 0 0 2px rgba(255,255,255,0.14);
     }
     .theme-swatch {
-      width: 12px;
-      height: 12px;
+      width: 16px;
+      height: 16px;
       border-radius: 999px;
       display: block;
     }
+    /* Each swatch shows the sidebar color and the accent color of its theme, so the themes look different. */
     .theme-swatch.muriel {
-      background: linear-gradient(135deg, #f268b5, #f4a06f 65%, #f3cf68);
+      background: linear-gradient(135deg, #2a1177 50%, #f268b5 50%);
+      box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85);
     }
     .theme-swatch.sunrise {
-      background: linear-gradient(135deg, #ef7ea2, #f4a06f 65%, #f7dd88);
+      background: linear-gradient(135deg, #7a255e 50%, #f4a06f 50%);
+      box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85);
     }
     .theme-icon-moon {
       width: 12px;
