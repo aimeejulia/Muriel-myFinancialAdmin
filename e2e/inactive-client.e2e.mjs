@@ -28,7 +28,7 @@ test('an invoice for an inactive client keeps its client when edited', async () 
 
   await app.evaluate(`document.querySelector('#invoices-table-body button[data-action="edit-invoice"]').click(); true`);
   assert.equal(await app.evaluate(`document.getElementById('invoiceClient').value`), 'client-2');
-  await app.evaluate(`document.getElementById('invoiceDescription').value = 'Edited'; document.getElementById('invoice-form').requestSubmit(); true`);
+  await app.evaluate(`document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Edited'; document.getElementById('invoice-form').requestSubmit(); true`);
   await sleep(500);
   await app.stop();
 

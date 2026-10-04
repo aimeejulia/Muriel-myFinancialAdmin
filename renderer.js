@@ -16,6 +16,8 @@ import {
   invoiceReceivedAmount,
   roundMoney,
   readDecimal,
+  invoiceLines,
+  linesSubtotal,
   displayInvoiceNumber,
   attachDecimalInputs,
   invoiceMoneyForSave,
@@ -76,6 +78,7 @@ import {
   syncInvoiceCurrencyFields,
   useClientCurrency,
 } from './invoice-currency-form.js';
+import { attachInvoiceLineHandlers, readInvoiceLines, setInvoiceLines } from './invoice-lines-form.js';
 import {
   attachExpenseCurrencyHandlers,
   fillExpenseCurrencyOptions,
@@ -340,6 +343,7 @@ function resetForms() {
   elements.invoiceTotalPreview.textContent = formatCurrency(0, reportingCurrency());
   elements.invoiceIssuerSelect.value = 'legal';
   elements.invoicePaymentMethod.value = '';
+  setInvoiceLines([]);
   resetInvoiceCurrencyFields();
   uiState.lastInvoiceClientValue = '';
   toggleInvoicePaidDateField();
@@ -407,8 +411,7 @@ function loadInvoiceForEditing(invoice) {
   elements.invoiceNumber.value = invoice.invoiceNumber || '';
   elements.invoiceIssueDate.value = invoice.issueDate || todayISO();
   elements.invoiceDueDate.value = invoice.dueDate || todayISO();
-  elements.invoiceDescription.value = invoice.description || '';
-  elements.invoiceSubtotal.value = formatDecimalInput(invoice.subtotal || 0);
+  setInvoiceLines(invoiceLines(invoice));
   elements.invoiceVatRate.value = formatDecimalInput(invoice.vatRate ?? 21, null);
   elements.invoiceStatus.value = invoice.status === 'overdue' ? 'sent' : invoice.status || 'draft';
   elements.invoicePaidDate.value = invoice.paidDate || '';
@@ -460,6 +463,7 @@ attachDialogHandlers();
 attachDecimalInputs();
 fillInvoiceCurrencyOptions();
 attachInvoiceCurrencyHandlers();
+attachInvoiceLineHandlers(updateInvoicePreview);
 fillExpenseCurrencyOptions();
 attachExpenseCurrencyHandlers();
 
@@ -571,7 +575,8 @@ elements.invoiceForm.addEventListener('submit', (event) => {
   }
   const editingInvoice = state.invoices.find((item) => item.id === uiState.editingInvoiceId);
   const vatRate = readDecimal(formData.get('invoiceVatRate'), { amount: false });
-  const money = invoiceMoneyForSave({ subtotal: readDecimal(formData.get('invoiceSubtotal')), vatRate, ...currencyFields }, editingInvoice);
+  const lines = readInvoiceLines();
+  const money = invoiceMoneyForSave({ subtotal: linesSubtotal(lines), vatRate, ...currencyFields }, editingInvoice);
 
   let issuerType = 'legal';
   let issuerBusinessId = '';
@@ -594,7 +599,9 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     issuerName,
     issueDate,
     dueDate: formData.get('invoiceDueDate'),
-    description: String(formData.get('invoiceDescription') || '').trim(),
+    // The description is kept for older versions of the app and for lists: the text of the lines.
+    description: lines.map((line) => line.description).join('; '),
+    lines,
     ...money,
     vatRate,
     currency: currencyFields.currency,
@@ -631,7 +638,6 @@ elements.invoiceForm.addEventListener('submit', (event) => {
   showView('invoices');
 });
 
-elements.invoiceSubtotal.addEventListener('input', updateInvoicePreview);
 elements.invoiceVatRate.addEventListener('input', updateInvoicePreview);
 elements.invoiceStatus.addEventListener('change', toggleInvoicePaidDateField);
 elements.invoiceClient.addEventListener('change', (event) => {

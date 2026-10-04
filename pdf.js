@@ -12,8 +12,16 @@ import {
   getClient,
   escapeHtml,
   formatDate,
+  invoiceLines,
+  lineAmount,
+  displayNumberLocale,
 } from './state.js';
 import { getInvoiceSenderDetails } from './profile.js';
+
+// A quantity in the number format of the desktop, without decimals that are not necessary: 1, 2,5 or 0.75.
+function formatQuantity(quantity) {
+  return new Intl.NumberFormat(displayNumberLocale(), { maximumFractionDigits: 4 }).format(Number(quantity || 0));
+}
 
 export function getInvoiceDocumentLabel(invoice) {
   return computedStatus(invoice) === 'paid' ? 'Receipt' : 'Invoice';
@@ -125,18 +133,19 @@ export function buildInvoicePreviewMarkup(invoice) {
       <thead>
         <tr>
           <th>Description</th>
-          <th>Net</th>
-          <th>VAT</th>
-          <th>Total</th>
+          <th>Quantity</th>
+          <th>Unit price</th>
+          <th>Amount</th>
         </tr>
       </thead>
       <tbody>
+        ${invoiceLines(invoice).map((line) => `
         <tr>
-          <td>${escapeHtml(invoice.description || '')}</td>
-          <td>${escapeHtml(money(invoice.subtotal))}</td>
-          <td>${escapeHtml(`${Number(invoice.vatRate || 0)}% (${money(invoice.vatAmount)})`)}</td>
-          <td>${escapeHtml(money(invoice.total))}</td>
-        </tr>
+          <td>${escapeHtml(line.description || '')}</td>
+          <td>${escapeHtml(formatQuantity(line.quantity))}</td>
+          <td>${escapeHtml(money(line.unitPrice))}</td>
+          <td>${escapeHtml(money(lineAmount(line)))}</td>
+        </tr>`).join('')}
       </tbody>
     </table>
     <div class="preview-totals">
@@ -223,7 +232,8 @@ export function printInvoice(invoice) {
   const defaultCurrency = invoiceCurrency(invoice);
   const clientCurrency = normalizeCurrencyCode(invoice.clientCurrency || defaultCurrency);
   const hasClientCurrencyTotal = clientCurrency !== defaultCurrency && Number(invoice.clientCurrencyTotal || 0) > 0;
-  const money = (value) => formatCurrency(value, defaultCurrency);
+  // The PDF font has no narrow no-break space, which some locales use in amounts.
+  const money = (value) => formatCurrency(value, defaultCurrency).replace(/\u202f/g, '\u00a0');
   const {
     client,
     primarySenderName,
@@ -365,32 +375,53 @@ export function printInvoice(invoice) {
   pdf.setDrawColor(226, 232, 240);
   pdf.rect(margin, cursorY, contentWidth, 28);
 
-  const descriptionWidth = contentWidth - 220;
-  const netX = margin + descriptionWidth + 12;
-  const vatX = netX + 72;
-  const totalX = vatX + 78;
+  const descriptionWidth = contentWidth - 250;
+  const quantityX = margin + descriptionWidth + 12;
+  const unitPriceX = quantityX + 60;
+  const amountRight = margin + contentWidth - 12;
 
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  pdf.setTextColor(15, 23, 42);
-  pdf.text('Description', margin + 12, cursorY + 18);
-  pdf.text('Net', netX, cursorY + 18);
-  pdf.text('VAT', vatX, cursorY + 18);
-  pdf.text('Total', totalX, cursorY + 18);
+  const drawLinesHeader = () => {
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(margin, cursorY, contentWidth, 28, 'F');
+    pdf.setDrawColor(226, 232, 240);
+    pdf.rect(margin, cursorY, contentWidth, 28);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(15, 23, 42);
+    pdf.text('Description', margin + 12, cursorY + 18);
+    pdf.text('Quantity', quantityX, cursorY + 18);
+    pdf.text('Unit price', unitPriceX, cursorY + 18);
+    pdf.text('Amount', amountRight, cursorY + 18, { align: 'right' });
+    cursorY += 28;
+  };
 
-  cursorY += 28;
-  const descriptionLines = pdf.splitTextToSize(sanitize(invoice.description || 'Invoice item'), descriptionWidth - 24);
-  const rowHeight = Math.max(34, descriptionLines.length * 14 + 12);
+  drawLinesHeader();
+  // Each line gets a row. A line that does not fit on the page goes to a new page, with the column titles again.
+  invoiceLines(invoice).forEach((line) => {
+    const descriptionLines = pdf.splitTextToSize(sanitize(line.description || 'Invoice item'), descriptionWidth - 24);
+    const rowHeight = Math.max(34, descriptionLines.length * 14 + 12);
+    if (cursorY + rowHeight > pageHeight - margin) {
+      pdf.addPage();
+      cursorY = margin;
+      drawLinesHeader();
+    }
+    pdf.setDrawColor(226, 232, 240);
+    pdf.rect(margin, cursorY, contentWidth, rowHeight);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.setTextColor(15, 23, 42);
+    pdf.text(descriptionLines, margin + 12, cursorY + 18);
+    pdf.text(sanitize(formatQuantity(line.quantity)), quantityX, cursorY + 18);
+    pdf.text(money(line.unitPrice), unitPriceX, cursorY + 18);
+    pdf.text(money(lineAmount(line)), amountRight, cursorY + 18, { align: 'right' });
+    cursorY += rowHeight;
+  });
 
-  pdf.rect(margin, cursorY, contentWidth, rowHeight);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(11);
-  pdf.text(descriptionLines, margin + 12, cursorY + 18);
-  pdf.text(money(invoice.subtotal), netX, cursorY + 18);
-  pdf.text(`${Number(invoice.vatRate || 0)}%`, vatX, cursorY + 18);
-  pdf.text(money(invoice.total), totalX, cursorY + 18);
-
-  cursorY += rowHeight + 26;
+  cursorY += 26;
+  if (cursorY + 10 + 4 * 22 > pageHeight - margin) {
+    pdf.addPage();
+    cursorY = margin;
+  }
 
   const totalsBoxWidth = 220;
   const totalsX = pageWidth - margin - totalsBoxWidth;

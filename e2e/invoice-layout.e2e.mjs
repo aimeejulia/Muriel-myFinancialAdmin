@@ -38,8 +38,8 @@ test('the invoice form opens with New invoice and closes with Cancel or after a 
     await app.evaluate(`(() => {
       document.getElementById('new-invoice-btn').click();
       document.getElementById('invoiceClient').value = '${sampleClient.id}';
-      document.getElementById('invoiceDescription').value = 'Layout test';
-      document.getElementById('invoiceSubtotal').value = '50';
+      document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Layout test';
+      document.querySelector('#invoice-lines-body [name="lineUnitPrice"]').value = '50';
       document.getElementById('invoice-form').requestSubmit();
       return true;
     })()`);
@@ -143,8 +143,8 @@ test('a new invoice starts as a draft, and Mark sent sends it', async () => {
 
     await app.evaluate(`(() => {
       document.getElementById('invoiceClient').value = '${sampleClient.id}';
-      document.getElementById('invoiceDescription').value = 'Draft first';
-      document.getElementById('invoiceSubtotal').value = '80';
+      document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Draft first';
+      document.querySelector('#invoice-lines-body [name="lineUnitPrice"]').value = '80';
       document.getElementById('invoice-form').requestSubmit();
       document.getElementById('invoice-preview-modal').hidden = true;
       return true;

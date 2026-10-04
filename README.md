@@ -7,7 +7,7 @@ Muriel keeps all data on your computer. It does not send your data to a server. 
 ## What Muriel does
 
 - **Clients**: keep the contact details, the VAT rate, the currency and the payment method of each client.
-- **Invoices**: make invoices, show a preview, and save them as PDF files. You can write an invoice in the currency of the client.
+- **Invoices**: make invoices with one or more lines, show a preview, and save them as PDF files. You can write an invoice in the currency of the client.
 - **Exchange rates**: Muriel gets the euro exchange rates of the European Central Bank (ECB) for the invoice date.
 - **Payments**: mark an invoice paid, and enter the amount that arrived in your bank account.
 - **Reminders**: click **More** > **Reminder** on an invoice to copy a payment reminder to the clipboard.
@@ -71,7 +71,7 @@ Do these steps one time, before you make your first invoice:
 Then do your daily work:
 
 1. To add a client, click **Clients**, fill in the form, and click **Save client**.
-2. To make an invoice, click **Invoices**, then **New invoice**. Select the client, fill in the form, and click **Create invoice**.
+2. To make an invoice, click **Invoices**, then **New invoice**. Select the client and fill in the form. Enter a description, a quantity and a unit price for each line. To add a line, click **Add line**. Then click **Create invoice**.
 3. To make a PDF of an invoice, click **Preview** on the invoice. Then click **Download PDF**.
 4. A new invoice is a draft. When you send it to the client, click **Mark sent** on the invoice.
 5. When the client pays, click **Mark paid** on the invoice. Enter the payment date and the amount that arrived in your bank account.

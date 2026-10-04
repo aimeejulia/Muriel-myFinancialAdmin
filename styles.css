@@ -363,7 +363,18 @@
     }
     .field { display: flex; flex-direction: column; gap: 8px; }
     .field[hidden] { display: none !important; }
-    .field label { font-size: 0.9rem; font-weight: 600; }
+    .field label, .field-label { font-size: 0.9rem; font-weight: 600; }
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
+    .invoice-lines-table { width: 100%; }
+    .invoice-lines-table th, .invoice-lines-table td { padding: 6px 6px 6px 0; border-bottom: 0; vertical-align: middle; }
+    .invoice-lines-table input { width: 100%; box-sizing: border-box; }
+    .invoice-lines-table th:nth-child(2), .invoice-lines-table td:nth-child(2) { width: 90px; }
+    .invoice-lines-table th:nth-child(3), .invoice-lines-table td:nth-child(3) { width: 140px; }
+    .invoice-lines-table th:nth-child(4), .invoice-lines-table td:nth-child(4) { width: 110px; text-align: right; }
+    .invoice-lines-table th:nth-child(5), .invoice-lines-table td:nth-child(5) { width: 90px; }
+    .invoice-line-remove:disabled { opacity: 0.45; cursor: default; }
     .input-with-action {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;

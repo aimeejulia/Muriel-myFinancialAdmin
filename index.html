@@ -290,12 +290,28 @@
                 <input id="invoiceDueDate" name="invoiceDueDate" type="date" required />
               </div>
               <div class="field full-span">
-                <label for="invoiceDescription">Description</label>
-                <textarea id="invoiceDescription" name="invoiceDescription" rows="3" placeholder="e.g. Website maintenance for April 2026" required></textarea>
+                <span class="field-label" id="invoice-lines-label">Lines</span>
+                <div class="table-wrap">
+                  <table class="invoice-lines-table" aria-labelledby="invoice-lines-label">
+                    <thead>
+                      <tr>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th id="invoice-unit-price-label">Unit price</th>
+                        <th>Amount</th>
+                        <th><span class="visually-hidden">Remove</span></th>
+                      </tr>
+                    </thead>
+                    <tbody id="invoice-lines-body"></tbody>
+                  </table>
+                </div>
+                <div>
+                  <button type="button" class="secondary-btn" id="add-invoice-line">Add line</button>
+                </div>
               </div>
               <div class="field">
-                <label for="invoiceSubtotal" id="invoice-subtotal-label">Subtotal</label>
-                <input id="invoiceSubtotal" name="invoiceSubtotal" type="text" inputmode="decimal" data-decimal="amount" required />
+                <span class="field-label" id="invoiceSubtotalLabel">Subtotal</span>
+                <div class="calc-output" id="invoiceSubtotalPreview" aria-labelledby="invoiceSubtotalLabel" aria-live="polite">€0.00</div>
               </div>
               <div class="field">
                 <label for="invoiceVatRate">VAT %</label>

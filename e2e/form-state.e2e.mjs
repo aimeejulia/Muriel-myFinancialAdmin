@@ -45,8 +45,8 @@ test('a client edit stays open when an invoice is saved', async () => {
     await app.evaluate(`document.getElementById('clientName').value = 'Name typed but not saved'; true`);
     await app.evaluate(`(() => {
       document.getElementById('invoiceClient').value = 'client-1';
-      document.getElementById('invoiceDescription').value = 'Work';
-      document.getElementById('invoiceSubtotal').value = '10';
+      document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Work';
+      document.querySelector('#invoice-lines-body [name="lineUnitPrice"]').value = '10';
       document.getElementById('invoiceStatus').value = 'draft';
       document.getElementById('invoice-form').requestSubmit();
       document.getElementById('invoice-preview-modal').hidden = true;

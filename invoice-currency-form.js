@@ -12,7 +12,9 @@ import {
   todayISO,
   formatDate,
   formatDecimalInput,
+  linesSubtotal,
 } from './state.js';
+import { readInvoiceLines, syncInvoiceLines } from './invoice-lines-form.js';
 import { canGetExchangeRates, getBookExchangeRate } from './book-rate.js';
 
 // The source of the rate in the form. It changes to "entered by hand" when the user types a rate.
@@ -53,13 +55,16 @@ export function syncInvoiceCurrencyFields() {
   const bookCurrency = currentBookCurrency();
   const needsRate = currency !== bookCurrency;
 
-  elements.invoiceSubtotalLabel.textContent = `Subtotal (${currency})`;
+  syncInvoiceLines();
   elements.invoiceExchangeRateField.hidden = !needsRate;
   elements.invoiceExchangeRate.required = needsRate;
   elements.invoiceExchangeRateLabel.textContent = `Exchange rate (${currency} for 1 ${bookCurrency})`;
 
   const vatRate = readDecimal(elements.invoiceVatRate.value, { amount: false });
-  const amounts = calculateInvoiceAmounts(readDecimal(elements.invoiceSubtotal.value), vatRate);
+  // A line that is not complete yet counts as 0 in the preview. The form cannot be saved with it.
+  const lines = readInvoiceLines().filter((line) => Number.isFinite(line.quantity) && Number.isFinite(line.unitPrice));
+  const amounts = calculateInvoiceAmounts(linesSubtotal(lines), vatRate);
+  elements.invoiceSubtotalPreview.textContent = formatCurrency(amounts.subtotal, currency);
   elements.invoiceTotalPreview.textContent = formatCurrency(amounts.total, currency);
 
   if (!needsRate) {
