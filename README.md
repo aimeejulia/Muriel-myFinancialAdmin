@@ -253,6 +253,14 @@ CAUTION: Keep backup files in a safe place. A backup file is not encrypted, so a
 
 Muriel examines a backup before it restores it. It does not restore a file that has errors. It also does not restore a backup from a newer version of Muriel. In that case, update Muriel first.
 
+## Themes
+
+The buttons below **Theme** in the sidebar change the colors of Muriel. The last button is the desktop theme. It uses the colors and the font of your GTK theme, so Muriel looks like the other apps of your desktop.
+
+Muriel reads the GTK theme when it starts. If you change the GTK theme, restart Muriel.
+
+If Muriel cannot read the GTK theme, the desktop theme button is off. Hold the pointer on the button to see why. This can occur in the Snap or the Flatpak, because they cannot read all theme files.
+
 ## Number and date formats
 
 Muriel shows amounts and dates in the formats of your desktop region settings. For numbers, it uses `LC_NUMERIC`. For dates, it uses `LC_TIME`. If these are not set, it uses `LANG`. For example, with `es_ES` formats, Muriel shows `12.345,00 €` and `10/03/2026`.

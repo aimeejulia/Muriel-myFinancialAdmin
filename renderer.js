@@ -90,10 +90,40 @@ import {
 import { exportInvoicesCsv, exportExpensesCsv, exportReportCsv } from './csv-export.js';
 
 
+// The colors of the GTK theme of the desktop, read once when the app starts.
+let desktopTheme = null;
+
+async function loadDesktopTheme() {
+  desktopTheme = await window.desktopStore.getDesktopTheme?.().catch(() => null) || null;
+  const button = document.querySelector('.theme-option[data-theme="desktop"]');
+  if (!button) return;
+  if (desktopTheme?.ok) {
+    button.title = `Desktop theme: the colors of your GTK theme (${desktopTheme.name})`;
+    const swatch = button.querySelector('.theme-swatch');
+    swatch.style.background = `linear-gradient(135deg, ${desktopTheme.variables['--page-start']} 50%, ${desktopTheme.variables['--brand']} 50%)`;
+  } else {
+    button.disabled = true;
+    button.title = desktopTheme?.error || 'Muriel could not read the GTK theme of the desktop.';
+  }
+}
+
+// The desktop theme sets the color variables of the app from the GTK theme. The other themes use the styles file.
+function applyDesktopThemeVariables(active) {
+  const root = document.documentElement;
+  const variables = desktopTheme?.ok ? desktopTheme.variables : {};
+  Object.entries(variables).forEach(([name, value]) => {
+    if (active) root.style.setProperty(name, value);
+    else root.style.removeProperty(name);
+  });
+}
+
 function applyTheme(themeName = state.profile.themePreset) {
   const nextTheme = normalizeThemePreset(themeName);
   state.profile.themePreset = nextTheme;
-  document.documentElement.dataset.theme = nextTheme;
+  // When the GTK theme cannot be read, the app shows the Muriel theme but keeps the choice for the next start.
+  const shownTheme = nextTheme === 'desktop' && !desktopTheme?.ok ? 'muriel' : nextTheme;
+  document.documentElement.dataset.theme = shownTheme;
+  applyDesktopThemeVariables(shownTheme === 'desktop');
 
   elements.themeButtons.forEach((button) => {
     const isActive = button.dataset.theme === nextTheme;
@@ -1030,7 +1060,7 @@ async function init() {
 
   // Amounts and dates use the formats of the desktop.
   setDisplayLocales(await window.desktopStore.getLocales?.().catch(() => null) || {});
-  await loadState();
+  await Promise.all([loadState(), loadDesktopTheme()]);
   applyTheme(state.profile.themePreset);
   document.getElementById('clientDefaultCurrency').value = reportingCurrency();
   document.getElementById('quickClientDefaultCurrency').value = reportingCurrency();

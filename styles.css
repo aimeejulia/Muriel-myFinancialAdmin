@@ -106,6 +106,48 @@
       --overlay: rgba(2, 4, 12, 0.62);
     }
 
+    /* The desktop theme: the app sets the color variables from the GTK theme of the desktop. These rules replace the
+       gradients, glows and round shapes of the other themes, so the app looks like the other desktop apps. */
+    :root[data-theme="desktop"] body { font-family: var(--font-family); background: var(--page-start); }
+    :root[data-theme="desktop"] .sidebar { background: var(--bg); color: var(--sidebar-text); box-shadow: inset -1px 0 0 var(--line); }
+    :root[data-theme="desktop"] .nav-link { color: var(--sidebar-text); opacity: 0.85; border-radius: 6px; }
+    :root[data-theme="desktop"] .nav-link:hover { background: var(--surface-alt); color: var(--sidebar-text); opacity: 1; }
+    :root[data-theme="desktop"] .nav-link.active { background: var(--brand); color: var(--on-brand); opacity: 1; }
+    :root[data-theme="desktop"] .sidebar-tools-label { color: var(--muted); }
+    :root[data-theme="desktop"] .sidebar-link-btn { color: var(--sidebar-text); }
+    :root[data-theme="desktop"] .theme-swatch.muriel,
+    :root[data-theme="desktop"] .theme-swatch.sunrise { box-shadow: 0 0 0 1.5px var(--line); }
+    :root[data-theme="desktop"] .theme-option { border-color: var(--line); background: transparent; }
+    :root[data-theme="desktop"] .theme-option:hover,
+    :root[data-theme="desktop"] .theme-option.active { border-color: var(--brand); background: var(--surface-alt); box-shadow: none; }
+    :root[data-theme="desktop"] .theme-icon-moon { box-shadow: -3px -1px 0 0 var(--sidebar-text); }
+    :root[data-theme="desktop"] .primary-btn { background: var(--brand); color: var(--on-brand); box-shadow: none; }
+    :root[data-theme="desktop"] .primary-btn,
+    :root[data-theme="desktop"] .secondary-btn,
+    :root[data-theme="desktop"] .danger-btn,
+    :root[data-theme="desktop"] .chip-btn { border-radius: 6px; }
+    :root[data-theme="desktop"] .panel,
+    :root[data-theme="desktop"] .metric-card,
+    :root[data-theme="desktop"] .report-card,
+    :root[data-theme="desktop"] .report-chart-card,
+    :root[data-theme="desktop"] .modal-card { border-radius: 8px; box-shadow: none; border: 1px solid var(--line); }
+    :root[data-theme="desktop"] input,
+    :root[data-theme="desktop"] select,
+    :root[data-theme="desktop"] textarea,
+    :root[data-theme="desktop"] .calc-output { border-radius: 6px; }
+    :root[data-theme="desktop"] .status-row:hover,
+    :root[data-theme="desktop"] .status-row:focus-visible { box-shadow: 0 0 0 2px var(--brand); }
+    /* Buttons without a color of their own use the text color of the theme. :where() keeps this rule below them. */
+    :where(:root[data-theme="desktop"]) button { color: var(--text); }
+    :root[data-theme="desktop"] .invoice-row-action-btn { border-radius: 6px; }
+    :root[data-theme="desktop"] :focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+    :root[data-theme="desktop"] .badge.draft,
+    :root[data-theme="desktop"] .badge.aborted { background: var(--surface-alt); color: var(--muted); }
+    :root[data-theme="desktop"] .badge.sent { background: var(--surface-alt); color: var(--text); }
+    :root[data-theme="desktop"] .badge.paid { background: var(--success-surface); color: var(--success-text); }
+    :root[data-theme="desktop"] .badge.overdue { background: var(--warning-surface); color: var(--warning-text); }
+    :root[data-theme="desktop"] .badge.delinquent { background: var(--danger-surface); color: var(--danger-text); }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;

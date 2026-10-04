@@ -4,7 +4,7 @@ export const LEGACY_STORAGE_KEY = 'flowInvoicePhase1';
 export const isDesktopApp = Boolean(window.desktopStore?.isDesktopApp);
 const BACKUP_APP_NAME = 'muriel-myfinancialadmin';
 const SUPPORTED_REPORTING_CURRENCIES = new Set(['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'SEK', 'NOK', 'DKK', 'PLN']);
-const SUPPORTED_THEME_PRESETS = new Set(['muriel', 'sunrise', 'night']);
+const SUPPORTED_THEME_PRESETS = new Set(['muriel', 'sunrise', 'night', 'desktop']);
 
 function normalizeReportingCurrency(value) {
   const code = String(value || 'EUR').trim().toUpperCase();
