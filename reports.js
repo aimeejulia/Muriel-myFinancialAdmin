@@ -253,15 +253,16 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
 }
 
 // The report figures of invoices and expenses in one book currency.
-export function reportFigures(financialInvoices, expenses) {
+// The figures of invoices and expenses in one book currency. Received is the money that arrived in the period, so
+// it counts the payments by payment date. Without payments, it counts the paid invoices of the list.
+export function reportFigures(financialInvoices, expenses, payments = null) {
   const bookTotal = (status) => financialInvoices
     .filter((invoice) => computedStatus(invoice) === status)
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const net = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
   const vat = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
   const gross = financialInvoices.reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
-  const paid = financialInvoices
-    .filter((invoice) => computedStatus(invoice) === 'paid')
+  const paid = (payments ?? financialInvoices.filter((invoice) => computedStatus(invoice) === 'paid'))
     .reduce((sum, invoice) => sum + invoiceReceivedAmount(invoice), 0);
   // Paid invoices count the euros that arrived, less VAT. Invoices that are not paid count the estimate.
   const income = financialInvoices.reduce((sum, invoice) => sum + invoiceIncome(invoice), 0);
@@ -317,6 +318,16 @@ export function bookCurrencyRangesText(currency, year, period) {
   return ranges.map((range) => `${formatDate(range.from)} to ${formatDate(range.to)}`).join(' and ');
 }
 
+// The paid invoices with a payment date in the period, whatever their issue date.
+export function paymentsInPeriod(year, period) {
+  return state.invoices.filter((invoice) => (
+    countsAsInvoiced(invoice)
+    && computedStatus(invoice) === 'paid'
+    && yearFromDate(invoice.paidDate) === year
+    && (period === 'year' || quarterFromDate(invoice.paidDate) === Number(period))
+  ));
+}
+
 export function runReport() {
   const year = Number(elements.reportYear.value);
   const period = elements.reportQuarter.value;
@@ -333,7 +344,7 @@ export function runReport() {
   ));
 
   const fallbackCurrency = bookCurrencyOn(periodEnd(year, period));
-  const groups = groupByBookCurrency(financialInvoices, filteredExpenses, fallbackCurrency);
+  const groups = groupByBookCurrency(financialInvoices, filteredExpenses, fallbackCurrency, paymentsInPeriod(year, period));
   const periodLabel = period === 'year' ? `Full year ${year}` : `Q${period} ${year}`;
   const cardHtml = ([label, value]) => `
     <article class="report-card">
@@ -343,7 +354,7 @@ export function runReport() {
   `;
 
   const sections = groups.map((group) => {
-    const figures = reportFigures(group.invoices, group.expenses);
+    const figures = reportFigures(group.invoices, group.expenses, group.payments);
     const reportMoney = (value) => formatCurrency(value, group.currency);
     const cards = [
       ['Reporting currency', group.currency],
