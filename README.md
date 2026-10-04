@@ -73,9 +73,11 @@ Then do your daily work:
 1. To add a client, click **Clients**, fill in the form, and click **Save client**.
 2. To make an invoice, click **Invoices**, then **New invoice**. Select the client, fill in the form, and click **Create invoice**.
 3. To make a PDF of an invoice, click **Preview** on the invoice. Then click **Download PDF**.
-4. When the client pays, click **Mark paid** on the invoice. Enter the payment date and the amount that arrived in your bank account.
-5. To record an expense, click **Expenses**, fill in the form, and click **Save expense**. To attach the PDF receipt, click **Upload expense PDF** first.
-6. To see your totals, click **Dashboard** or **Reports**.
+4. A new invoice is a draft. When you send it to the client, click **Mark sent** on the invoice.
+5. When the client pays, click **Mark paid** on the invoice. Enter the payment date and the amount that arrived in your bank account.
+6. To record an expense, click **Expenses**, fill in the form, and click **Save expense**. To attach the PDF receipt, click **Upload expense PDF** first.
+7. To see your totals, click **Dashboard** or **Reports**.
+8. To correct an invoice, click **More** > **Edit** on the invoice.
 
 ## Other ways to install
 

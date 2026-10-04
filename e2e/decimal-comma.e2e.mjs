@@ -50,6 +50,7 @@ test('an invoice and its payment accept amounts with a decimal comma and thousan
       subtotal.value = '1.234,56';
       subtotal.dispatchEvent(new Event('input'));
       document.getElementById('invoiceVatRate').value = '21';
+      document.getElementById('invoiceStatus').value = 'sent';
       return true;
     })()`);
     assert.equal(await app.evaluate(`document.getElementById('invoiceTotalPreview').textContent`), '€1,493.82');

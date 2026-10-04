@@ -75,8 +75,8 @@ test('each row shows its main action and Preview, and the other actions are in t
       more: [...row.querySelectorAll('.invoice-row-menu-list button')].map((button) => button.textContent),
     }))`);
     assert.deepEqual(rows, [
-      { visible: ['Edit', 'Preview'], more: ['Status'] },
-      { visible: ['Preview'], more: ['Mark unpaid'] },
+      { visible: ['Mark sent', 'Preview'], more: ['Edit', 'Status'] },
+      { visible: ['Preview'], more: ['Edit', 'Mark unpaid'] },
     ]);
 
     const menu = await app.evaluate(`(() => {
@@ -113,10 +113,10 @@ test('each status gets only the actions that make sense for it', async () => {
       more: [...row.querySelectorAll('.invoice-row-menu-list button')].map((button) => button.textContent),
     }))`);
     assert.deepEqual(rows, [
-      { status: 'sent', visible: ['Mark paid', 'Preview'], more: ['Status', 'Reminder'] },
-      { status: 'overdue', visible: ['Mark paid', 'Preview'], more: ['Status', 'Reminder'] },
-      { status: 'delinquent', visible: ['Mark paid', 'Preview'], more: ['Status', 'Reminder'] },
-      { status: 'aborted', visible: ['Preview'], more: ['Status'] },
+      { status: 'sent', visible: ['Mark paid', 'Preview'], more: ['Edit', 'Status', 'Reminder'] },
+      { status: 'overdue', visible: ['Mark paid', 'Preview'], more: ['Edit', 'Status', 'Reminder'] },
+      { status: 'delinquent', visible: ['Mark paid', 'Preview'], more: ['Edit', 'Status', 'Reminder'] },
+      { status: 'aborted', visible: ['Preview'], more: ['Edit', 'Status'] },
     ]);
 
     const options = await app.evaluate(`(() => {
@@ -125,6 +125,36 @@ test('each status gets only the actions that make sense for it', async () => {
         selected: document.getElementById('changeStatusSelect').value };
     })()`);
     assert.deepEqual(options, { options: ['draft', 'sent', 'delinquent', 'aborted', 'paid'], selected: 'sent' });
+  } finally {
+    await app.stop();
+  }
+});
+
+test('a new invoice starts as a draft, and Mark sent sends it', async () => {
+  writeStateFile(dataDir, sampleState({ invoices: [] }));
+  const app = await launchApp(dataDir);
+  try {
+    await app.evaluate(`(() => {
+      document.querySelector('.nav-link[data-view="invoices"]').click();
+      document.getElementById('new-invoice-btn').click();
+      return true;
+    })()`);
+    assert.equal(await app.evaluate(`document.getElementById('invoiceStatus').value`), 'draft');
+
+    await app.evaluate(`(() => {
+      document.getElementById('invoiceClient').value = '${sampleClient.id}';
+      document.getElementById('invoiceDescription').value = 'Draft first';
+      document.getElementById('invoiceSubtotal').value = '80';
+      document.getElementById('invoice-form').requestSubmit();
+      document.getElementById('invoice-preview-modal').hidden = true;
+      return true;
+    })()`);
+    const saved = `import('./state.js').then((module) => module.state.invoices[0]?.status)`;
+    assert.equal(await waitFor(() => app.evaluate(saved)), 'draft');
+
+    await app.evaluate(`document.querySelector('#invoices-table-body button[data-action="mark-sent"]').click(); true`);
+    assert.equal(await waitFor(async () => (await app.evaluate(saved)) === 'sent' && 'sent'), 'sent');
+    assert.equal(await app.evaluate(`document.querySelector('#invoices-table-body .badge').textContent`), 'sent');
   } finally {
     await app.stop();
   }
