@@ -1,11 +1,8 @@
 # Installation Step By Step Instructions
 
-This content was merged into README to avoid duplicated documentation.
+The installation instructions are in [README.md](README.md). This file only keeps old links working.
 
-Use [README.md](README.md) as the single source of truth.
-
-Direct links:
-
-- Beginner install section: [README.md](README.md#installation-guide-for-beginners)
-- AppImage build and usage: [README.md](README.md#build-and-use-appimage)
-- Troubleshooting: [README.md](README.md#troubleshooting)
+- To install Muriel, read [Install Muriel](README.md#install-muriel).
+- To install the Snap or the Flatpak, or to run Muriel from the source code, read [Other ways to install](README.md#other-ways-to-install).
+- To add the AppImage to the app menu, read [Add the AppImage to the app menu](README.md#add-the-appimage-to-the-app-menu).
+- If you have a problem, read [Troubleshooting](README.md#troubleshooting).
