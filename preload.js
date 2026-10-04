@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld('desktopStore', {
   async getEncryptionStatus() {
     return ipcRenderer.invoke('desktop-store:get-encryption-status');
   },
+  async getDesktopTheme() {
+    return ipcRenderer.invoke('desktop-store:get-desktop-theme');
+  },
   async getLocales() {
     return ipcRenderer.invoke('desktop-store:get-locales');
   },

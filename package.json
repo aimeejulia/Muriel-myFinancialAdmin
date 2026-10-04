@@ -84,6 +84,7 @@
       "ipc-guard.js",
       "exchange-rates.js",
       "system-locale.js",
+      "gtk-theme.js",
       "preload.js",
       "build/icon.png",
       "!**/node_modules/canvas/**"

@@ -20,6 +20,7 @@ const { updateSourceCheckout } = require('./source-update');
 const { isAppPageUrl } = require('./ipc-guard');
 const { createExchangeRateService } = require('./exchange-rates');
 const { systemLocales } = require('./system-locale');
+const { readDesktopTheme } = require('./gtk-theme');
 
 let mainWindow = null;
 let lastKnownSerializedState = '';
@@ -454,6 +455,14 @@ app.whenReady().then(() => {
       const filePath = result.filePaths[0];
       const raw = fs.readFileSync(filePath, 'utf8');
       return { ok: true, path: filePath, raw };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  });
+
+  handleFromApp('desktop-store:get-desktop-theme', () => {
+    try {
+      return readDesktopTheme();
     } catch (error) {
       return { ok: false, error: error.message };
     }
