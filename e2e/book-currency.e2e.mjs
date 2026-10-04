@@ -25,16 +25,19 @@ afterEach(async () => {
   assertRealDataUntouched();
 });
 
-// Saves the profile with a book currency and a date, and gives the alerts that the app showed.
+// Saves the profile with a book currency and a date, and gives the messages that the app showed at the fields.
 function saveBookCurrency(currency, from) {
   return `(() => {
-    window.alerts = [];
-    window.alert = (message) => window.alerts.push(message);
     document.querySelector('.nav-link[data-view="profile"]').click();
-    document.getElementById('profileReportingCurrency').value = '${currency}';
-    document.getElementById('profileBookCurrencyFrom').value = '${from}';
+    const select = document.getElementById('profileReportingCurrency');
+    select.value = '${currency}';
+    select.dispatchEvent(new Event('change'));
+    const date = document.getElementById('profileBookCurrencyFrom');
+    date.value = '${from}';
+    date.dispatchEvent(new Event('input', { bubbles: true }));
     document.getElementById('profile-form').requestSubmit();
-    return window.alerts;
+    return [select, date].filter((field) => !field.validity.valid)
+      .map((field) => (field.validity.valueMissing ? 'required' : field.validationMessage));
   })()`;
 }
 
@@ -44,9 +47,7 @@ test('the book currency changes from a date, and older records keep their book c
     const [expenseBefore] = await app.evaluate(savedExpenses);
     assert.equal(expenseBefore.bookCurrency, 'EUR', 'the migration keeps the older expense in euros');
 
-    assert.deepEqual(await app.evaluate(saveBookCurrency('GBP', '')), [
-      'Enter the date from which the book currency is GBP. Invoices and expenses before this date stay in their book currency.',
-    ]);
+    assert.deepEqual(await app.evaluate(saveBookCurrency('GBP', '')), ['required'], 'the date is required for the change');
     assert.deepEqual(await app.evaluate(saveBookCurrency('GBP', '2026-03-10')), [
       'The date must be after 10/03/2026, the date of the last invoice or expense. A change of book currency does not change invoices and expenses that exist.',
     ]);
@@ -117,12 +118,11 @@ test('the book currency changes from a date, and older records keep their book c
 
     // The change stays while it has records.
     const undo = `(() => {
-      window.alerts = [];
       document.querySelector('.nav-link[data-view="profile"]').click();
       document.getElementById('profile-book-currency-undo').click();
-      return window.alerts;
+      return document.getElementById('profile-book-currency-error').textContent;
     })()`;
-    assert.deepEqual(await app.evaluate(undo), ['Invoices or expenses from 01/04/2026 or later are in GBP, so this change stays.']);
+    assert.equal(await app.evaluate(undo), 'Invoices or expenses from 01/04/2026 or later are in GBP, so this change stays.');
   } finally {
     await app.stop();
   }

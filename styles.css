@@ -416,6 +416,8 @@
       color: var(--placeholder);
       opacity: 1;
     }
+    .field-error { margin: 4px 0 0; color: var(--danger, #b42318); font-size: 0.9rem; }
+    .field-error:empty { display: none; }
     .panel-hint { margin: -6px 0 14px; color: var(--muted); font-size: 0.9rem; }
     .field-hint {
       display: block;

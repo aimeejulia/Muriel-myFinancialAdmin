@@ -707,6 +707,17 @@ export function readDecimal(value, { amount = true } = {}) {
   return Number(text.replace(mark, '.'));
 }
 
+// Shows a message at a form field, as the browser does for a required field, and moves the focus to the field.
+// The message goes away when anything in the form changes, or when the form is reset.
+export function showFieldError(field, message) {
+  field.setCustomValidity(message);
+  field.reportValidity();
+  field.focus();
+  const clear = () => field.setCustomValidity('');
+  const form = field.form || field;
+  ['input', 'change', 'reset'].forEach((type) => form.addEventListener(type, clear, { once: true }));
+}
+
 // Number fields are text fields, so a comma can be the decimal mark. The pattern makes the field invalid when the
 // text is not a number, so the form cannot be saved with it.
 export function attachDecimalInputs(root = document) {
