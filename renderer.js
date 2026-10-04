@@ -801,7 +801,13 @@ elements.invoiceSortToggle.addEventListener('click', () => {
 });
 elements.dashboardYear.addEventListener('input', renderDashboard);
 elements.dashboardPeriod.addEventListener('change', renderDashboard);
-elements.runQuarterReportBtn.addEventListener('click', runReport);
+// The report follows the selected year and period at once, so it never shows the figures of another period.
+elements.reportYear.addEventListener('input', runReport);
+elements.reportQuarter.addEventListener('change', runReport);
+elements.reportForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  runReport();
+});
 
 elements.invoicesTableBody.addEventListener('toggle', (event) => {
   const menu = event.target;

@@ -212,7 +212,7 @@ export const elements = {
   expenseSubmitBtn: byId('expense-submit-btn'),
   expenseEditCancelBtn: byId('expense-edit-cancel-btn'),
   invoiceSortToggle: byId('invoice-sort-toggle'),
-  runQuarterReportBtn: byId('run-quarter-report'),
+  reportForm: byId('report-form'),
   invoicesTableBody: byId('invoices-table-body'),
   clientsTableBody: byId('clients-table-body'),
   overdueTableBody: byId('overdue-table-body'),
