@@ -246,6 +246,9 @@
                 <h3>Clients</h3>
               </div>
             </div>
+            <div class="list-toolbar">
+              <input id="client-search" type="search" placeholder="Search clients" aria-label="Search clients by name, contact, email, VAT ID or client ID" />
+            </div>
             <div class="table-wrap">
               <table>
                 <thead>
@@ -382,8 +385,13 @@
   <button class="secondary-btn" id="export-invoices-csv">Export CSV</button>
   <button class="secondary-btn" id="import-invoices-pdf">Import PDF</button>
   <input id="invoice-pdf-input" type="file" accept="application/pdf" multiple style="display:none;" />
-  <select id="invoice-filter" class="compact-select">
-                <option value="all">All</option>
+              </div>
+            </div>
+            <div class="list-toolbar">
+              <input id="invoice-search" type="search" placeholder="Search invoices" aria-label="Search invoices by number, client or description" />
+              <select id="invoice-client-filter" class="compact-select" aria-label="Client"></select>
+              <select id="invoice-filter" class="compact-select" aria-label="Status">
+                <option value="all">All statuses</option>
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>
                 <option value="paid">Paid</option>
@@ -392,7 +400,6 @@
                 <option value="aborted">Aborted</option>
               </select>
               <button class="secondary-btn" id="invoice-sort-toggle" title="Sort by issue date">Date ↓</button>
-            </div>
             </div>
             <div class="table-wrap">
               <table>

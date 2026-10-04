@@ -821,10 +821,16 @@ elements.invoicePdfInput.addEventListener('change', async (event) => {
 });
 
 elements.invoiceFilter.addEventListener('change', renderInvoices);
+elements.invoiceClientFilter.addEventListener('change', renderInvoices);
+elements.invoiceSearch.addEventListener('input', renderInvoices);
+elements.clientSearch.addEventListener('input', renderClients);
 elements.statusSummary.addEventListener('click', (event) => {
   const statusButton = event.target.closest('.status-row[data-status]');
   if (!statusButton) return;
+  // The status summary counts all invoices, so the list shows all invoices with the status.
   elements.invoiceFilter.value = statusButton.dataset.status;
+  elements.invoiceClientFilter.value = '';
+  elements.invoiceSearch.value = '';
   renderInvoices();
   showView('invoices');
 });

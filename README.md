@@ -78,6 +78,7 @@ Then do your daily work:
 6. To record an expense, click **Expenses**, fill in the form, and click **Save expense**. To attach the PDF receipt, click **Upload expense PDF** first.
 7. To see your totals, click **Dashboard** or **Reports**.
 8. To correct an invoice, click **More** > **Edit** on the invoice.
+9. To find an invoice, type a number, a client or a word from the description in **Search invoices**. You can also show the invoices of one client.
 
 ## Other ways to install
 
