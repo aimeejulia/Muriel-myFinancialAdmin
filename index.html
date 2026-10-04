@@ -40,6 +40,7 @@
             <span class="theme-icon-moon" aria-hidden="true"></span>
           </button>
         </div>
+        <button type="button" class="sidebar-link-btn" id="check-updates-btn">Check for updates</button>
       </div>
 
       <div class="brand-bottom">
@@ -50,11 +51,7 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Overview</p>
           <h2 id="page-title">Dashboard</h2>
-        </div>
-        <div class="topbar-actions">
-          <button type="button" class="secondary-btn" id="check-updates-btn">Check for updates</button>
         </div>
       </header>
 
@@ -100,14 +97,14 @@
         </div>
         <div class="card-grid metrics-grid">
           <article class="metric-card">
-            <span>Realised net income</span>
+            <span>Net income, paid invoices</span>
             <strong id="metric-quarter-invoiced">€0.00</strong>
-            <small>Paid invoice income less period expenses</small>
+            <small>Income of the paid invoices of the period, less the expenses of the period</small>
           </article>
           <article class="metric-card">
-            <span>Accrued net income</span>
+            <span>Net income, all invoices</span>
             <strong id="metric-received">€0.00</strong>
-            <small>Issued invoice income less period expenses</small>
+            <small>Income of the issued invoices of the period, with an estimate for unpaid ones, less the expenses of the period</small>
           </article>
           <article class="metric-card">
             <span>Outstanding receivables</span>
@@ -795,7 +792,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" class="secondary-btn" id="mark-paid-cancel" data-dialog-close>Cancel</button>
-        <button type="submit" class="primary-btn">Save paid date</button>
+        <button type="submit" class="primary-btn">Mark paid</button>
       </div>
     </form>
   </div>

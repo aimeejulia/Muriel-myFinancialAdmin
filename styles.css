@@ -159,6 +159,12 @@
       gap: 8px;
       padding: 6px 4px 2px;
     }
+    .sidebar-link-btn {
+      background: transparent; border: 0; color: rgba(235, 247, 249, 0.76); cursor: pointer;
+      font-size: 0.82rem; font-weight: 600; text-align: left; padding: 6px; text-decoration: underline;
+    }
+    .sidebar-link-btn:hover { color: white; }
+    .sidebar-link-btn:disabled { opacity: 0.6; cursor: default; }
     .sidebar-tools-label {
       margin: 0 6px;
       font-size: 0.68rem;
