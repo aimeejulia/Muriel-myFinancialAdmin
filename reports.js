@@ -45,6 +45,14 @@ export function setReportChartsEmpty(message = '') {
   elements.reportChartsEmpty.textContent = message;
 }
 
+function showChartMessage(canvas, message) {
+  canvas.hidden = Boolean(message);
+  const text = canvas.parentElement.querySelector('.report-chart-card-empty');
+  if (!text) return;
+  text.hidden = !message;
+  text.textContent = message;
+}
+
 export function renderReportCharts({ filteredInvoices, financialInvoices, filteredExpenses, period, currencyCode }) {
   if (!elements.reportStatusChartCanvas || !elements.reportCashflowChartCanvas || !elements.reportIncomeChartCanvas) return;
 
@@ -73,20 +81,25 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const allExpenses = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
 
-  const hasData = statusCounts.some((count) => count > 0)
-    || [paidTotal, openTotal, overdueTotal, delinquentTotal, allExpenses].some((value) => value > 0);
-  if (!hasData) {
-    destroyReportCharts();
-    setReportChartsEmpty('No data for this reporting period yet. Add invoices or expenses to see charts.');
+  const hasInvoices = statusCounts.some((count) => count > 0);
+  const hasAmounts = [paidTotal, openTotal, overdueTotal, delinquentTotal, allExpenses].some((value) => value > 0);
+  const chartGrid = document.getElementById('report-charts');
+  destroyReportCharts();
+  if (!hasInvoices && !hasAmounts) {
+    if (chartGrid) chartGrid.hidden = true;
+    setReportChartsEmpty('No invoices or expenses in this period, so there are no charts.');
     return;
   }
-
+  if (chartGrid) chartGrid.hidden = false;
   setReportChartsEmpty('');
-  destroyReportCharts();
+  // A chart without data shows a short text in place of empty axes.
+  showChartMessage(elements.reportStatusChartCanvas, hasInvoices ? '' : 'No invoices in this period.');
+  showChartMessage(elements.reportCashflowChartCanvas, hasAmounts ? '' : 'No amounts in this period.');
+  showChartMessage(elements.reportIncomeChartCanvas, hasAmounts ? '' : 'No amounts in this period.');
 
   const reportMoney = (value) => formatCurrency(value, currencyCode);
 
-  reportStatusChart = new ChartLib(elements.reportStatusChartCanvas.getContext('2d'), {
+  if (hasInvoices) reportStatusChart = new ChartLib(elements.reportStatusChartCanvas.getContext('2d'), {
     type: 'bar',
     data: {
       labels: statusLabels,
@@ -118,7 +131,7 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
     },
   });
 
-  reportCashflowChart = new ChartLib(elements.reportCashflowChartCanvas.getContext('2d'), {
+  if (hasAmounts) reportCashflowChart = new ChartLib(elements.reportCashflowChartCanvas.getContext('2d'), {
     type: 'doughnut',
     data: {
       labels: ['Paid', 'Open', 'Overdue', 'Delinquent', 'Expenses'],
@@ -182,7 +195,7 @@ export function renderReportCharts({ filteredInvoices, financialInvoices, filter
 
   const netByMonth = invoicedByMonth.map((value, index) => value - expensesByMonth[index]);
 
-  reportIncomeChart = new ChartLib(elements.reportIncomeChartCanvas.getContext('2d'), {
+  if (hasAmounts) reportIncomeChart = new ChartLib(elements.reportIncomeChartCanvas.getContext('2d'), {
     type: 'line',
     data: {
       labels,
