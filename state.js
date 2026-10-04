@@ -678,6 +678,39 @@ export function escapeCsv(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+// The text that a number field accepts: digits with a comma or a full stop as the decimal mark, and optionally
+// full stops or commas between groups of three digits, as in 12,50, 12.50, 1.234,56 or 1,234.56.
+export const DECIMAL_INPUT_PATTERN = String.raw`\d+(?:[.,]\d+)?|\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d{1,3}(?:,\d{3})+(?:\.\d+)?`;
+const DECIMAL_INPUT = new RegExp(`^(?:${DECIMAL_INPUT_PATTERN})$`);
+
+// Reads a number that the user typed. The decimal mark can be a comma or a full stop, so "12,50" and "12.50" are
+// both 12.5. In an amount, one separator before exactly three digits groups thousands, so "1.234" and "1,234" are
+// 1234, because amounts have two decimals. In other numbers, such as a rate, that separator is the decimal mark.
+// An empty text is 0. A text that is not a number is NaN.
+export function readDecimal(value, { amount = true } = {}) {
+  const text = String(value ?? '').trim();
+  if (!text) return 0;
+  if (!DECIMAL_INPUT.test(text)) return NaN;
+
+  const lastSeparator = Math.max(text.lastIndexOf('.'), text.lastIndexOf(','));
+  if (lastSeparator === -1) return Number(text);
+  const mark = text[lastSeparator];
+  const other = mark === '.' ? ',' : '.';
+  if (text.includes(other)) return Number(text.split(other).join('').replace(mark, '.'));
+  if (text.split(mark).length > 2) return Number(text.split(mark).join(''));
+  if (amount && /^\d{1,3}[.,]\d{3}$/.test(text)) return Number(text.replace(mark, ''));
+  return Number(text.replace(mark, '.'));
+}
+
+// Number fields are text fields, so a comma can be the decimal mark. The pattern makes the field invalid when the
+// text is not a number, so the form cannot be saved with it.
+export function attachDecimalInputs(root = document) {
+  root.querySelectorAll('input[data-decimal]').forEach((input) => {
+    input.pattern = DECIMAL_INPUT_PATTERN;
+    input.title = 'Enter a number, for example 12,50 or 12.50.';
+  });
+}
+
 export function roundMoney(value) {
   // toPrecision removes floating point noise first, so 1.005 rounds to 1.01 and not 1.00
   return Math.round(Number((Number(value || 0) * 100).toPrecision(15))) / 100;

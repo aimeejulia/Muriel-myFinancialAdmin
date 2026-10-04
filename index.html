@@ -192,7 +192,7 @@
               </div>
               <div class="field">
                 <label for="clientDefaultVat">Default VAT %</label>
-                <input id="clientDefaultVat" name="clientDefaultVat" type="number" min="0" step="0.01" value="21" />
+                <input id="clientDefaultVat" name="clientDefaultVat" type="text" inputmode="decimal" data-decimal="number" value="21" />
               </div>
               <div class="field">
                 <label for="clientDefaultCurrency">Client currency</label>
@@ -295,11 +295,11 @@
               </div>
               <div class="field">
                 <label for="invoiceSubtotal" id="invoice-subtotal-label">Subtotal</label>
-                <input id="invoiceSubtotal" name="invoiceSubtotal" type="number" min="0" step="0.01" required />
+                <input id="invoiceSubtotal" name="invoiceSubtotal" type="text" inputmode="decimal" data-decimal="amount" required />
               </div>
               <div class="field">
                 <label for="invoiceVatRate">VAT %</label>
-                <input id="invoiceVatRate" name="invoiceVatRate" type="number" min="0" step="0.01" value="21" required />
+                <input id="invoiceVatRate" name="invoiceVatRate" type="text" inputmode="decimal" data-decimal="number" value="21" required />
               </div>
               <div class="field">
                 <label id="invoiceTotalLabel">Total (auto-calculated)</label>
@@ -317,7 +317,7 @@
               </div>
               <div class="field" id="invoice-exchange-rate-field" hidden>
                 <label for="invoiceExchangeRate" id="invoice-exchange-rate-label">Exchange rate</label>
-                <input id="invoiceExchangeRate" name="invoiceExchangeRate" type="number" min="0" step="any" />
+                <input id="invoiceExchangeRate" name="invoiceExchangeRate" type="text" inputmode="decimal" data-decimal="number" />
                 <small id="invoice-exchange-rate-hint" class="field-hint" aria-live="polite"></small>
               </div>
               <div class="field">
@@ -334,7 +334,7 @@
               </div>
               <div class="field" id="invoice-received-field" hidden>
                 <label for="invoiceReceived" id="invoice-received-label">Amount received (after bank charges)</label>
-                <input id="invoiceReceived" name="invoiceReceived" type="number" min="0" step="0.01" />
+                <input id="invoiceReceived" name="invoiceReceived" type="text" inputmode="decimal" data-decimal="amount" />
                 <small class="field-hint">Leave it empty to use the invoice total in the books.</small>
               </div>
               <div class="form-actions full-span">
@@ -399,7 +399,7 @@
         </div>
         <div class="field">
           <label for="expenseAmount" id="expense-amount-label">Amount (EUR)</label>
-          <input id="expenseAmount" name="expenseAmount" type="number" min="0" step="0.01" required />
+          <input id="expenseAmount" name="expenseAmount" type="text" inputmode="decimal" data-decimal="amount" required />
         </div>
         <div class="field">
           <label for="expenseCurrency">Currency</label>
@@ -407,12 +407,12 @@
         </div>
         <div class="field" id="expense-exchange-rate-field" hidden>
           <label for="expenseExchangeRate" id="expense-exchange-rate-label">Exchange rate</label>
-          <input id="expenseExchangeRate" name="expenseExchangeRate" type="number" min="0" step="any" />
+          <input id="expenseExchangeRate" name="expenseExchangeRate" type="text" inputmode="decimal" data-decimal="number" />
           <small id="expense-exchange-rate-hint" class="field-hint" aria-live="polite"></small>
         </div>
         <div class="field" id="expense-paid-field" hidden>
           <label for="expensePaid" id="expense-paid-label">Amount paid in EUR (after bank charges)</label>
-          <input id="expensePaid" name="expensePaid" type="number" min="0" step="0.01" />
+          <input id="expensePaid" name="expensePaid" type="text" inputmode="decimal" data-decimal="amount" />
           <small class="field-hint">The amount that left your account. It starts at the amount at the exchange rate.</small>
         </div>
         <div class="field">
@@ -738,7 +738,7 @@
         </div>
         <div class="field">
           <label for="quickClientDefaultVat">Default VAT %</label>
-          <input id="quickClientDefaultVat" name="quickClientDefaultVat" type="number" min="0" step="0.01" value="21" />
+          <input id="quickClientDefaultVat" name="quickClientDefaultVat" type="text" inputmode="decimal" data-decimal="number" value="21" />
         </div>
         <div class="field">
           <label for="quickClientDefaultCurrency">Client currency</label>
@@ -787,7 +787,7 @@
       </div>
       <div class="field">
         <label for="markPaidReceived" id="mark-paid-received-label">Amount received (after bank charges)</label>
-        <input id="markPaidReceived" name="markPaidReceived" type="number" min="0" step="0.01" required />
+        <input id="markPaidReceived" name="markPaidReceived" type="text" inputmode="decimal" data-decimal="amount" required />
         <small id="mark-paid-received-hint" class="field-hint"></small>
       </div>
       <div class="modal-actions">
@@ -819,7 +819,7 @@
           <label for="changeStatusPaidDate">Payment date</label>
           <input id="changeStatusPaidDate" name="changeStatusPaidDate" type="date" />
           <label for="changeStatusReceived" id="change-status-received-label">Amount received (after bank charges)</label>
-          <input id="changeStatusReceived" name="changeStatusReceived" type="number" min="0" step="0.01" />
+          <input id="changeStatusReceived" name="changeStatusReceived" type="text" inputmode="decimal" data-decimal="amount" />
         </div>
         <div class="field full-span" id="change-status-aborted-number-field" hidden>
           <label for="changeStatusAbortedNumberHandling">Invoice number handling</label>
