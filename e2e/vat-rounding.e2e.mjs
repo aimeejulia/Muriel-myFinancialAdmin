@@ -23,8 +23,8 @@ test('VAT is rounded for each invoice, so reports match the invoices', async () 
     await app.evaluate(`(() => {
       document.getElementById('invoiceClient').value = 'client-1';
       document.getElementById('invoiceIssueDate').value = '2026-03-10';
-      document.getElementById('invoiceDescription').value = 'Item ${index}';
-      document.getElementById('invoiceSubtotal').value = '12.50';
+      document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Item ${index}';
+      document.querySelector('#invoice-lines-body [name="lineUnitPrice"]').value = '12.50';
       document.getElementById('invoiceVatRate').value = '21';
       document.getElementById('invoiceStatus').value = 'sent';
       document.getElementById('invoice-form').requestSubmit();

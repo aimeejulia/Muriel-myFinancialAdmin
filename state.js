@@ -180,7 +180,9 @@ export const elements = {
   invoicePreviewCloseBtn: byId('invoice-preview-close'),
   invoicePreviewEditBtn: byId('invoice-preview-edit'),
   invoicePreviewDownloadBtn: byId('invoice-preview-download'),
-  invoiceSubtotal: byId('invoiceSubtotal'),
+  invoiceLinesBody: byId('invoice-lines-body'),
+  addInvoiceLineBtn: byId('add-invoice-line'),
+  invoiceSubtotalPreview: byId('invoiceSubtotalPreview'),
   invoiceVatRate: byId('invoiceVatRate'),
   invoiceStatus: byId('invoiceStatus'),
   invoiceClient: byId('invoiceClient'),
@@ -190,9 +192,8 @@ export const elements = {
   invoiceIssueDate: byId('invoiceIssueDate'),
   invoiceDueDate: byId('invoiceDueDate'),
   invoiceNumber: byId('invoiceNumber'),
-  invoiceDescription: byId('invoiceDescription'),
   invoiceTotalPreview: byId('invoiceTotalPreview'),
-  invoiceSubtotalLabel: byId('invoice-subtotal-label'),
+  invoiceUnitPriceLabel: byId('invoice-unit-price-label'),
   invoiceBookPreview: byId('invoice-book-preview'),
   invoiceCurrency: byId('invoiceCurrency'),
   invoiceServiceDate: byId('invoiceServiceDate'),
@@ -513,6 +514,13 @@ const isAmount = (value) => value === undefined || value === null || value === '
 
 // Finds records that the app cannot show: each record needs a unique id, and the fields that the app reads
 // as text or as amounts must have that type. Optional fields can be missing, so older backups stay valid.
+// Invoices from before lines have no lines. Other invoices have a list of lines.
+function isInvoiceLineList(lines) {
+  return lines === undefined || (Array.isArray(lines) && lines.every((line) => (
+    line && typeof line === 'object' && isText(line.description) && isAmount(line.quantity) && isAmount(line.unitPrice)
+  )));
+}
+
 export function findBackupRecordProblems({ clients, invoices, expenses }) {
   const problems = [];
   const checkList = (records, listName, checks) => {
@@ -535,6 +543,7 @@ export function findBackupRecordProblems({ clients, invoices, expenses }) {
     ['subtotal', isAmount, 'an amount'],
     ['vatAmount', isAmount, 'an amount'],
     ['total', isAmount, 'an amount'],
+    ['lines', isInvoiceLineList, 'a list of lines with a description, a quantity and a unit price'],
   ]);
   checkList(expenses, 'expense', [['amount', isAmount, 'an amount']]);
   return problems;
@@ -721,6 +730,22 @@ export function roundMoney(value) {
   return Math.round(Number((Number(value || 0) * 100).toPrecision(15))) / 100;
 }
 
+// The lines of an invoice: a description, a quantity and a unit price each. An invoice from before lines has one
+// line with its description and its subtotal.
+export function invoiceLines(invoice) {
+  if (Array.isArray(invoice?.lines) && invoice.lines.length) return invoice.lines;
+  return [{ description: String(invoice?.description || ''), quantity: 1, unitPrice: Number(invoice?.subtotal || 0) }];
+}
+
+// Each line is rounded to cents, so the lines on the invoice add up to its subtotal.
+export function lineAmount(line) {
+  return roundMoney(Number(line?.quantity || 0) * Number(line?.unitPrice || 0));
+}
+
+export function linesSubtotal(lines) {
+  return roundMoney(lines.reduce((sum, line) => sum + lineAmount(line), 0));
+}
+
 // VAT is rounded to cents for each invoice, so the invoice, reports and exports show the same amounts.
 export function calculateInvoiceAmounts(subtotal, vatRate) {
   const roundedSubtotal = roundMoney(subtotal);
@@ -815,6 +840,10 @@ export function invoiceMoneyForSave({ subtotal, vatRate, currency, bookCurrency,
 // The locales of the desktop for numbers and dates. The app sets them when it starts. Without them, amounts use
 // English formats and dates show as YYYY-MM-DD.
 const displayLocales = { number: 'en', date: '' };
+
+export function displayNumberLocale() {
+  return displayLocales.number;
+}
 
 export function setDisplayLocales({ number, date } = {}) {
   displayLocales.number = number || 'en';

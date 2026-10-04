@@ -111,8 +111,8 @@ test('a paid invoice from the form uses the entered amount, or the total in the 
     const save = (received) => app.evaluate(`(() => {
       document.querySelector('.nav-link[data-view="invoices"]').click();
       document.getElementById('invoiceClient').value = 'client-1';
-      document.getElementById('invoiceDescription').value = 'Work ${received || 'default'}';
-      document.getElementById('invoiceSubtotal').value = '100';
+      document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Work ${received || 'default'}';
+      document.querySelector('#invoice-lines-body [name="lineUnitPrice"]').value = '100';
       document.getElementById('invoiceVatRate').value = '21';
       const status = document.getElementById('invoiceStatus');
       status.value = 'paid';

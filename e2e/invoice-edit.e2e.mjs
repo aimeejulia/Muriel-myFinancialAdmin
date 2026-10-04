@@ -33,7 +33,7 @@ test('an invoice stays saved when the app closes during an edit', async () => {
 test('submitting an edit updates the invoice in place', async () => {
   const app = await launchApp(dataDir);
   await app.evaluate(clickEdit);
-  await app.evaluate(`document.getElementById('invoiceDescription').value = 'Edited description'; document.getElementById('invoice-form').requestSubmit(); true`);
+  await app.evaluate(`document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Edited description'; document.getElementById('invoice-form').requestSubmit(); true`);
   await sleep(500);
   assert.equal(await app.evaluate(`document.getElementById('invoice-submit-btn').textContent`), 'Create invoice');
   await app.stop();
@@ -53,8 +53,8 @@ test('cancel edit leaves the invoice unchanged and the next save creates a new i
   await app.evaluate(`(() => {
     document.getElementById('new-invoice-btn').click();
     document.getElementById('invoiceClient').value = 'client-1';
-    document.getElementById('invoiceDescription').value = 'Second invoice';
-    document.getElementById('invoiceSubtotal').value = '50';
+    document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Second invoice';
+    document.querySelector('#invoice-lines-body [name="lineUnitPrice"]').value = '50';
     document.getElementById('invoiceStatus').value = 'draft';
     document.getElementById('invoice-form').requestSubmit();
     return true;

@@ -45,10 +45,10 @@ test('an invoice and its payment accept amounts with a decimal comma and thousan
       const client = document.getElementById('invoiceClient');
       client.value = '${sampleClient.id}';
       client.dispatchEvent(new Event('change'));
-      document.getElementById('invoiceDescription').value = 'Comma amounts';
-      const subtotal = document.getElementById('invoiceSubtotal');
+      document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Comma amounts';
+      const subtotal = document.querySelector('#invoice-lines-body [name="lineUnitPrice"]');
       subtotal.value = '1.234,56';
-      subtotal.dispatchEvent(new Event('input'));
+      subtotal.dispatchEvent(new Event('input', { bubbles: true }));
       document.getElementById('invoiceVatRate').value = '21';
       document.getElementById('invoiceStatus').value = 'sent';
       return true;

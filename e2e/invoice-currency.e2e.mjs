@@ -27,8 +27,8 @@ async function fillUsdInvoice(app) {
     const client = document.getElementById('invoiceClient');
     client.value = 'client-usd';
     client.dispatchEvent(new Event('change'));
-    document.getElementById('invoiceDescription').value = 'Consulting';
-    document.getElementById('invoiceSubtotal').value = '1000';
+    document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Consulting';
+    document.querySelector('#invoice-lines-body [name="lineUnitPrice"]').value = '1000';
     document.getElementById('invoiceVatRate').value = '21';
     document.getElementById('invoiceStatus').value = 'sent';
     return true;
@@ -120,7 +120,7 @@ test('an edit of the description keeps the frozen rate, and a typed rate is mark
     await app.evaluate(`document.querySelector('.nav-link[data-view="invoices"]').click(); document.querySelector('#invoices-table-body button[data-action="edit-invoice"]').click(); true`);
     assert.equal(await app.evaluate(`document.getElementById('invoiceExchangeRate').value`), '1.1403');
     assert.equal(await app.evaluate(`document.getElementById('invoice-exchange-rate-hint').textContent`), 'ECB reference rate of 2026-09-25.');
-    await app.evaluate(`document.getElementById('invoiceDescription').value = 'Consulting, September'; document.getElementById('invoice-form').requestSubmit(); true`);
+    await app.evaluate(`document.querySelector('#invoice-lines-body [name="lineDescription"]').value = 'Consulting, September'; document.getElementById('invoice-form').requestSubmit(); true`);
     let [invoice] = await waitFor(async () => {
       const invoices = await app.evaluate(savedInvoices);
       return invoices[0]?.description === 'Consulting, September' && invoices;

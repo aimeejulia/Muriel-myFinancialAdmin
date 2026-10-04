@@ -14,6 +14,7 @@ import {
   formatDecimalInput,
 } from './state.js';
 import { loadPdfJs } from './pdf-reader.js';
+import { setInvoiceLines } from './invoice-lines-form.js';
 import { readExpenseCurrencyFields, syncExpenseCurrencyFields } from './expense-currency-form.js';
 
 const NEW_CLIENT_OPTION_VALUE = '__create_client__';
@@ -354,8 +355,7 @@ export function loadImportedDraftIntoForm(draft) {
   elements.invoiceDueDate.value = draft.dueDate || todayISO();
   elements.invoiceStatus.value = 'sent';
   elements.invoiceNumber.value = draft.invoiceNumber || '';
-  elements.invoiceDescription.value = draft.description || 'Imported from PDF';
-  elements.invoiceSubtotal.value = formatDecimalInput(draft.subtotal || 0);
+  setInvoiceLines([{ description: draft.description || 'Imported from PDF', quantity: 1, unitPrice: draft.subtotal || 0 }]);
   elements.invoiceVatRate.value = formatDecimalInput(draft.vatRate || 21, null);
   elements.invoicePaidDate.value = '';
   elements.invoiceIssuerSelect.value = 'legal';
