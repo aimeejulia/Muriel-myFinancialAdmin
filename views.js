@@ -293,9 +293,10 @@ export function renderDashboard() {
     .reduce((sum, invoice) => sum + invoiceIncome(invoice), 0) - expensesOf(group);
   // Money that is still open does not depend on the period: an invoice from an earlier quarter can still be unpaid.
   const openGroups = groupByBookCurrency(state.invoices.filter(countsAsInvoiced), []);
+  // The client pays the total with VAT, so the outstanding amount is the total, as in the report.
   const outstanding = (group) => group.invoices
     .filter((invoice) => !['paid', 'delinquent'].includes(computedStatus(invoice)))
-    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).subtotal), 0);
+    .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).total), 0);
   const vatExposure = (group) => group.invoices
     .filter((invoice) => computedStatus(invoice) !== 'paid')
     .reduce((sum, invoice) => sum + Number(invoiceBookAmounts(invoice).vatAmount), 0);
