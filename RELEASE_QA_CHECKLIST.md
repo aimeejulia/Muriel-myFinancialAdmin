@@ -113,7 +113,7 @@ Do these checks in the AppImage:
 - [ ] **Import PDF** reads an invoice PDF.
 - [ ] **Upload expense PDF** reads an expense receipt, and the receipt preview opens.
 - [ ] **Export backup** saves a backup file, and **Restore backup** restores it.
-- [ ] **Save profile** shows the message "Profile changes saved." and then hides it.
+- [ ] **Save your details** shows the message "Your details are saved." and then hides it.
 - [ ] The developer tools console shows no errors. To open it, press Ctrl+Shift+I.
 
 ## 6. Make sure that the metadata is correct

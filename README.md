@@ -64,7 +64,7 @@ Do these steps one time, before you make your first invoice:
 1. Click **Profile**.
 2. Enter your name, legal name, email address, VAT number and address.
 3. Select your **Book currency**. This is the currency of your accounts and your tax reports, for example EUR.
-4. Click **Save profile**.
+4. Click **Save your details**.
 5. In **Profile**, click **Add payment method** to add your bank account or other payment details. Invoices show these details.
 6. If you invoice under a trading name, click **Add trading name** in **Profile**. You can add a logo to each trading name.
 
@@ -293,8 +293,8 @@ You can change the book currency from a date, for example after a move to anothe
 
 1. Click **Profile**.
 2. Select the new **Book currency**.
-3. In **Book currency from**, enter the first day of the new book currency.
-4. Click **Save profile**.
+3. In **Book currency from**, which shows after step 2, enter the first day of the new book currency.
+4. Click **Save your details**.
 
 The date must be after your last invoice or expense. A new invoice uses the book currency of its issue date. A new expense uses the book currency of its date.
 

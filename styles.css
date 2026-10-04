@@ -416,6 +416,7 @@
       color: var(--placeholder);
       opacity: 1;
     }
+    .panel-hint { margin: -6px 0 14px; color: var(--muted); font-size: 0.9rem; }
     .field-hint {
       display: block;
       margin-top: 6px;

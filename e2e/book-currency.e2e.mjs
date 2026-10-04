@@ -147,3 +147,24 @@ test('the last change of book currency can be removed while it has no records', 
     await app.stop();
   }
 });
+
+test('the book currency date shows only when another book currency is selected and records exist', async () => {
+  const app = await launchApp(dataDir);
+  try {
+    const dateField = (currency) => app.evaluate(`(() => {
+      document.querySelector('.nav-link[data-view="profile"]').click();
+      const select = document.getElementById('profileReportingCurrency');
+      select.value = '${currency}';
+      select.dispatchEvent(new Event('change'));
+      return {
+        visible: !document.getElementById('profile-book-currency-from-field').hidden,
+        required: document.getElementById('profileBookCurrencyFrom').required,
+      };
+    })()`);
+    assert.deepEqual(await dateField('EUR'), { visible: false, required: false });
+    assert.deepEqual(await dateField('GBP'), { visible: true, required: true });
+    assert.deepEqual(await dateField('EUR'), { visible: false, required: false });
+  } finally {
+    await app.stop();
+  }
+});
