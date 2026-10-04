@@ -49,8 +49,9 @@ test('cancel edit leaves the invoice unchanged and the next save creates a new i
   const app = await launchApp(dataDir);
   await app.evaluate(clickEdit);
   await app.evaluate(`document.getElementById('invoice-edit-cancel-btn').click(); true`);
-  assert.equal(await app.evaluate(`document.getElementById('invoice-edit-cancel-btn').hidden`), true);
+  assert.equal(await app.evaluate(`document.getElementById('invoice-form-panel').hidden`), true);
   await app.evaluate(`(() => {
+    document.getElementById('new-invoice-btn').click();
     document.getElementById('invoiceClient').value = 'client-1';
     document.getElementById('invoiceDescription').value = 'Second invoice';
     document.getElementById('invoiceSubtotal').value = '50';

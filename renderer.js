@@ -298,7 +298,20 @@ function loadClientForEditing(client) {
 function resetInvoiceEditMode() {
   uiState.editingInvoiceId = '';
   elements.invoiceSubmitBtn.textContent = 'Create invoice';
-  elements.invoiceEditCancelBtn.hidden = true;
+  elements.invoiceFormTitle.textContent = 'New invoice';
+}
+
+// The invoice form opens above the invoice list for a new invoice, an edit or an imported PDF, so the list can
+// use the full width.
+function showInvoiceForm() {
+  elements.invoiceFormPanel.hidden = false;
+  showView('invoices');
+  elements.invoiceFormPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  elements.invoiceClient.focus({ preventScroll: true });
+}
+
+function hideInvoiceForm() {
+  elements.invoiceFormPanel.hidden = true;
 }
 
 function resetForms() {
@@ -395,9 +408,8 @@ function loadInvoiceForEditing(invoice) {
   toggleInvoicePaidDateField();
   loadInvoiceCurrencyFields(invoice, invoiceCurrency(invoice));
   elements.invoiceSubmitBtn.textContent = 'Update invoice';
-  elements.invoiceEditCancelBtn.hidden = false;
-  showView('invoices');
-  elements.invoiceForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  elements.invoiceFormTitle.textContent = `Edit invoice ${invoice.invoiceNumber || ''}`.trim();
+  showInvoiceForm();
 }
 
 registerProfileHooks({ renderAll });
@@ -408,6 +420,7 @@ registerImportHooks({
   upsertClientOptionList,
   updateInvoicePreview,
   toggleInvoicePaidDateField,
+  showInvoiceForm,
 });
 
 elements.navLinks.forEach((link) => {
@@ -511,6 +524,12 @@ elements.expenseEditCancelBtn.addEventListener('click', () => {
 
 elements.invoiceEditCancelBtn.addEventListener('click', () => {
   resetForms();
+  hideInvoiceForm();
+});
+
+elements.newInvoiceBtn.addEventListener('click', () => {
+  resetForms();
+  showInvoiceForm();
 });
 
 elements.invoiceForm.addEventListener('submit', (event) => {
@@ -594,6 +613,7 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     import('./imports.js').then(({ loadImportedDraftIntoForm }) => loadImportedDraftIntoForm(nextDraft));
   } else {
     resetForms();
+    hideInvoiceForm();
     const savedInvoice = state.invoices.find((item) => item.id === createdInvoice.id);
     if (savedInvoice) {
       openInvoicePreview(savedInvoice);
@@ -816,9 +836,27 @@ elements.invoicesTableBody.addEventListener('toggle', (event) => {
   }
   if (menu.open) {
     closeInvoiceRowMenus(menu);
+    // The list is fixed to the window, so it goes below the More button, or above it near the bottom of the window.
+    const button = menu.querySelector('summary').getBoundingClientRect();
+    const list = menu.querySelector('.invoice-row-menu-list');
+    list.style.right = `${Math.max(8, window.innerWidth - button.right)}px`;
+    list.style.top = `${button.bottom + 6}px`;
+    const height = list.getBoundingClientRect().height;
+    if (button.bottom + 6 + height > window.innerHeight - 8) {
+      list.style.top = `${Math.max(8, button.top - 6 - height)}px`;
+    }
   }
 }, true);
 
+// A fixed menu does not move with the page, so it closes when the page scrolls.
+document.addEventListener('scroll', () => closeInvoiceRowMenus(), true);
+
+document.addEventListener('keydown', (event) => {
+  const openMenu = document.querySelector('.invoice-row-menu[open]');
+  if (event.key !== 'Escape' || !openMenu) return;
+  openMenu.open = false;
+  openMenu.querySelector('summary').focus();
+});
 document.addEventListener('click', (event) => {
   if (!event.target.closest('.invoice-row-menu')) {
     closeInvoiceRowMenus();

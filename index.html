@@ -256,12 +256,12 @@
       </section>
 
       <section class="view" id="invoices-view">
-        <div class="two-col two-col-forms">
-          <section class="panel">
+        <div class="invoice-layout">
+          <section class="panel" id="invoice-form-panel" hidden>
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Invoice builder</p>
-                <h3>Create invoice</h3>
+                <h3 id="invoice-form-title">New invoice</h3>
               </div>
             </div>
             <form id="invoice-form" class="form-grid">
@@ -339,7 +339,7 @@
               </div>
               <div class="form-actions full-span">
                 <button type="submit" class="primary-btn" id="invoice-submit-btn">Create invoice</button>
-                <button type="button" class="secondary-btn" id="invoice-edit-cancel-btn" hidden>Cancel edit</button>
+                <button type="button" class="secondary-btn" id="invoice-edit-cancel-btn">Cancel</button>
               </div>
             </form>
           </section>
@@ -351,6 +351,7 @@
                 <h3>Invoice list</h3>
               </div>
               <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+  <button type="button" class="primary-btn" id="new-invoice-btn">New invoice</button>
   <button class="secondary-btn" id="export-invoices-csv">Export CSV</button>
   <button class="secondary-btn" id="import-invoices-pdf">Import PDF</button>
   <input id="invoice-pdf-input" type="file" accept="application/pdf" multiple style="display:none;" />
@@ -372,6 +373,8 @@
                   <tr>
                     <th>Invoice</th>
                     <th>Client</th>
+                    <th>Issued</th>
+                    <th>Due</th>
                     <th>Status</th>
                     <th>Total</th>
                     <th>Actions</th>

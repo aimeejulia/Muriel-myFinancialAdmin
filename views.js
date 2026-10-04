@@ -197,7 +197,7 @@ export function renderInvoices() {
   }
 
   if (!invoices.length) {
-    appendEmptyStateRow(elements.invoicesTableBody, 5, 'No invoices in this view.');
+    appendEmptyStateRow(elements.invoicesTableBody, 7, 'No invoices in this view.');
     return;
   }
 
@@ -207,6 +207,7 @@ export function renderInvoices() {
     const row = document.createElement('tr');
 
     const numberCell = document.createElement('td');
+    numberCell.className = 'nowrap-cell';
     const numberStrong = document.createElement('strong');
     numberStrong.textContent = displayInvoiceNumber(invoice);
     const numberBreak = document.createElement('br');
@@ -218,6 +219,8 @@ export function renderInvoices() {
     row.appendChild(numberCell);
 
     appendTextCell(row, client?.name || 'Unknown');
+    appendTextCell(row, invoice.issueDate || '', 'nowrap-cell');
+    appendTextCell(row, invoice.dueDate || '', 'nowrap-cell');
 
     const statusCell = document.createElement('td');
     const statusBadge = document.createElement('span');
@@ -231,42 +234,43 @@ export function renderInvoices() {
     const actionsCell = document.createElement('td');
     const actionsWrap = document.createElement('div');
     actionsWrap.className = 'invoice-actions';
-
-    if (!['paid', 'aborted'].includes(status)) {
-      const markPaidBtn = document.createElement('button');
-      markPaidBtn.className = 'chip-btn';
-      markPaidBtn.dataset.action = 'mark-paid';
-      markPaidBtn.dataset.id = invoice.id;
-      markPaidBtn.textContent = 'Mark paid';
-      actionsWrap.appendChild(markPaidBtn);
-    }
-
-    if (status === 'paid') {
-      const markUnpaidBtn = document.createElement('button');
-      markUnpaidBtn.className = 'invoice-row-action-btn';
-      markUnpaidBtn.dataset.action = 'mark-unpaid';
-      markUnpaidBtn.dataset.id = invoice.id;
-      markUnpaidBtn.textContent = 'Mark unpaid';
-      actionsWrap.appendChild(markUnpaidBtn);
-    }
-
-    const addActionBtn = (action, label) => {
+    const actionButton = (action, label, className = 'invoice-row-action-btn') => {
       const button = document.createElement('button');
-      button.className = 'invoice-row-action-btn';
+      button.type = 'button';
+      button.className = className;
       button.dataset.action = action;
       button.dataset.id = invoice.id;
       button.textContent = label;
-      actionsWrap.appendChild(button);
+      return button;
     };
 
-    if (status === 'draft') {
-      addActionBtn('edit-invoice', 'Edit');
+    // The row shows the main action and Preview. The other actions are in the More menu, so rows stay one line high.
+    if (!['paid', 'aborted'].includes(status)) {
+      actionsWrap.appendChild(actionButton('mark-paid', 'Mark paid', 'chip-btn'));
     }
+    actionsWrap.appendChild(actionButton('preview-invoice', 'Preview'));
+
+    const moreActions = [];
+    if (status === 'draft') moreActions.push(actionButton('edit-invoice', 'Edit'));
     if (status !== 'paid') {
-      addActionBtn('change-status', 'Status');
-      addActionBtn('reminder', 'Reminder');
+      moreActions.push(actionButton('change-status', 'Status'));
+      moreActions.push(actionButton('reminder', 'Reminder'));
     }
-    addActionBtn('preview-invoice', 'Preview');
+    if (status === 'paid') moreActions.push(actionButton('mark-unpaid', 'Mark unpaid'));
+    if (moreActions.length) {
+      const menu = document.createElement('details');
+      menu.className = 'invoice-row-menu';
+      const summary = document.createElement('summary');
+      summary.className = 'invoice-row-action-btn';
+      summary.textContent = 'More';
+      summary.setAttribute('aria-label', `More actions for ${displayInvoiceNumber(invoice)}`);
+      const list = document.createElement('div');
+      list.className = 'invoice-row-menu-list';
+      moreActions.forEach((button) => list.appendChild(button));
+      menu.appendChild(summary);
+      menu.appendChild(list);
+      actionsWrap.appendChild(menu);
+    }
     actionsCell.appendChild(actionsWrap);
     row.appendChild(actionsCell);
 

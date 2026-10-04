@@ -666,7 +666,8 @@
     .invoice-actions {
       display: flex;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      white-space: nowrap;
       align-items: center;
       justify-content: flex-start;
     }
@@ -683,6 +684,32 @@
     }
     .invoice-row-action-btn:hover {
       background: var(--surface-alt);
+    }
+    .invoice-layout { display: grid; gap: 18px; margin-top: 18px; }
+    /* Without min-width: 0, a wide table makes the page wider than the window. Then the table scrolls in its box. */
+    .invoice-layout > .panel { min-width: 0; }
+    @media (max-width: 1000px) {
+      .invoice-actions { flex-wrap: wrap; min-width: 180px; }
+      #invoices-view th, #invoices-view td { padding-left: 4px; padding-right: 4px; }
+    }
+    .invoice-layout > .panel[hidden] { display: none; }
+    .nowrap-cell { white-space: nowrap; }
+    .invoice-row-menu { position: relative; }
+    .invoice-row-menu > summary { list-style: none; }
+    .invoice-row-menu > summary::-webkit-details-marker { display: none; }
+    .invoice-row-menu > summary::after { content: ' ▾'; }
+    /* The list is fixed to the window, so the table cannot cut it off. The app places it below the More button. */
+    .invoice-row-menu-list {
+      position: fixed;
+      z-index: 30;
+      display: grid;
+      gap: 6px;
+      min-width: 150px;
+      padding: 8px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 12px 28px rgba(28, 16, 64, 0.18);
     }
     .dashboard-toolbar {
       display: flex;
