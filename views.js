@@ -280,7 +280,41 @@ export function renderInvoices() {
   });
 }
 
+// The first steps for a new user. Each step is done when the data for it exists. The panel goes away when all
+// steps are done, or when the user hides it.
+export function setupSteps() {
+  return [
+    { id: 'profile', label: 'Enter your name, address and VAT number in Profile.', action: 'Open Profile', done: Boolean(state.profile.legalName && state.profile.address) },
+    { id: 'payment', label: 'Add a payment method, for example your bank account.', action: 'Add payment method', done: state.profile.paymentMethods.length > 0 },
+    { id: 'client', label: 'Add your first client.', action: 'Add client', done: state.clients.length > 0 },
+    { id: 'invoice', label: 'Make your first invoice.', action: 'New invoice', done: state.invoices.length > 0 },
+  ];
+}
+
+function renderSetupPanel() {
+  const steps = setupSteps();
+  elements.setupPanel.hidden = state.profile.setupGuideHidden || steps.every((step) => step.done);
+  elements.setupSteps.innerHTML = '';
+  steps.forEach((step) => {
+    const item = document.createElement('li');
+    item.className = step.done ? 'setup-step done' : 'setup-step';
+    const text = document.createElement('span');
+    text.textContent = step.done ? `${step.label} Done.` : step.label;
+    item.appendChild(text);
+    if (!step.done) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'chip-btn';
+      button.dataset.setupStep = step.id;
+      button.textContent = step.action;
+      item.appendChild(button);
+    }
+    elements.setupSteps.appendChild(item);
+  });
+}
+
 export function renderDashboard() {
+  renderSetupPanel();
   const periodInvoices = state.invoices.filter((invoice) => matchesDashboardPeriod(invoice.issueDate));
   const financialInvoices = periodInvoices.filter(countsAsInvoiced);
   const periodExpenses = state.expenses.filter((expense) => matchesDashboardPeriod(expense.date));

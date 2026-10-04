@@ -547,6 +547,13 @@
       font-size: 1.35rem;
       line-height: 1.1;
     }
+    .setup-panel { margin-bottom: 18px; }
+    .setup-panel[hidden] { display: none; }
+    .setup-intro { margin: 0 0 12px; color: var(--muted); }
+    .setup-steps { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
+    .setup-step { padding-left: 4px; }
+    .setup-step > span { margin-right: 12px; }
+    .setup-step.done { color: var(--muted); }
     .report-group-title {
       grid-column: 1 / -1;
       margin: 8px 0 0;
