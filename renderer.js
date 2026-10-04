@@ -29,6 +29,9 @@ import {
   expenseBookCurrency,
   normalizeCurrencyCode,
   normalizeThemePreset,
+  formatDate,
+  formatDecimalInput,
+  setDisplayLocales,
 } from './state.js';
 import {
   renderProfile,
@@ -135,7 +138,7 @@ function openMarkPaidModal(invoice) {
   uiState.pendingMarkPaidInvoiceId = invoice.id;
   elements.markPaidDateInput.value = invoice.paidDate || todayISO();
   elements.markPaidReceivedLabel.textContent = receivedLabel(invoice);
-  elements.markPaidReceived.value = invoiceReceivedAmount(invoice).toFixed(2);
+  elements.markPaidReceived.value = formatDecimalInput(invoiceReceivedAmount(invoice));
   elements.markPaidReceivedHint.textContent = `Invoice total in the books: ${formatCurrency(invoiceBookAmounts(invoice).total, invoiceBookCurrency(invoice))}.`;
   elements.markPaidModal.hidden = false;
   elements.markPaidDateInput.focus();
@@ -168,7 +171,7 @@ function openChangeStatusModal(invoice) {
   elements.changeStatusAbortedNumberHandling.value = invoice.abortedNumberHandling || 'cancelled';
   elements.changeStatusPaidDate.value = invoice.paidDate || todayISO();
   elements.changeStatusReceivedLabel.textContent = receivedLabel(invoice);
-  elements.changeStatusReceived.value = invoiceReceivedAmount(invoice).toFixed(2);
+  elements.changeStatusReceived.value = formatDecimalInput(invoiceReceivedAmount(invoice));
   syncChangeStatusFields();
   elements.changeStatusModal.hidden = false;
   elements.changeStatusSelect.focus();
@@ -285,7 +288,7 @@ function loadClientForEditing(client) {
   elements.clientEmail.value = client.email || '';
   elements.clientVatNumber.value = client.vatNumber || '';
   elements.clientAddress.value = client.address || '';
-  elements.clientDefaultVat.value = String(client.defaultVatRate ?? 21);
+  elements.clientDefaultVat.value = formatDecimalInput(client.defaultVatRate ?? 21, null);
   elements.clientDefaultCurrency.value = client.defaultCurrency || reportingCurrency();
   elements.clientStatus.value = client.status === 'inactive' ? 'inactive' : 'active';
   elements.clientPreferredPaymentMethod.value = String(client.preferredPaymentMethodId || '').trim();
@@ -344,7 +347,7 @@ function resetExpenseEditMode() {
 function loadExpenseForEditing(expense) {
   uiState.editingExpenseId = expense.id;
   elements.expenseDate.value = expense.date || todayISO();
-  elements.expenseAmount.value = String(expense.amount || 0);
+  elements.expenseAmount.value = formatDecimalInput(expense.amount || 0);
   elements.expenseCategory.value = expense.category || 'Other';
   elements.expenseDeductible.value = expense.deductible || 'yes';
   elements.expenseNote.value = expense.note || '';
@@ -394,11 +397,11 @@ function loadInvoiceForEditing(invoice) {
   elements.invoiceIssueDate.value = invoice.issueDate || todayISO();
   elements.invoiceDueDate.value = invoice.dueDate || todayISO();
   elements.invoiceDescription.value = invoice.description || '';
-  elements.invoiceSubtotal.value = String(invoice.subtotal || 0);
-  elements.invoiceVatRate.value = String(invoice.vatRate ?? 21);
+  elements.invoiceSubtotal.value = formatDecimalInput(invoice.subtotal || 0);
+  elements.invoiceVatRate.value = formatDecimalInput(invoice.vatRate ?? 21, null);
   elements.invoiceStatus.value = invoice.status === 'overdue' ? 'sent' : invoice.status || 'draft';
   elements.invoicePaidDate.value = invoice.paidDate || '';
-  elements.invoiceReceived.value = invoice.receivedAmount ?? '';
+  elements.invoiceReceived.value = invoice.receivedAmount === null || invoice.receivedAmount === undefined ? '' : formatDecimalInput(invoice.receivedAmount);
   elements.invoicePaymentMethod.value = invoice.paymentMethodId || '';
   if (invoice.issuerType === 'business' && invoice.issuerBusinessId) {
     renderIssuerOptions(`business:${invoice.issuerBusinessId}`);
@@ -944,7 +947,7 @@ elements.expensesTableBody.addEventListener('click', (event) => {
   }
 
   if (button.dataset.action === 'delete-expense') {
-    const confirmed = confirm(`Delete expense from ${expense.date} for ${formatCurrency(expense.amount, expenseBookCurrency(expense))}?`);
+    const confirmed = confirm(`Delete expense from ${formatDate(expense.date)} for ${formatCurrency(expense.amount, expenseBookCurrency(expense))}?`);
     if (!confirmed) return;
 
     state.expenses = state.expenses.filter((item) => item.id !== expense.id);
@@ -965,6 +968,8 @@ async function init() {
     return;
   }
 
+  // Amounts and dates use the formats of the desktop.
+  setDisplayLocales(await window.desktopStore.getLocales?.().catch(() => null) || {});
   await loadState();
   applyTheme(state.profile.themePreset);
   document.getElementById('clientDefaultCurrency').value = reportingCurrency();

@@ -19,6 +19,7 @@ import {
   getClient,
   groupByBookCurrency,
   formatCurrencyTotals,
+  formatDate,
 } from './state.js';
 
 function appendTextCell(row, text, className = '') {
@@ -135,7 +136,7 @@ export function renderExpenses() {
   sorted.forEach((expense) => {
     const row = document.createElement('tr');
 
-    appendTextCell(row, expense.date || '');
+    appendTextCell(row, formatDate(expense.date), 'nowrap-cell');
     appendTextCell(row, expense.category || '');
     appendTextCell(row, expenseAmountText(expense));
     appendTextCell(row, expense.deductible || '');
@@ -219,8 +220,8 @@ export function renderInvoices() {
     row.appendChild(numberCell);
 
     appendTextCell(row, client?.name || 'Unknown');
-    appendTextCell(row, invoice.issueDate || '', 'nowrap-cell');
-    appendTextCell(row, invoice.dueDate || '', 'nowrap-cell');
+    appendTextCell(row, formatDate(invoice.issueDate), 'nowrap-cell');
+    appendTextCell(row, formatDate(invoice.dueDate), 'nowrap-cell');
 
     const statusCell = document.createElement('td');
     const statusBadge = document.createElement('span');
@@ -318,7 +319,7 @@ export function renderDashboard() {
       const row = document.createElement('tr');
       appendTextCell(row, invoice.invoiceNumber || '');
       appendTextCell(row, client?.name || 'Unknown');
-      appendTextCell(row, invoice.dueDate || '');
+      appendTextCell(row, formatDate(invoice.dueDate));
       appendTextCell(row, formatCurrency(invoice.total, invoiceCurrency(invoice)));
       elements.overdueTableBody.appendChild(row);
     });

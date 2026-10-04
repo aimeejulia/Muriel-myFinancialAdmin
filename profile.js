@@ -12,6 +12,7 @@ import {
   bookCurrencyPeriods,
   changeBookCurrency,
   removeLastBookCurrencyChange,
+  formatDate,
 } from './state.js';
 
 let profileHooks = {
@@ -140,7 +141,7 @@ function renderBookCurrencies() {
   document.getElementById('profileReportingCurrency').value = periods[periods.length - 1].currency;
   document.getElementById('profileBookCurrencyFrom').value = '';
   document.getElementById('profile-book-currencies').textContent = periods.length > 1
-    ? periods.map((period) => (period.from ? `${period.currency} from ${period.from}` : `${period.currency} from the start`)).join(', ')
+    ? periods.map((period) => (period.from ? `${period.currency} from ${formatDate(period.from)}` : `${period.currency} from the start`)).join(', ')
     : '';
   document.getElementById('profile-book-currency-undo').hidden = periods.length < 2;
 }

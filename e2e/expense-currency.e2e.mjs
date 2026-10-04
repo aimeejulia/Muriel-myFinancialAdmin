@@ -84,7 +84,7 @@ test('an expense in another currency gets the ECB rate, and the euros paid are t
     assert.equal(expense.originalAmount, 114.03);
     assert.deepEqual(expense.exchangeRate, ecbRate);
 
-    assert.match(await app.evaluate(`document.getElementById('expenses-table-body').textContent`), /€101\.25 \(\$114\.03\)/);
+    assert.match(await app.evaluate(`document.getElementById('expenses-table-body').textContent`), /€101\.25 \(US\$114\.03\)/);
     assert.equal((await app.evaluate(reportCards(2026, 'year')))['Deductible expenses'], '€101.25');
 
     // The form is back to the book currency for the next expense.

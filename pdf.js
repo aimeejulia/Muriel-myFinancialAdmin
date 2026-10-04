@@ -11,6 +11,7 @@ import {
   computedStatus,
   getClient,
   escapeHtml,
+  formatDate,
 } from './state.js';
 import { getInvoiceSenderDetails } from './profile.js';
 
@@ -104,8 +105,8 @@ export function buildInvoicePreviewMarkup(invoice) {
         ${senderLogoDataUrl ? `<img class="preview-logo" src="${escapeHtml(senderLogoDataUrl)}" alt="${escapeHtml(primarySenderName || 'Business')} logo">` : ''}
       </div>
       <div class="preview-meta">
-        <div><strong style="color: var(--text);">Issue date:</strong> ${escapeHtml(invoice.issueDate || '')}</div>
-        <div><strong style="color: var(--text);">Due date:</strong> ${escapeHtml(invoice.dueDate || '')}</div>
+        <div><strong style="color: var(--text);">Issue date:</strong> ${escapeHtml(formatDate(invoice.issueDate))}</div>
+        <div><strong style="color: var(--text);">Due date:</strong> ${escapeHtml(formatDate(invoice.dueDate))}</div>
         <div><strong style="color: var(--text);">Status:</strong> ${escapeHtml(computedStatus(invoice))}</div>
       </div>
     </div>
@@ -187,7 +188,7 @@ export function buildReminder(invoice, tone) {
 
 Hi ${name},
 
-I hope you're well. Just a quick reminder that invoice ${invoice.invoiceNumber} for ${money(invoice.total)} was due on ${invoice.dueDate}.
+I hope you're well. Just a quick reminder that invoice ${invoice.invoiceNumber} for ${money(invoice.total)} was due on ${formatDate(invoice.dueDate)}.
 
 Please let me know if payment is already in progress.
 
@@ -199,7 +200,7 @@ Thanks very much.`;
 
 Hi ${name},
 
-This is a reminder that invoice ${invoice.invoiceNumber} for ${money(invoice.total)} is overdue since ${invoice.dueDate}.
+This is a reminder that invoice ${invoice.invoiceNumber} for ${money(invoice.total)} is overdue since ${formatDate(invoice.dueDate)}.
 
 Please confirm payment status and arrange settlement as soon as possible.
 
@@ -210,7 +211,7 @@ Thank you.`;
 
 Hi ${name},
 
-Just a reminder that invoice ${invoice.invoiceNumber} for ${money(invoice.total)} was due on ${invoice.dueDate}.
+Just a reminder that invoice ${invoice.invoiceNumber} for ${money(invoice.total)} was due on ${formatDate(invoice.dueDate)}.
 
 Please let me know if payment has already been scheduled.
 
@@ -296,9 +297,9 @@ export function printInvoice(invoice) {
 
   const metaX = pageWidth - margin - 170;
   drawLabel('Issue date', metaX, cursorY + 8);
-  drawValue(invoice.issueDate || '', metaX, cursorY + 24, { maxWidth: 170 });
+  drawValue(formatDate(invoice.issueDate), metaX, cursorY + 24, { maxWidth: 170 });
   drawLabel('Due date', metaX, cursorY + 48);
-  drawValue(invoice.dueDate || '', metaX, cursorY + 64, { maxWidth: 170 });
+  drawValue(formatDate(invoice.dueDate), metaX, cursorY + 64, { maxWidth: 170 });
 
   cursorY += 92;
 

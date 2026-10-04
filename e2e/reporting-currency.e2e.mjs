@@ -35,7 +35,7 @@ test('the expense form, the expense list and the dashboard use the reporting cur
     const metrics = await app.evaluate(`['metric-quarter-invoiced', 'metric-received', 'metric-outstanding', 'metric-vat-exposure']
       .map((id) => document.getElementById(id).textContent)`);
     for (const metric of metrics) {
-      assert.match(metric, /^-?\$/, `the dashboard shows dollars: ${metric}`);
+      assert.match(metric, /^-?US\$/, `the dashboard shows dollars: ${metric}`);
     }
   } finally {
     await app.stop();

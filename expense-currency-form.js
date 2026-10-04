@@ -7,6 +7,8 @@ import {
   readDecimal,
   bookCurrencyOn,
   todayISO,
+  formatDate,
+  formatDecimalInput,
 } from './state.js';
 import { canGetExchangeRates, getBookExchangeRate } from './book-rate.js';
 
@@ -53,7 +55,7 @@ export function syncExpenseCurrencyFields() {
   if (!needsRate || paidByHand) return;
   const rate = readDecimal(elements.expenseExchangeRate.value, { amount: false });
   const amount = readDecimal(elements.expenseAmount.value);
-  elements.expensePaid.value = rate > 0 && elements.expenseAmount.value !== '' ? roundMoney(amount / rate).toFixed(2) : '';
+  elements.expensePaid.value = rate > 0 && elements.expenseAmount.value !== '' ? formatDecimalInput(roundMoney(amount / rate)) : '';
 }
 
 function showRateHint() {
@@ -62,7 +64,7 @@ function showRateHint() {
     return;
   }
   elements.expenseExchangeRateHint.textContent = rateDetails.manual
-    ? `Entered by hand for ${rateDetails.rateDate}.`
+    ? `Entered by hand for ${formatDate(rateDetails.rateDate)}.`
     : `${rateDetails.source}.`;
 }
 
@@ -88,7 +90,7 @@ export async function refreshExpenseExchangeRate() {
     return;
   }
 
-  elements.expenseExchangeRate.value = String(result.rate);
+  elements.expenseExchangeRate.value = formatDecimalInput(result.rate, null);
   rateDetails = { rateDate: result.rateDate, source: result.source, manual: false };
   showRateHint();
   syncExpenseCurrencyFields();
@@ -133,9 +135,9 @@ export function loadExpenseCurrencyFields(expense) {
 
   rateRequest += 1;
   elements.expenseCurrency.value = currency;
-  elements.expenseAmount.value = String(expense.originalAmount ?? expense.amount ?? 0);
-  elements.expenseExchangeRate.value = expense.exchangeRate?.rate ? String(expense.exchangeRate.rate) : '';
-  elements.expensePaid.value = Number(expense.amount || 0).toFixed(2);
+  elements.expenseAmount.value = formatDecimalInput(expense.originalAmount ?? expense.amount ?? 0);
+  elements.expenseExchangeRate.value = expense.exchangeRate?.rate ? formatDecimalInput(expense.exchangeRate.rate, null) : '';
+  elements.expensePaid.value = formatDecimalInput(expense.amount || 0);
   paidByHand = true;
   rateDetails = {
     rateDate: expense.exchangeRate?.rateDate || '',
