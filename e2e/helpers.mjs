@@ -181,6 +181,8 @@ export async function launchApp(dataDir, { env = {} } = {}) {
     pending.get(message.id)?.(message);
   });
   await send('Page.enable');
+  // The page counts as focused even when another window on the desktop has the focus. The clipboard needs it.
+  await send('Emulation.setFocusEmulationEnabled', { enabled: true });
 
   const evaluate = async (expression) => {
     // userGesture makes clicks count as user actions, which the clipboard needs.
