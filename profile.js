@@ -13,6 +13,7 @@ import {
   changeBookCurrency,
   removeLastBookCurrencyChange,
   formatDate,
+  showFieldError,
 } from './state.js';
 
 let profileHooks = {
@@ -306,10 +307,8 @@ export function attachProfileHandlers() {
   document.getElementById('profileReportingCurrency').addEventListener('change', syncBookCurrencyFromField);
   document.getElementById('profile-book-currency-undo').addEventListener('click', () => {
     const error = removeLastBookCurrencyChange();
-    if (error) {
-      alert(error);
-      return;
-    }
+    document.getElementById('profile-book-currency-error').textContent = error;
+    if (error) return;
     saveState();
     profileHooks.renderAll();
   });
@@ -322,7 +321,8 @@ export function attachProfileHandlers() {
       String(formData.get('profileBookCurrencyFrom') || '').trim(),
     );
     if (bookCurrencyError) {
-      alert(bookCurrencyError);
+      const dateField = document.getElementById('profileBookCurrencyFrom');
+      showFieldError(dateField.closest('[hidden]') ? document.getElementById('profileReportingCurrency') : dateField, bookCurrencyError);
       return;
     }
     state.profile.personalName = String(formData.get('profilePersonalName') || '').trim();
@@ -415,7 +415,7 @@ export function attachProfileHandlers() {
       return business.name.toLowerCase() === name.toLowerCase();
     });
     if (exists) {
-      alert('This trading name already exists.');
+      showFieldError(elements.profileBusinessNameInput, 'You have a trading name with this name. Enter another name.');
       return;
     }
 
@@ -432,7 +432,7 @@ export function attachProfileHandlers() {
         logoFileName = logoFile.name || '';
       } catch (error) {
         console.error('Could not read trading name logo', error);
-        alert('Could not read the selected logo file. Try another image.');
+        showFieldError(document.getElementById('profileBusinessLogo'), 'Muriel could not read this image. Select another image.');
         return;
       }
     }
@@ -497,7 +497,7 @@ export function attachProfileHandlers() {
     const includeByDefault = Boolean(elements.profilePaymentMethodDefaultInput.checked);
 
     if (!label && !details) {
-      alert('Add a method label or payment details.');
+      showFieldError(document.getElementById('profilePaymentMethodLabel'), 'Enter a label or payment details for the payment method.');
       return;
     }
 

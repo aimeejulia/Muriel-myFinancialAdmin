@@ -38,11 +38,13 @@ test('a payment reminder is copied to the clipboard', async () => {
   const clipboardBefore = readClipboard();
   const app = await launchApp(dataDir);
   try {
-    await app.evaluate(`window.alerts = []; window.alert = (message) => window.alerts.push(message); true`);
     await app.evaluate(`document.querySelector('#invoices-table-body button[data-action="reminder"]').click(); true`);
-    await waitFor(() => app.evaluate('window.alerts.length > 0'));
+    const label = await waitFor(async () => {
+      const text = await app.evaluate(`document.querySelector('#invoices-table-body button[data-action="reminder"]').textContent`);
+      return text !== 'Reminder' && text;
+    });
 
-    assert.deepEqual(await app.evaluate('window.alerts'), ['Reminder copied.']);
+    assert.equal(label, 'Copied', 'the button says that the reminder is copied, in place of a message box');
     if (clipboardBefore !== null) {
       assert.match(await waitFor(() => /INV-2026-09-001/.test(readClipboard()) && readClipboard()), /INV-2026-09-001/);
     }

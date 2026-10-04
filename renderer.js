@@ -20,6 +20,7 @@ import {
   linesSubtotal,
   displayInvoiceNumber,
   attachDecimalInputs,
+  showFieldError,
   invoiceMoneyForSave,
   upsertInvoice,
   buildInvoiceNumber,
@@ -484,14 +485,14 @@ elements.clientForm.addEventListener('submit', (event) => {
   const formData = new FormData(elements.clientForm);
   const name = String(formData.get('clientName') || '').trim();
   if (!name) {
-    alert('Client name is required.');
+    showFieldError(elements.clientForm.elements.clientName, 'Enter the name of the client.');
     return;
   }
 
   const displayId = String(formData.get('clientDisplayId') || '').trim() || generateClientDisplayId();
   const duplicateDisplayId = state.clients.some((client) => client.id !== uiState.editingClientId && client.displayId === displayId);
   if (duplicateDisplayId) {
-    alert('Client ID already exists. Please use another one.');
+    showFieldError(elements.clientForm.elements.clientDisplayId, `Another client has the client ID ${displayId}. Enter another ID.`);
     return;
   }
 
@@ -555,7 +556,7 @@ elements.invoiceForm.addEventListener('submit', (event) => {
   const formData = new FormData(elements.invoiceForm);
   const clientId = formData.get('invoiceClient');
   if (!clientId) {
-    alert('Add or select a client first.');
+    showFieldError(elements.invoiceClient, 'Select a client, or add a new client.');
     return;
   }
 
@@ -564,13 +565,13 @@ elements.invoiceForm.addEventListener('submit', (event) => {
   const manualInvoiceNumber = String(formData.get('invoiceNumber') || '').trim();
   const invoiceNumber = manualInvoiceNumber || buildInvoiceNumber(issueDate);
   if (!canUseInvoiceNumber(invoiceNumber, uiState.editingInvoiceId)) {
-    alert('Invoice number already exists. Please change it before saving.');
+    showFieldError(elements.invoiceNumber, `Another invoice has the number ${invoiceNumber}. Enter another number, or leave the field empty.`);
     return;
   }
 
   const currencyFields = readInvoiceCurrencyFields();
   if (currencyFields.currency !== currencyFields.bookCurrency && !currencyFields.exchangeRate) {
-    alert(`Enter the exchange rate from ${currencyFields.currency} to ${currencyFields.bookCurrency}, or wait until the app has the rate from the ECB.`);
+    showFieldError(elements.invoiceExchangeRate, `Enter the exchange rate from ${currencyFields.currency} to ${currencyFields.bookCurrency}, or wait until the app has the rate from the ECB.`);
     return;
   }
   const editingInvoice = state.invoices.find((item) => item.id === uiState.editingInvoiceId);
@@ -695,14 +696,14 @@ elements.quickClientForm.addEventListener('submit', (event) => {
   const formData = new FormData(elements.quickClientForm);
   const name = String(formData.get('quickClientName') || '').trim();
   if (!name) {
-    alert('Client name is required.');
+    showFieldError(elements.quickClientForm.elements.quickClientName, 'Enter the name of the client.');
     return;
   }
 
   const displayId = String(formData.get('quickClientDisplayId') || generateClientDisplayId()).trim();
   const duplicateDisplayId = state.clients.some((client) => client.displayId === displayId);
   if (duplicateDisplayId) {
-    alert('Client ID already exists. Please use another one.');
+    showFieldError(elements.quickClientForm.elements.quickClientDisplayId, `Another client has the client ID ${displayId}. Enter another ID.`);
     return;
   }
 
@@ -761,7 +762,7 @@ elements.changeStatusForm.addEventListener('submit', (event) => {
   const abortedNumberHandling = newStatus === 'aborted' ? elements.changeStatusAbortedNumberHandling.value : '';
   const nextReservesNumber = !(newStatus === 'aborted' && abortedNumberHandling === 'reuse');
   if (nextReservesNumber && !canUseInvoiceNumber(invoice.invoiceNumber, invoice.id)) {
-    alert('This invoice number is already in use. Keep it reusable or change the invoice number before leaving aborted status.');
+    showFieldError(elements.changeStatusSelect, 'Another invoice uses this invoice number now. Keep the number reusable, or change the invoice number first.');
     return;
   }
 
@@ -810,7 +811,7 @@ elements.expensePdfInput.addEventListener('change', async (event) => {
     await importExpensePdfFile(file);
   } catch (error) {
     console.error('Failed to import expense PDF', file.name, error);
-    alert('Could not parse this expense PDF. You can still fill the expense manually and save it.');
+    setPendingExpenseImportInfo(`Muriel could not read ${file.name}. Fill in the expense by hand, then click Save expense.`);
   }
 });
 
@@ -957,9 +958,17 @@ elements.invoicesTableBody.addEventListener('click', (event) => {
 
   if (button.dataset.action === 'reminder') {
     const text = buildReminder(invoice, 'neutral');
+    // The button says for a short time if the copy worked, so no message box interrupts the user.
+    const label = button.textContent;
+    const showResult = (result) => {
+      button.textContent = result;
+      setTimeout(() => {
+        button.textContent = label;
+      }, 2000);
+    };
     navigator.clipboard.writeText(text)
-      .then(() => alert('Reminder copied.'))
-      .catch(() => alert('Could not copy the reminder.'));
+      .then(() => showResult('Copied'))
+      .catch(() => showResult('Could not copy'));
     return;
   }
 
