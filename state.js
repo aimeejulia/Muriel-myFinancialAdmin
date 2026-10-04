@@ -224,6 +224,9 @@ export const elements = {
   overdueTableBody: byId('overdue-table-body'),
   statusSummary: byId('status-summary'),
   dashboardPeriodLabel: byId('dashboard-period-label'),
+  setupPanel: byId('setup-panel'),
+  setupSteps: byId('setup-steps'),
+  setupHideBtn: byId('setup-hide'),
   exportInvoicesCsvBtn: byId('export-invoices-csv'),
   exportExpensesCsvBtn: byId('export-expenses-csv'),
   exportReportCsvBtn: byId('export-report-csv'),
@@ -449,6 +452,7 @@ export function normalizeProfile() {
     .map((change) => ({ from: change.from, currency: normalizeReportingCurrency(change.currency) }))
     .sort((left, right) => left.from.localeCompare(right.from));
   state.profile.themePreset = normalizeThemePreset(state.profile.themePreset);
+  state.profile.setupGuideHidden = Boolean(state.profile.setupGuideHidden);
 
   const businesses = Array.isArray(state.profile.businesses) ? state.profile.businesses : [];
   state.profile.businesses = businesses

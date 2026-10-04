@@ -59,7 +59,7 @@ To install Muriel as a Snap or a Flatpak, or to run it from the source code, rea
 
 ### First steps in the app
 
-Do these steps one time, before you make your first invoice:
+Do these steps one time, before you make your first invoice. Until you do them, the **Get started** panel on the Dashboard shows them, with a button for each step.
 
 1. Click **Profile**.
 2. Enter your name, legal name, email address, VAT number and address.

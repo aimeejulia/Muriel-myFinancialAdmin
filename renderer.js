@@ -835,6 +835,31 @@ elements.invoiceSortToggle.addEventListener('click', () => {
   renderInvoices();
 });
 elements.dashboardYear.addEventListener('input', renderDashboard);
+
+// Each first step opens the page where the user does it.
+elements.setupSteps.addEventListener('click', (event) => {
+  const step = event.target.closest('button[data-setup-step]')?.dataset.setupStep;
+  if (step === 'profile') {
+    showView('profile');
+    document.getElementById('profileLegalName').focus();
+  } else if (step === 'payment') {
+    showView('profile');
+    document.getElementById('profilePaymentMethodLabel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('profilePaymentMethodLabel').focus({ preventScroll: true });
+  } else if (step === 'client') {
+    showView('clients');
+    document.getElementById('clientName').focus();
+  } else if (step === 'invoice') {
+    resetForms();
+    showInvoiceForm();
+  }
+});
+
+elements.setupHideBtn.addEventListener('click', () => {
+  state.profile.setupGuideHidden = true;
+  saveState();
+  renderDashboard();
+});
 elements.dashboardPeriod.addEventListener('change', renderDashboard);
 // The report follows the selected year and period at once, so it never shows the figures of another period.
 elements.reportYear.addEventListener('input', runReport);

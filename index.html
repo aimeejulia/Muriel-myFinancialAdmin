@@ -82,6 +82,17 @@
       </section>
 
       <section class="view active" id="dashboard-view">
+        <section class="panel setup-panel" id="setup-panel" aria-labelledby="setup-title" hidden>
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">First steps</p>
+              <h3 id="setup-title">Get started</h3>
+            </div>
+            <button type="button" class="secondary-btn" id="setup-hide">Hide</button>
+          </div>
+          <p class="setup-intro">Do these steps before you make your first invoice. Invoices show your details and payment details.</p>
+          <ol class="setup-steps" id="setup-steps"></ol>
+        </section>
         <div class="dashboard-toolbar">
           <div class="field">
             <label for="dashboardYear">Year</label>
