@@ -24,6 +24,7 @@ let importHooks = {
   updateInvoicePreview: () => {},
   useClientCurrency: () => {},
   toggleInvoicePaidDateField: () => {},
+  showInvoiceForm: () => {},
 };
 
 export function registerImportHooks(hooks) {
@@ -360,7 +361,7 @@ export function loadImportedDraftIntoForm(draft) {
   importHooks.toggleInvoicePaidDateField();
   importHooks.updateInvoicePreview();
   updateImportQueueInfo();
-  importHooks.showView('invoices');
+  importHooks.showInvoiceForm();
 }
 
 export function persistExpenseFromForm(editingExpenseId = '') {

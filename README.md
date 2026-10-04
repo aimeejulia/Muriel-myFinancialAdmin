@@ -10,7 +10,7 @@ Muriel keeps all data on your computer. It does not send your data to a server. 
 - **Invoices**: make invoices, show a preview, and save them as PDF files. You can write an invoice in the currency of the client.
 - **Exchange rates**: Muriel gets the euro exchange rates of the European Central Bank (ECB) for the invoice date.
 - **Payments**: mark an invoice paid, and enter the amount that arrived in your bank account.
-- **Reminders**: click **Reminder** on an invoice to copy a payment reminder to the clipboard.
+- **Reminders**: click **More** > **Reminder** on an invoice to copy a payment reminder to the clipboard.
 - **Expenses**: record expenses, attach the PDF receipt, and record expenses in other currencies.
 - **Reports and dashboard**: see the invoiced amounts, VAT, income, expenses and estimated net income for a quarter or a year.
 - **Import**: read invoices and expense receipts from PDF files.
@@ -71,7 +71,7 @@ Do these steps one time, before you make your first invoice:
 Then do your daily work:
 
 1. To add a client, click **Clients**, fill in the form, and click **Save client**.
-2. To make an invoice, click **Invoices**, select the client, fill in the form, and click **Create invoice**.
+2. To make an invoice, click **Invoices**, then **New invoice**. Select the client, fill in the form, and click **Create invoice**.
 3. To make a PDF of an invoice, click **Preview** on the invoice. Then click **Download PDF**.
 4. When the client pays, click **Mark paid** on the invoice. Enter the payment date and the amount that arrived in your bank account.
 5. To record an expense, click **Expenses**, fill in the form, and click **Save expense**. To attach the PDF receipt, click **Upload expense PDF** first.
@@ -271,7 +271,7 @@ When you mark an invoice paid, enter the amount that arrived in your bank accoun
 - The income of an unpaid invoice is an estimate: its subtotal at the exchange rate of the invoice date.
 - The VAT figures use the amounts at the exchange rate of the invoice date.
 
-If you entered a wrong amount, click **Mark unpaid** on the invoice. Then mark it paid again with the correct amount.
+If you entered a wrong amount, click **More** > **Mark unpaid** on the invoice. Then mark it paid again with the correct amount.
 
 ### Expenses in another currency
 

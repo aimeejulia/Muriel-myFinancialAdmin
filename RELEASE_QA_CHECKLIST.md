@@ -106,9 +106,9 @@ Do these checks in the AppImage:
 - [ ] An invoice in another currency gets an ECB exchange rate.
 - [ ] The invoice PDF shows the VAT and the totals in the book currency.
 - [ ] **Mark paid** asks for the amount received, and **Reports** shows it as **Received**.
-- [ ] **Mark unpaid** makes a paid invoice unpaid again.
+- [ ] **More** > **Mark unpaid** makes a paid invoice unpaid again.
 - [ ] An expense in another currency gets an ECB exchange rate.
-- [ ] **Reminder** on an invoice copies a reminder to the clipboard.
+- [ ] **More** > **Reminder** on an invoice copies a reminder to the clipboard.
 - [ ] The three CSV exports download.
 - [ ] **Import PDF** reads an invoice PDF.
 - [ ] **Upload expense PDF** reads an expense receipt, and the receipt preview opens.
