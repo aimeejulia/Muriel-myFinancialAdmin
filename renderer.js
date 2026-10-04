@@ -173,7 +173,8 @@ function syncChangeStatusFields() {
 function openChangeStatusModal(invoice) {
   uiState.pendingChangeStatusInvoiceId = invoice.id;
   elements.changeStatusSubject.textContent = invoiceSubject(invoice);
-  elements.changeStatusSelect.value = invoice.status === 'paid' ? 'sent' : (invoice.status || 'sent');
+  // Overdue is not a status to select: the app shows it when a sent invoice is past its due date.
+  elements.changeStatusSelect.value = ['paid', 'overdue'].includes(invoice.status) ? 'sent' : (invoice.status || 'sent');
   elements.changeStatusAbortedNumberHandling.value = invoice.abortedNumberHandling || 'cancelled';
   elements.changeStatusPaidDate.value = invoice.paidDate || todayISO();
   elements.changeStatusReceivedLabel.textContent = receivedLabel(invoice);
@@ -606,11 +607,6 @@ elements.invoiceForm.addEventListener('submit', (event) => {
   invoiceFields.receivedAmount = invoiceFields.status === 'paid'
     ? (String(formData.get('invoiceReceived') || '').trim() ? roundMoney(readDecimal(formData.get('invoiceReceived'))) : money.bookAmounts.total)
     : null;
-
-  // Auto-set status to overdue if due date is today or in the past and status is sent
-  if (invoiceFields.status === 'sent' && invoiceFields.dueDate <= todayISO()) {
-    invoiceFields.status = 'overdue';
-  }
 
   const createdInvoice = upsertInvoice(editingInvoice?.id || crypto.randomUUID(), invoiceFields);
   resetInvoiceEditMode();
