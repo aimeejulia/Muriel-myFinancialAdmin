@@ -4,6 +4,7 @@ import {
   expenseCurrency,
   reportingCurrency,
   roundMoney,
+  readDecimal,
   bookCurrencyOn,
   todayISO,
 } from './state.js';
@@ -50,8 +51,8 @@ export function syncExpenseCurrencyFields() {
   elements.expensePaidLabel.textContent = `Amount paid in ${bookCurrency} (after bank charges)`;
 
   if (!needsRate || paidByHand) return;
-  const rate = Number(elements.expenseExchangeRate.value);
-  const amount = Number(elements.expenseAmount.value);
+  const rate = readDecimal(elements.expenseExchangeRate.value, { amount: false });
+  const amount = readDecimal(elements.expenseAmount.value);
   elements.expensePaid.value = rate > 0 && elements.expenseAmount.value !== '' ? roundMoney(amount / rate).toFixed(2) : '';
 }
 
@@ -151,7 +152,7 @@ export function readExpenseCurrencyFields() {
   const bookCurrency = currentBookCurrency();
   if (currency === bookCurrency) {
     return {
-      amount: Number(elements.expenseAmount.value),
+      amount: readDecimal(elements.expenseAmount.value),
       currency,
       bookCurrency,
       originalAmount: null,
@@ -159,12 +160,12 @@ export function readExpenseCurrencyFields() {
     };
   }
 
-  const rate = Number(elements.expenseExchangeRate.value);
+  const rate = readDecimal(elements.expenseExchangeRate.value, { amount: false });
   return {
-    amount: roundMoney(elements.expensePaid.value),
+    amount: roundMoney(readDecimal(elements.expensePaid.value)),
     currency,
     bookCurrency,
-    originalAmount: roundMoney(elements.expenseAmount.value),
+    originalAmount: roundMoney(readDecimal(elements.expenseAmount.value)),
     exchangeRate: rate > 0
       ? {
           rate: Number(rate.toPrecision(8)),

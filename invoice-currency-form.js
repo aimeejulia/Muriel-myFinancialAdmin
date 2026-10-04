@@ -7,6 +7,7 @@ import {
   getClient,
   clientCurrencyFor,
   reportingCurrency,
+  readDecimal,
   bookCurrencyOn,
   todayISO,
 } from './state.js';
@@ -55,7 +56,8 @@ export function syncInvoiceCurrencyFields() {
   elements.invoiceExchangeRate.required = needsRate;
   elements.invoiceExchangeRateLabel.textContent = `Exchange rate (${currency} for 1 ${bookCurrency})`;
 
-  const amounts = calculateInvoiceAmounts(elements.invoiceSubtotal.value, elements.invoiceVatRate.value);
+  const vatRate = readDecimal(elements.invoiceVatRate.value, { amount: false });
+  const amounts = calculateInvoiceAmounts(readDecimal(elements.invoiceSubtotal.value), vatRate);
   elements.invoiceTotalPreview.textContent = formatCurrency(amounts.total, currency);
 
   if (!needsRate) {
@@ -63,12 +65,12 @@ export function syncInvoiceCurrencyFields() {
     return;
   }
 
-  const rate = Number(elements.invoiceExchangeRate.value);
+  const rate = readDecimal(elements.invoiceExchangeRate.value, { amount: false });
   if (!(rate > 0)) {
     elements.invoiceBookPreview.textContent = '';
     return;
   }
-  const book = convertToBookAmounts(amounts.subtotal, elements.invoiceVatRate.value, rate);
+  const book = convertToBookAmounts(amounts.subtotal, vatRate, rate);
   elements.invoiceBookPreview.textContent = `In the books: subtotal ${formatCurrency(book.subtotal, bookCurrency)}, VAT ${formatCurrency(book.vatAmount, bookCurrency)}, total ${formatCurrency(book.total, bookCurrency)}.`;
 }
 
@@ -167,7 +169,7 @@ export function readInvoiceCurrencyFields() {
     return { currency, bookCurrency, serviceDate: elements.invoiceServiceDate.value, exchangeRate: null };
   }
 
-  const rate = Number(elements.invoiceExchangeRate.value);
+  const rate = readDecimal(elements.invoiceExchangeRate.value, { amount: false });
   return {
     currency,
     bookCurrency,

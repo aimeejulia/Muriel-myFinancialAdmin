@@ -15,6 +15,8 @@ import {
   invoiceBookCurrency,
   invoiceReceivedAmount,
   roundMoney,
+  readDecimal,
+  attachDecimalInputs,
   invoiceMoneyForSave,
   upsertInvoice,
   buildInvoiceNumber,
@@ -428,6 +430,7 @@ elements.themeButtons.forEach((button) => {
 attachUpdateHandlers();
 attachExpenseReceiptHandlers();
 attachDialogHandlers();
+attachDecimalInputs();
 fillInvoiceCurrencyOptions();
 attachInvoiceCurrencyHandlers();
 fillExpenseCurrencyOptions();
@@ -469,7 +472,7 @@ elements.clientForm.addEventListener('submit', (event) => {
     email: String(formData.get('clientEmail') || '').trim(),
     vatNumber: String(formData.get('clientVatNumber') || '').trim(),
     address: String(formData.get('clientAddress') || '').trim(),
-    defaultVatRate: Number(formData.get('clientDefaultVat') || 0),
+    defaultVatRate: readDecimal(formData.get('clientDefaultVat'), { amount: false }),
     defaultCurrency: normalizeCurrencyCode(formData.get('clientDefaultCurrency') || reportingCurrency()),
     status: String(formData.get('clientStatus') || 'active').trim().toLowerCase() === 'inactive' ? 'inactive' : 'active',
     preferredPaymentMethodId: String(formData.get('clientPreferredPaymentMethod') || '').trim(),
@@ -534,8 +537,8 @@ elements.invoiceForm.addEventListener('submit', (event) => {
     return;
   }
   const editingInvoice = state.invoices.find((item) => item.id === uiState.editingInvoiceId);
-  const vatRate = Number(formData.get('invoiceVatRate'));
-  const money = invoiceMoneyForSave({ subtotal: formData.get('invoiceSubtotal'), vatRate, ...currencyFields }, editingInvoice);
+  const vatRate = readDecimal(formData.get('invoiceVatRate'), { amount: false });
+  const money = invoiceMoneyForSave({ subtotal: readDecimal(formData.get('invoiceSubtotal')), vatRate, ...currencyFields }, editingInvoice);
 
   let issuerType = 'legal';
   let issuerBusinessId = '';
@@ -573,7 +576,7 @@ elements.invoiceForm.addEventListener('submit', (event) => {
   };
   // A paid invoice keeps the euros that arrived. Without an entered amount it is the total in the books.
   invoiceFields.receivedAmount = invoiceFields.status === 'paid'
-    ? (String(formData.get('invoiceReceived') || '').trim() ? roundMoney(formData.get('invoiceReceived')) : money.bookAmounts.total)
+    ? (String(formData.get('invoiceReceived') || '').trim() ? roundMoney(readDecimal(formData.get('invoiceReceived'))) : money.bookAmounts.total)
     : null;
 
   // Auto-set status to overdue if due date is today or in the past and status is sent
@@ -676,7 +679,7 @@ elements.quickClientForm.addEventListener('submit', (event) => {
     email: String(formData.get('quickClientEmail') || '').trim(),
     vatNumber: String(formData.get('quickClientVatNumber') || '').trim(),
     address: String(formData.get('quickClientAddress') || '').trim(),
-    defaultVatRate: Number(formData.get('quickClientDefaultVat') || 21),
+    defaultVatRate: String(formData.get('quickClientDefaultVat') || '').trim() ? readDecimal(formData.get('quickClientDefaultVat'), { amount: false }) : 21,
     defaultCurrency: normalizeCurrencyCode(formData.get('quickClientDefaultCurrency') || reportingCurrency()),
     status: String(formData.get('quickClientStatus') || 'active').trim().toLowerCase() === 'inactive' ? 'inactive' : 'active',
     preferredPaymentMethodId: String(formData.get('quickClientPreferredPaymentMethod') || '').trim(),
@@ -730,7 +733,7 @@ elements.changeStatusForm.addEventListener('submit', (event) => {
   invoice.status = newStatus;
   invoice.abortedNumberHandling = abortedNumberHandling;
   invoice.paidDate = newStatus === 'paid' ? (elements.changeStatusPaidDate.value || todayISO()) : '';
-  invoice.receivedAmount = newStatus === 'paid' ? roundMoney(elements.changeStatusReceived.value) : null;
+  invoice.receivedAmount = newStatus === 'paid' ? roundMoney(readDecimal(elements.changeStatusReceived.value)) : null;
   saveState();
   renderAll();
   closeChangeStatusModal();
@@ -748,7 +751,7 @@ elements.markPaidForm.addEventListener('submit', (event) => {
   invoice.status = 'paid';
   invoice.abortedNumberHandling = '';
   invoice.paidDate = elements.markPaidDateInput.value || todayISO();
-  invoice.receivedAmount = roundMoney(elements.markPaidReceived.value);
+  invoice.receivedAmount = roundMoney(readDecimal(elements.markPaidReceived.value));
   saveState();
   renderAll();
   closeMarkPaidModal();
