@@ -262,6 +262,7 @@
     .preview-book-totals {
       margin-top: 12px;
     }
+    .preview-multiline { white-space: pre-line; }
     .preview-rate {
       margin: 0 0 6px;
       color: var(--muted);
